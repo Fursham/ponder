@@ -1,11 +1,40 @@
-#' This function will test if the CDS in query is an NMD substrate
+#' Generate augmented CDSs of spliced transcripts
 #'
-#' @param queryCDS is a GRanges Object
-#' @param refsequence is a sequence containing TwoBitFile
+#' @param knownCDS GRanges object containing reference ORF for the gene in query
+#' @param queryTx GRanges object containing exon structure of query transcript
 #'
-#' @return Granges
+#' @return GRangesList object containing a list of new CDS structures
 #' @export
-testNMDtx <- function(queryCDS, refsequence){
+#'
+augmentCDS <- function(knownCDS, queryTx){
+
+  # merge both GRanges transcripts
+  combinedList = removeMetadata(list(refTx = knownCDS, testTx = queryTx))
+  
+  
+  # identify segments which are different
+  diffSegments = indentifyAddedRemovedRegions("refTx", "testTx", combinedList[c("refTx", "testTx")])
+  
+  # we need to find a way to remove segments found in ref and add segments found in test
+  augmentedTx = setdiff(knownCDS, diff$ENSMUST00000029780[2,])
+  
+  
+  return() 
+}
+
+
+
+
+#' Test query CDS for NMD features
+#'
+#' @param queryCDS GRanges Object containing CDS structure
+#' @param refsequence sequence file build from AnnotationHub
+#' 
+#' @return A GRanges object containing a list of in-frame stop codons, its
+#' coordinate, its distance to last EJC and prediction of its NMD nature
+#' @import
+#' @author Fursham Hamid
+testTxforNMD <- function(queryCDS, refsequence){
   
   queryStrand = as.character(strand(queryCDS))[1]
   
@@ -21,29 +50,25 @@ testNMDtx <- function(queryCDS, refsequence){
   }
   
   # prepare a dict of stop codons for pattern matching
-  stopcodons = DNAStringSet(c("TAA", "TAG", "TGA"))
-  pdict_stopcodons = PDict(stopcodons)
+  list_stopcodons = DNAStringSet(c("TAA", "TAG", "TGA"))
+  pdict_stopcodons = PDict(list_stopcodons)
   
   # search for in-frame stop codons
-  matches = matchPDict(pdict_stopcodons, thisqueryseq)
-  combinedmatches = do.call("c", matches)
-  stop_codon = combinedmatches[end(combinedmatches) %% 3 == 0,]
-  PTC = stop_codon[end(stop_codon) != sum(width(queryCDS))]
-  return(PTC)
-  PTC_rep <- ifelse(!is.null(PTC), 'Yes', 'No')  # need to improve on this
+  allmatches = matchPDict(pdict_stopcodons, thisqueryseq) # check whether this list is named
+  combinedmatches = unlist(allmatches)
+  inframe_stopcodons = combinedmatches[end(combinedmatches) %% 3 == 0,]
+  
+  ## this line is no longer necessary
+  # PTC = inframe_stopcodons[end(inframe_stopcodons) != sum(width(queryCDS))]
   
   # calculate distance of stop codon to last exon junction
   lastEJ = head(tail(exon_boundaries, n=2), n=1)
-  dist_stop_to_lastEJ = end(stop_codon) - lastEJ
+  dist_stop_to_lastEJ = end(inframe_stopcodons) - lastEJ
   
+  # update GRanges object 'inframe_stopcodons' with more information
   metadata = dplyr::data_frame(lastEJ_dist = dist_stop_to_lastEJ) %>%
     dplyr::mutate(is_NMD = ifelse(lastEJ_dist < -50, TRUE, FALSE)) %>%
     as.data.frame()
-  elementMetadata(stop_codon) = metadata
-  return(stop_codon)
-  
-  # outputs (1) whether tx contain PTC and (2) distance of (all) stops to last EJ
-  # more outputs would be desirable etc exon structure considered
-  output = list(PTC_rep, dist_stop_to_lastEJ)
-  return(output)
+  elementMetadata(inframe_stopcodons) = metadata
+  return(inframe_stopcodons)
 }
