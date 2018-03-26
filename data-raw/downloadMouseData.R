@@ -20,23 +20,33 @@ txdb_mm = loadDb("data-raw/txdb/mus_musculus_txdb.sqlite")
 exons = exonsBy(txdb_mm, by = 'tx', use.names=TRUE)
 cds = cdsBy(txdb_mm, by = 'tx', use.names=TRUE)
 
-# Extract PTBP2 transcripts
+# Extract Ptbp2 transcripts
 ptbp2_testTx = c('ENSMUST00000029780', 'ENSMUST00000197833')
-ptbp2_NMDTx = sort(unlist(append(
-                removeMetadata(cds$ENSMUST00000029780[1]), 
-                removeMetadata(exons$ENSMUST00000197833[2:13]))), 
-                decreasing=TRUE)
+# below is a workaround to delete exons
+ptbp2_NMDTx = cds$ENSMUST00000029780[ranges(cds$ENSMUST00000029780) 
+                                     != ranges(cds$ENSMUST00000029780)[10]]
+
 ptbp2_testData = list(exons = exons[ptbp2_testTx], cdss = cds[ptbp2_testTx], noNMD = cds$ENSMUST00000029780, NMD = ptbp2_NMDTx)
 devtools::use_data(ptbp2_testData, overwrite = TRUE)
 
 # Extract Bak1 transcripts
 bak1_testTx = c('ENSMUST00000078691', 'ENSMUST00000025034') 
 bak1_NMDTx = sort(unlist(append(
-  removeMetadata(cds$ENSMUST00000078691[1]), 
-  removeMetadata(exons$ENSMUST00000025034[3:7])))
-  )
+  reduce(cds$ENSMUST00000078691), 
+  reduce(exons$ENSMUST00000025034[5]))), 
+  decreasing=TRUE)
+
 bak1_testData = list(exons = exons[bak1_testTx], cdss = cds[bak1_testTx], noNMD = cds$ENSMUST00000078691, NMD = bak1_NMDTx)
 devtools::use_data(bak1_testData, overwrite = TRUE)
+
+# Extract Psd95 transcripts
+psd95_testTx = c('ENSMUST00000108589', 'ENSMUST00000123687')
+# below is a workaround to delete exons
+psd95_NMDTx = cds$ENSMUST00000108589[ranges(cds$ENSMUST00000108589) 
+                                     != ranges(cds$ENSMUST00000108589)[20]]
+
+psd95_testData = list(exons = exons[psd95_testTx], cdss = cds[psd95_testTx], noNMD = cds$ENSMUST00000108589, NMD = psd95_NMDTx)
+devtools::use_data(psd95_testData, overwrite = TRUE)
 
 
 

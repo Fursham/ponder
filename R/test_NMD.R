@@ -46,7 +46,8 @@ testTxforNMD <- function(queryCDS, refsequence){
     thisqueryseq = Biostrings::reverseComplement(unlist(thisqueryseq))
     exon_boundaries = cumsum(rev(width(queryCDS)))
   } else if(queryStrand == '+') {
-    thisqueryseq = Biostrings::getSeq(mmus_dna, queryCDS)
+    thisqueryseq = Biostrings::getSeq(mmus_dna, queryCDS) %>%
+      unlist(.)
     exon_boundaries = cumsum(width(queryCDS))
     
   }
