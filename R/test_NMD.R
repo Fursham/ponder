@@ -32,8 +32,9 @@ augmentCDS <- function(knownCDS, queryTx){
 #' 
 #' @return A GRanges object containing a list of in-frame stop codons, its
 #' coordinate, its distance to last EJC and prediction of its NMD nature
-#' @import
+#' @import Biostrings 
 #' @author Fursham Hamid
+#' @export
 testTxforNMD <- function(queryCDS, refsequence){
   
   queryStrand = as.character(strand(queryCDS))[1]
@@ -41,22 +42,24 @@ testTxforNMD <- function(queryCDS, refsequence){
   # prepares query seq and exon boundaries depending on strand
   if (queryStrand == '-') {
     queryCDS = sort(queryCDS)
-    thisqueryseq = getSeq(mmus_dna, queryCDS)
-    thisqueryseq = reverseComplement(unlist(thisqueryseq))
+    thisqueryseq = Biostrings::getSeq(mmus_dna, queryCDS)
+    thisqueryseq = Biostrings::reverseComplement(unlist(thisqueryseq))
     exon_boundaries = cumsum(rev(width(queryCDS)))
   } else if(queryStrand == '+') {
-    thisqueryseq = getSeq(mmus_dna, queryCDS)
+    thisqueryseq = Biostrings::getSeq(mmus_dna, queryCDS)
     exon_boundaries = cumsum(width(queryCDS))
+    
   }
-  
+
   # prepare a dict of stop codons for pattern matching
-  list_stopcodons = DNAStringSet(c("TAA", "TAG", "TGA"))
-  pdict_stopcodons = PDict(list_stopcodons)
+  list_stopcodons = Biostrings::DNAStringSet(c("TAA", "TAG", "TGA"))
+  pdict_stopcodons = Biostrings::PDict(list_stopcodons)
   
   # search for in-frame stop codons
-  allmatches = matchPDict(pdict_stopcodons, thisqueryseq) # check whether this list is named
+  allmatches = Biostrings::matchPDict(pdict_stopcodons, thisqueryseq) # check whether this list is named
   combinedmatches = unlist(allmatches)
   inframe_stopcodons = combinedmatches[end(combinedmatches) %% 3 == 0,]
+
   
   ## this line is no longer necessary
   # PTC = inframe_stopcodons[end(inframe_stopcodons) != sum(width(queryCDS))]

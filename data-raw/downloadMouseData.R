@@ -22,13 +22,21 @@ cds = cdsBy(txdb_mm, by = 'tx', use.names=TRUE)
 
 # Extract PTBP2 transcripts
 ptbp2_testTx = c('ENSMUST00000029780', 'ENSMUST00000197833')
-ptbp2_testData = list(exons = exons[ptbp2_testTx], cdss = cds[ptbp2_testTx])
-devtools::use_data(ptbp2_data, overwrite = TRUE)
+ptbp2_NMDTx = sort(unlist(append(
+                removeMetadata(cds$ENSMUST00000029780[1]), 
+                removeMetadata(exons$ENSMUST00000197833[2:13]))), 
+                decreasing=TRUE)
+ptbp2_testData = list(exons = exons[ptbp2_testTx], cdss = cds[ptbp2_testTx], noNMD = cds$ENSMUST00000029780, NMD = ptbp2_NMDTx)
+devtools::use_data(ptbp2_testData, overwrite = TRUE)
 
 # Extract Bak1 transcripts
 bak1_testTx = c('ENSMUST00000078691', 'ENSMUST00000025034') 
-bak1_testData = list(exons = exons[bak1_testTx], cdss = cds[bak1_testTx])
-devtools::use_data(bak1_data, overwrite = TRUE)
+bak1_NMDTx = sort(unlist(append(
+  removeMetadata(cds$ENSMUST00000078691[1]), 
+  removeMetadata(exons$ENSMUST00000025034[3:7])))
+  )
+bak1_testData = list(exons = exons[bak1_testTx], cdss = cds[bak1_testTx], noNMD = cds$ENSMUST00000078691, NMD = bak1_NMDTx)
+devtools::use_data(bak1_testData, overwrite = TRUE)
 
 
 

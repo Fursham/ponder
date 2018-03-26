@@ -2,4 +2,6 @@
 
 export(augmentCDS)
 export(indentifyAddedRemovedRegions)
+export(testTxforNMD)
+import(Biostrings)
 import(GenomicRanges)
