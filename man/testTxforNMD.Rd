@@ -18,6 +18,14 @@ coordinate, its distance to last EJC and prediction of its NMD nature
 \description{
 Test query CDS for NMD features
 }
+\examples{
+# Return a GRanges Object with 1 stop codon
+testTxforNMD(ptbp2_testData$noNMD, mmus_dna)
+
+# Return a GRanges Object with multiple premature stop codons, 
+5 of which is >50 from lastEJC
+testTxforNMD(ptbp2_testData$NMD, mmus_dna)
+}
 \author{
 Fursham Hamid
 }

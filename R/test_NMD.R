@@ -48,6 +48,13 @@ augmentCDS <- function(knownCDS, queryTx){
 #' coordinate, its distance to last EJC and prediction of its NMD nature
 #' @import Biostrings 
 #' @author Fursham Hamid
+#' @examples
+#' # Return a GRanges Object with 1 stop codon
+#' testTxforNMD(ptbp2_testData$noNMD, mmus_dna)
+#' 
+#' # Return a GRanges Object with multiple premature stop codons, 
+#' # 5 of which is >50 from lastEJC
+#' testTxforNMD(ptbp2_testData$NMD, mmus_dna)
 #' @export
 testTxforNMD <- function(queryCDS, refsequence){
   
