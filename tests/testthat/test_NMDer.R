@@ -8,7 +8,16 @@ test_that("identifyAddedRemoveRegions works", {
 })
 
 context("Test NMDer")
-test_that("testTxforNMD works", {
+test_that("augmentCDS", {
+  augmented_ptbp2 = augmentCDS(ptbp2_testData$noNMD, exons$ENSMUST00000197833)
+  augmented_bak1 = augmentCDS(bak1_testData$noNMD, exons$ENSMUST00000025034)
+  augmented_negative = augmentCDS(ptbp2_testData$noNMD, exons$ENSMUST00000029780)
+  
+  expect_equal(length(augmented_ptbp2), 13)
+  expect_equal(length(augmented_bak1), 6)
+  expect_equal(augmented_negative, NULL)  # test should return NULL as transcript is a ref CDS
+})
+test_that("testTxforNMD", {
   NMDreport_ptbp2_noNMD = testTxforNMD(ptbp2_testData$noNMD, mmus_dna)
   NMDreport_ptbp2_NMD = testTxforNMD(ptbp2_testData$NMD, mmus_dna)
   NMDreport_psd95_noNMD = testTxforNMD(psd95_testData$noNMD, mmus_dna)

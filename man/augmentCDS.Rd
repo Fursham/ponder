@@ -7,13 +7,17 @@
 augmentCDS(knownCDS, queryTx)
 }
 \arguments{
-\item{knownCDS}{GRanges object containing reference ORF for the gene in query}
+\item{knownCDS}{GRanges object containing reference CDS for the gene in query}
 
 \item{queryTx}{GRanges object containing exon structure of query transcript}
 }
 \value{
-GRangesList object containing a list of new CDS structures
+GRangesList object containing a list of new CDS structures or 
+NULL if no unique internal exons are found
 }
 \description{
 Generate augmented CDSs of spliced transcripts
+}
+\author{
+Fursham Hamid
 }

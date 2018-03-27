@@ -1,25 +1,39 @@
 #' Generate augmented CDSs of spliced transcripts
 #'
-#' @param knownCDS GRanges object containing reference ORF for the gene in query
+#' @param knownCDS GRanges object containing reference CDS for the gene in query
 #' @param queryTx GRanges object containing exon structure of query transcript
 #'
-#' @return GRangesList object containing a list of new CDS structures
+#' @return GRangesList object containing a list of new CDS structures or 
+#' NULL if no unique internal exons are found
+#' @author Fursham Hamid
 #' @export
 #'
 augmentCDS <- function(knownCDS, queryTx){
 
-  # merge both GRanges transcripts
-  combinedList = removeMetadata(list(refTx = knownCDS, testTx = queryTx))
-  
-  
-  # identify segments which are different
+  # combine both GRanges objects into a list and identify segments which are different
+  combinedList = list(refTx = knownCDS, testTx = queryTx)
   diffSegments = indentifyAddedRemovedRegions("refTx", "testTx", combinedList[c("refTx", "testTx")])
   
-  # we need to find a way to remove segments found in ref and add segments found in test
-  augmentedTx = setdiff(knownCDS, diff$ENSMUST00000029780[2,])
-  
-  
-  return() 
+  if (length(diffSegments$refTx$contained[diffSegments$refTx$contained == TRUE]) == 0 & 
+      length(diffSegments$testTx$contained[diffSegments$testTx$contained == TRUE]) == 0) {
+    return(NULL)
+  }
+  # remove internal segments in CDS which are absent in test transcripts,
+  # add internal segments to CDS which are present in test transcripts
+  ## future development, to also test first and last exons
+  augmentedTx = knownCDS
+  if (!is.null(diffSegments$refTx$contained)){
+    augmentedTx = knownCDS[knownCDS != diffSegments$refTx[diffSegments$refTx$contained == TRUE]]
+    augmentedTx = reduce(augmentedTx)
+  }
+  if (!is.null(diffSegments$testTx$contained)){
+    augmentedTx = sort(unlist(append(
+      reduce(augmentedTx), 
+      reduce(diffSegments$testTx[diffSegments$testTx$contained == TRUE]))),
+      decreasing = as.character(strand(knownCDS))[1] == '-')
+  }
+
+  return(augmentedTx) 
 }
 
 
