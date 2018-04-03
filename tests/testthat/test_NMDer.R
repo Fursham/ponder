@@ -66,13 +66,13 @@ test_that("testTXforNMD", {
   # we need to store sequence info for Ptbp2 and Bak1 transcripts
   # i guess we can test multiple transcripts in this test function and have more expected output below
   
-  expect_equal(length(NMDreport_ptbp2_noNMD),0)
+  expect_equal(length(NMDreport_ptbp2_noNMD),1)
   
   expect_equal(mcols(NMDreport_ptbp2_NMD[1])$lastEJ_dist,-361)
-  expect_equal(length(NMDreport_ptbp2_NMD),5)
+  expect_equal(length(NMDreport_ptbp2_NMD),8)
   
-  expect_equal(length(NMDreport_psd95_noNMD),0)
+  expect_equal(length(NMDreport_psd95_noNMD),1)
   
   expect_equal(mcols(NMDreport_psd95_NMD[1])$lastEJ_dist,-80)
-  expect_equal(length(NMDreport_psd95_NMD),1)
+  expect_equal(length(NMDreport_psd95_NMD),2)
 })

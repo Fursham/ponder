@@ -39,7 +39,7 @@ workflow1 <- function(knownCDS, queryTx, refseqeunce) {
   return(list(transcript = augmentedCDS[[1]], 
               AltSpliced_tx = TRUE,
               is_NMD = elementMetadata(NMDreport[1])$is_NMD, 
-              dist_to_lastEJ = as.numeric(elementMetadata(NMDreport[1])$lastEJ_dist), 
+              dist_to_lastEJ = elementMetadata(NMDreport[1])$lastEJ_dist, 
               annotatedStart = pre_report$annotatedStart)
          )
   

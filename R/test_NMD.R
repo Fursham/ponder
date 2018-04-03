@@ -267,7 +267,9 @@ testTXforNMD <- function(queryCDS, refsequence){
     dplyr::mutate(is_NMD = ifelse(lastEJ_dist < -50, TRUE, FALSE)) %>%
     as.data.frame()
   elementMetadata(inframe_stopcodons) = metadata
-  inframe_stopcodons = inframe_stopcodons[elementMetadata(inframe_stopcodons)$is_NMD == TRUE] %>%
-    .[order(elementMetadata(.)$lastEJ_dist)]
+  inframe_stopcodons = inframe_stopcodons[order(elementMetadata(inframe_stopcodons)$lastEJ_dist)]
+  
+  #inframe_stopcodons = inframe_stopcodons[elementMetadata(inframe_stopcodons)$is_NMD == TRUE] %>%
+  #  .[order(elementMetadata(.)$lastEJ_dist)]
   return(inframe_stopcodons)
 }
