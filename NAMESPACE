@@ -3,6 +3,7 @@
 export(indentifyAddedRemovedRegions)
 export(reconstructCDS)
 export(reconstructCDSstart)
+export(resizeTranscripts)
 export(testTXforNMD)
 export(testTXforStart)
 import(Biostrings)

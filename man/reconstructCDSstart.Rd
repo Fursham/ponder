@@ -4,7 +4,7 @@
 \alias{reconstructCDSstart}
 \title{Reconstruct CDS with alternate 5' exons}
 \usage{
-reconstructCDSstart(knownCDS, queryTx, txrevise_out, refsequence)
+reconstructCDSstart(knownCDS, queryTx, txrevise_out, refsequence, full.output = FALSE)
 }
 \arguments{
 \item{knownCDS}{A GRanges object containing CCDS information of a gene family}
@@ -17,13 +17,17 @@ or 'testTXforStart()' output. ?indentifyAddedRemovedRegions or ?testTXforStart
 for more information}
 
 \item{refsequence}{sequence file build from AnnotationHub}
+
+\item{full.output}{if TRUE, function will output additional information}
 }
 \value{
-A list containing (1) a GRanges object with a reconstructed CDS, 
-(2) GRangesobject from 'indentifyAddedRemovedRegions()' and 
-(3) a flag for non-annotated Start codon.
-If reconstructed CDS do not contain an in-frame Start codon with 3' end of the coding sequence,
-function will return NA for (2)
+Default output (ORF),
+If reconstructed CDS contain an in-frame ATG, function will output a GRanges Object describing the
+reconstructed CDS. Else, function will output 'NA'
+
+If full.output == TRUE,
+function will also return a list of GRanges objects similar to 'indentifyAddedRemovedRegions()' output (txrevise_out). 
+?indentifyAddedRemovedRegions for more information
 }
 \description{
 This function will reconstruct a CDS sequence with a different 5' end 

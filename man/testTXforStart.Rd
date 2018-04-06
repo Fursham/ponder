@@ -4,17 +4,23 @@
 \alias{testTXforStart}
 \title{Test transcripts for annotated start codons}
 \usage{
-testTXforStart(knownCDS, queryTX)
+testTXforStart(knownCDS, queryTX, full.output = FALSE)
 }
 \arguments{
 \item{knownCDS}{A GRanges object containing CCDS information of a gene family}
+
+\item{full.output}{If TRUE, function will output other information}
 
 \item{queryTx}{A GRanges object containing exon structure of a query transcript from
 the same gene family}
 }
 \value{
-A list of GRanges objects similar to 'indentifyAddedRemovedRegions()' output. 
-Fourth object in the list flags the transcript for annotated start codon
+By default, function will return a TRUE/FALSE boolean (annotatedStart)
+
+If full.output is TRUE, function will output other information which include:
+(1) the length of the first coding exon (firstexlen), 
+(2) queryTx GRanges with 5' end appended to the start codon  (ORF),  
+(3) a list of GRanges objects similar to 'indentifyAddedRemovedRegions()' output (txrevise_out). 
 ?indentifyAddedRemovedRegions for more information
 }
 \description{
@@ -24,6 +30,7 @@ Start codon from a reference CCDS of the gene
 \examples{
 
 testTXforStart(ptbp2_testData$noNMD, ptbp2_testData$NMD)
+testTXforStart(ptbp2_testData$noNMD, ptbp2_testData$diffstart)
 
 
 }

@@ -22,10 +22,11 @@ cds = cdsBy(txdb_mm, by = 'tx', use.names=TRUE)
 
 # Extract Ptbp2 transcripts
 ptbp2_testTx = c('ENSMUST00000029780', 'ENSMUST00000197833')
+ptbp2_NMDTx = cds$ENSMUST00000029780[cds$ENSMUST00000029780 != cds$ENSMUST00000029780[10]]
 ptbp2_testData = list(exons = exons[ptbp2_testTx], 
                       cdss = cds[ptbp2_testTx], 
                       noNMD = cds$ENSMUST00000029780, 
-                      NMD = exons$ENSMUST00000197833,
+                      NMD = ptbp2_NMDTx,
                       diffstart = exons$ENSMUST00000198399)
 devtools::use_data(ptbp2_testData, overwrite = TRUE)
 

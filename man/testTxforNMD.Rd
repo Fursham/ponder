@@ -4,27 +4,31 @@
 \alias{testTXforNMD}
 \title{Test ORF for NMD}
 \usage{
-testTXforNMD(queryCDS, refsequence)
+testTXforNMD(queryCDS, refsequence, minmPTCdist = -50, full.output = FALSE)
 }
 \arguments{
 \item{queryCDS}{GRanges Object containing CDS structure}
 
 \item{refsequence}{sequence file build from AnnotationHub}
+
+\item{full.output}{If TRUE, function will output other information}
 }
 \value{
-A GRanges object containing a list of NMD-inducible stop codons
+A list containing: 
+(1) GRanges object containing a list of in-frame stop codons and its metadata
+
+if full.output == TRUE, function will also return
+(2) An ORF which ends at the most upstream in-frame stopcodon
 }
 \description{
-This function will check for NMD features for an input transcript
+This function will check for NMD features for an input ORF
+
+Do not that input query has to begin with an ATG
 }
 \examples{
 
-# Return a GRanges Object with 1 stop codon
-testTxforNMD(ptbp2_testData$noNMD, mmus_dna)
-
-# Return a GRanges Object with multiple premature stop codons, 
-# 5 of which is >50 from lastEJC
-testTxforNMD(ptbp2_testData$NMD, mmus_dna)
+testTXforNMD(ptbp2_testData$noNMD, mmus_dna)
+testTXforNMD(ptbp2_testData$NMD, mmus_dna)
 
 }
 \author{

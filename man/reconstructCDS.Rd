@@ -2,9 +2,9 @@
 % Please edit documentation in R/test_NMD.R
 \name{reconstructCDS}
 \alias{reconstructCDS}
-\title{Reconstruct ORF with alternative segments}
+\title{Reconstruct ORF with alternative internal and downstream segments}
 \usage{
-reconstructCDS(knownCDS, queryTx, txrevise_out, annotatedStart = TRUE)
+reconstructCDS(knownCDS, queryTx, txrevise_out)
 }
 \arguments{
 \item{knownCDS}{A GRanges object containing CCDS information of a gene family}
@@ -17,8 +17,6 @@ GRangesobject from 'indentifyAddedRemovedRegions()'
 or 'testTXforStart()' output. ?indentifyAddedRemovedRegions or ?testTXforStart
 for more information.
 Arguments knownCDS and queryTx is not mandatory if this argument is provided}
-
-\item{annotatedStart}{A}
 }
 \value{
 A GRanges Object with new ORF information if transcript contain unique segments, or
@@ -26,11 +24,14 @@ NA if transcript is identical to reference CDS
 }
 \description{
 This function will generate a new ORF of a gene family with 
-added segments from a query transcript. INPUT...
+added segments from a query transcript. 
+
+Do note that this function, if ran as a stand-alone, 
+will not insert/remove first exons.
 }
 \examples{
 
-reconstructCDS(_)
+reconstructCDS(ptbp2_testData$noNMD, ptbp2_testData$exons$ENSMUST00000197833)
 
 
 

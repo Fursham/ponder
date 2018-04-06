@@ -3,14 +3,23 @@
 #' @description This function will test whether the query transcript contain an annotated 
 #' Start codon from a reference CCDS of the gene
 #' 
+#' @usage 
+#' testTXforStart(knownCDS, queryTX, full.output = FALSE)
+#' 
 #' @param knownCDS A GRanges object containing CCDS information of a gene family
 #' @param queryTx A GRanges object containing exon structure of a query transcript from
 #' the same gene family
-#'
-#' @return 
-#' A list of GRanges objects similar to 'indentifyAddedRemovedRegions()' output. 
-#' Fourth object in the list flags the transcript for annotated start codon
+#' @param full.output If TRUE, function will output other information 
+
+#' @return
+#' By default, function will return a TRUE/FALSE boolean (annotatedStart)
+#' 
+#' If full.output is TRUE, function will output other information which include:
+#' (1) the length of the first coding exon (firstexlen), 
+#' (2) queryTx GRanges with 5' end appended to the start codon  (ORF),  
+#' (3) a list of GRanges objects similar to 'indentifyAddedRemovedRegions()' output (txrevise_out). 
 #' ?indentifyAddedRemovedRegions for more information
+#' 
 #' @export
 #' 
 #' @author Fursham Hamid
@@ -18,10 +27,17 @@
 #' @examples
 #' 
 #' testTXforStart(ptbp2_testData$noNMD, ptbp2_testData$NMD)
+#' testTXforStart(ptbp2_testData$noNMD, ptbp2_testData$diffstart)
 #' 
 #' 
-testTXforStart <- function(knownCDS, queryTX) {
+testTXforStart <- function(knownCDS, queryTX, full.output = FALSE) {
   
+  # prepare output of function
+  output = list(annotatedStart = NA,
+                txrevise_out = NA,
+                ORF = NA,
+                firstexlen = NA)
+
   # combine both GRanges objects into a list and identify segments which are different
   combinedList = list(refTx = knownCDS, testTx = queryTX)
   diffSegments = indentifyAddedRemovedRegions("refTx", "testTx", combinedList[c("refTx", "testTx")])
@@ -29,12 +45,23 @@ testTXforStart <- function(knownCDS, queryTX) {
   # test if the reference CDS contain any unique upstream segments
     # if test return FALSE, it means that the test transcript bear the annotated Start
     # if test return TRUE, it means that the test transcript bear a different 5' structure
+  
   if (length(diffSegments$refTx$upstream[diffSegments$refTx$upstream == TRUE]) == 0) {
-    output = list(txrevise_out = diffSegments, annotatedStart = TRUE)
-  } else {
-    output = list(txrevise_out = diffSegments, annotatedStart = FALSE)
+    
+    lenfirstsharedexon = width(diffSegments$shared_exons[1])
+    upUTRsize = sum(width(diffSegments$testTx[diffSegments$testTx$upstream == TRUE]))
+    setORF = resizeTranscripts(queryTX, start = upUTRsize)
+    output = modifyList(output, 
+                        list(txrevise_out = diffSegments, 
+                             ORF = setORF, 
+                             annotatedStart = TRUE, 
+                             firstexlen = lenfirstsharedexon))
+    } else {
+      output = modifyList(output, 
+                          list(txrevise_out = diffSegments, 
+                               annotatedStart = FALSE))
   }
-  return(output)
+  ifelse(full.output == TRUE, return(output), return(output["annotatedStart"]))
 }
 
 
@@ -43,6 +70,8 @@ testTXforStart <- function(knownCDS, queryTX) {
 #' @description This function will reconstruct a CDS sequence with a different 5' end 
 #' taken from a query transcript from the same gene
 #' 
+#' @usage reconstructCDSstart(knownCDS, queryTx, txrevise_out, refsequence, full.output = FALSE)
+#' 
 #' @param knownCDS A GRanges object containing CCDS information of a gene family
 #' @param queryTx A GRanges object containing exon structure of a query transcript from
 #' the same gene family
@@ -50,13 +79,16 @@ testTXforStart <- function(knownCDS, queryTX) {
 #' or 'testTXforStart()' output. ?indentifyAddedRemovedRegions or ?testTXforStart
 #' for more information
 #' @param refsequence sequence file build from AnnotationHub
+#' @param full.output if TRUE, function will output additional information
 #' 
 #' @return 
-#' A list containing (1) a GRanges object with a reconstructed CDS, 
-#' (2) GRangesobject from 'indentifyAddedRemovedRegions()' and 
-#' (3) a flag for non-annotated Start codon.
-#' If reconstructed CDS do not contain an in-frame Start codon with 3' end of the coding sequence,
-#' function will return NA for (2)
+#' Default output (ORF),
+#' If reconstructed CDS contain an in-frame ATG, function will output a GRanges Object describing the
+#' reconstructed CDS. Else, function will output 'NA'
+#' 
+#' If full.output == TRUE,
+#' function will also return a list of GRanges objects similar to 'indentifyAddedRemovedRegions()' output (txrevise_out). 
+#' ?indentifyAddedRemovedRegions for more information
 #' 
 #' @export
 #' 
@@ -66,7 +98,7 @@ testTXforStart <- function(knownCDS, queryTX) {
 #' 
 #' reconstructCDSstart(ptbp2_testData$noNMD, ptbp2_testData$diffstart, refsequence = mmus_dna)
 #' 
-reconstructCDSstart <- function(knownCDS, queryTx, txrevise_out, refsequence) {
+reconstructCDSstart <- function(knownCDS, queryTx, txrevise_out, refsequence, full.output = FALSE) {
   
   # check if txrevise_out input is provided, and build one if not.
   if (missing(knownCDS) | missing(queryTx)) {
@@ -106,30 +138,35 @@ reconstructCDSstart <- function(knownCDS, queryTx, txrevise_out, refsequence) {
       unlist(.)
   }
   
-
   # find all in-frame start codons in reconstructed transcript
   StartCodons = Biostrings::matchPattern(Biostrings::DNAString("ATG"), thisqueryseq)
   inFrameStartCodons = StartCodons[(length(reconstructedTx) - (end(StartCodons))) %%3 == 0,]
   
   if (length(inFrameStartCodons) > 0) {
-
-    # obtain txrevise output
-    combinedList = list(refTx = reconstructedTx, testTx = queryTx)
-    diffSegments = indentifyAddedRemovedRegions("refTx", "testTx", combinedList[c("refTx", "testTx")])
     
-    out = list(newCDS = reconstructedTx, txrevise_out = diffSegments, annotatedStart = FALSE)
+    # append 5' end of reconstructed transcript
+    upUTRsize = start(inFrameStartCodons[1]) - 1
+    setORF = resizeTranscripts(reconstructedTx, start = upUTRsize)
+    
+    # obtain txrevise output
+    combinedList = list(refTx = setORF, testTx = queryTx)
+    diffSegments = indentifyAddedRemovedRegions("refTx", "testTx", combinedList[c("refTx", "testTx")])
+    out = list(ORF = setORF, txrevise_out = diffSegments)
   } else {
-    out = list(newCDS = reconstructedTx, txrevise_out = NA, annotatedStart = FALSE)
+    out = list(ORF = NA, txrevise_out = NA)
   }
-  return(out)
+  ifelse(full.output == TRUE, return(out), return(out["ORF"]))
 }
 
 
-#' Reconstruct ORF with alternative segments
+#' Reconstruct ORF with alternative internal and downstream segments
 #'
 #' @description 
 #' This function will generate a new ORF of a gene family with 
-#' added segments from a query transcript. INPUT...
+#' added segments from a query transcript. 
+#' 
+#' Do note that this function, if ran as a stand-alone, 
+#' will not insert/remove first exons. 
 #' 
 #' @param knownCDS A GRanges object containing CCDS information of a gene family
 #' @param queryTx A GRanges object containing exon structure of a query transcript from
@@ -140,7 +177,6 @@ reconstructCDSstart <- function(knownCDS, queryTx, txrevise_out, refsequence) {
 #' or 'testTXforStart()' output. ?indentifyAddedRemovedRegions or ?testTXforStart
 #' for more information.
 #' Arguments knownCDS and queryTx is not mandatory if this argument is provided
-#' @param annotatedStart A 
 #' 
 #' 
 #' @return
@@ -152,13 +188,13 @@ reconstructCDSstart <- function(knownCDS, queryTx, txrevise_out, refsequence) {
 #'
 #' @examples
 #' 
-#' reconstructCDS(_)
+#' reconstructCDS(ptbp2_testData$noNMD, ptbp2_testData$exons$ENSMUST00000197833)
 #' 
 #' 
 #' 
 #' 
 #' 
-reconstructCDS <- function(knownCDS, queryTx, txrevise_out, annotatedStart = TRUE){
+reconstructCDS <- function(knownCDS, queryTx, txrevise_out){
 
   # check if txrevise_out input is provided, and build one if not.
   if (missing(txrevise_out)) {
@@ -177,12 +213,7 @@ reconstructCDS <- function(knownCDS, queryTx, txrevise_out, annotatedStart = TRU
       length(diffSegments[[1]]$downstream[diffSegments[[1]]$downstream == TRUE]) == 0 &
       length(diffSegments[[2]]$contained[diffSegments[[2]]$contained == TRUE]) == 0
       ) {
-    if(annotatedStart == TRUE){
-      output = list(NA, annotatedStart = TRUE)
-    } else {
-      output = list(NA, annotatedStart = FALSE)
-    }
-    return(output)
+    return(NA)
   } 
 
   augmentedTx = sort(reduce(unlist(append(
@@ -190,59 +221,62 @@ reconstructCDS <- function(knownCDS, queryTx, txrevise_out, annotatedStart = TRU
     reduce(diffSegments[[2]][diffSegments[[2]]$upstream != TRUE])))),
     decreasing = as.character(strand(diffSegments$shared_exons))[1] == '-')
 
-  return(list(augmentedTx))
+  return(augmentedTx)
 }
 
 
 #' Test ORF for NMD
 #' 
 #' @description 
-#' This function will check for NMD features for an input transcript
+#' This function will check for NMD features for an input ORF
+#' 
+#' Do not that input query has to begin with an ATG
 #'
 #' @param queryCDS GRanges Object containing CDS structure
 #' @param refsequence sequence file build from AnnotationHub
+#' @param full.output If TRUE, function will output other information 
 #' 
-#' @return A GRanges object containing a list of NMD-inducible stop codons
+#' @return 
+#' A list containing: 
+#' (1) GRanges object containing a list of in-frame stop codons and its metadata
+#' 
+#' if full.output == TRUE, function will also return
+#' (2) An ORF which ends at the most upstream in-frame stopcodon
 #' 
 #' @import Biostrings
 #' @author Fursham Hamid
 #' @export
 #' 
 #' @examples
-#'
-#' # Return a GRanges Object with 1 stop codon
-#' testTxforNMD(ptbp2_testData$noNMD, mmus_dna)
 #' 
-#' # Return a GRanges Object with multiple premature stop codons, 
-#' # 5 of which is >50 from lastEJC
-#' testTxforNMD(ptbp2_testData$NMD, mmus_dna)
+#' testTXforNMD(ptbp2_testData$noNMD, mmus_dna)
+#' testTXforNMD(ptbp2_testData$NMD, mmus_dna)
 #' 
-testTXforNMD <- function(queryCDS, refsequence){
+testTXforNMD <- function(queryCDS, refsequence, minmPTCdist = -50, full.output = FALSE){
   
   queryStrand = as.character(strand(queryCDS))[1]
+  exon_boundaries = cumsum(width(queryCDS))
   
   # prepares query seq and exon boundaries depending on strand
   if (queryStrand == '-') {
-    queryCDS = sort(queryCDS)
-    thisqueryseq = Biostrings::getSeq(mmus_dna, queryCDS)
+    setqueryCDS = sort(queryCDS)
+    thisqueryseq = Biostrings::getSeq(mmus_dna, setqueryCDS)
     thisqueryseq = Biostrings::reverseComplement(unlist(thisqueryseq))
-    exon_boundaries = cumsum(rev(width(queryCDS)))
   } else if(queryStrand == '+') {
     thisqueryseq = Biostrings::getSeq(mmus_dna, queryCDS) %>%
       unlist(.)
-    exon_boundaries = cumsum(width(queryCDS))
   }
-
+  
   # check first codon for ATG and append to nearest ATG if it is not
-  if (thisqueryseq[1:3] != Biostrings::DNAString("ATG")) {
-    StartCodons = Biostrings::matchPattern(Biostrings::DNAString("ATG"), thisqueryseq)
-    nearestStart = start(StartCodons[1])
-    thisqueryseq = thisqueryseq[nearestStart:length(thisqueryseq)]
+  #if (thisqueryseq[1:3] != Biostrings::DNAString("ATG")) {
+  #  StartCodons = Biostrings::matchPattern(Biostrings::DNAString("ATG"), thisqueryseq)
+  #  nearestStart = start(StartCodons[1])
+  #  thisqueryseq = thisqueryseq[nearestStart:length(thisqueryseq)]
     
-    UTRlength = nearestStart - 1
-  } else {
-    UTRlength = 0
-  }
+  #  UTRlength = nearestStart - 1
+  #} else {
+  #  UTRlength = 0
+  #}
   # check for at least a start and end is an ORF
   
   # prepare a dict of stop codons for pattern matching
@@ -259,17 +293,78 @@ testTXforNMD <- function(queryCDS, refsequence){
   # PTC = inframe_stopcodons[end(inframe_stopcodons) != sum(width(queryCDS))]
   
   # calculate distance of stop codon to last exon junction
-  lastEJ = head(tail(exon_boundaries, n=2), n=1) - UTRlength
+  lastEJ = head(tail(exon_boundaries, n=2), n=1)
   dist_stop_to_lastEJ = end(inframe_stopcodons) - lastEJ
   
   # update GRanges object 'inframe_stopcodons' with more information
   metadata = dplyr::data_frame(lastEJ_dist = dist_stop_to_lastEJ) %>%
-    dplyr::mutate(is_NMD = ifelse(lastEJ_dist < -50, TRUE, FALSE)) %>%
+    dplyr::mutate(is_NMD = ifelse(lastEJ_dist < minmPTCdist, TRUE, FALSE)) %>%
     as.data.frame()
   elementMetadata(inframe_stopcodons) = metadata
   inframe_stopcodons = inframe_stopcodons[order(elementMetadata(inframe_stopcodons)$lastEJ_dist)]
   
-  #inframe_stopcodons = inframe_stopcodons[elementMetadata(inframe_stopcodons)$is_NMD == TRUE] %>%
-  #  .[order(elementMetadata(.)$lastEJ_dist)]
-  return(inframe_stopcodons)
+  # append 3' end of transcript to the first stop codon
+  downUTRsize = length(thisqueryseq) - end(inframe_stopcodons[1])
+  setORF = resizeTranscripts(queryCDS, end = downUTRsize) 
+  
+  ifelse(full.output == TRUE, 
+         return(list(stopcodons = inframe_stopcodons, ORF = setORF)),
+         return(list(stopcodons = inframe_stopcodons))
+         )
+}
+
+
+#' Resize GRanges transcript object
+#' 
+#' @description 
+#' This function will append/extend the 5' and 3' ends of a GRanges object which describes the 
+#' exon ranges of a transcript or a CDS
+#'
+#' @usage resizeTranscripts(x, start = 0, end = 0)
+#'
+#' @param x GRanges object containing exon coordinates of a transcript or CDS
+#' @param start Length of 5' end to truncate (positive val) or extend (negative val)
+#' @param end Length of 3' end to truncate (positive val) or extend (negative val)
+#'
+#' @return a new GRanges transcript object 
+#' @export
+#'
+#' @examples
+#' resizeTranscripts(ptbp2_testData$exons$ENSMUST00000197833, start = 100)
+#' 
+resizeTranscripts <- function(x, start = 0, end = 0) {
+  
+  # get transcript strand information
+  strand = as.character(strand(x))[1]
+  exonsize = width(x)
+  firstlastexons = c(1, length(x))
+  mid = floor(length(x)/2)
+  
+  loop = TRUE
+  while (loop == TRUE) {
+    exonsize[firstlastexons] = exonsize[firstlastexons] - c(start, end)
+    if (all(exonsize[firstlastexons] > 0)) {
+      loop = FALSE
+    } else {
+      newval = ifelse(exonsize[firstlastexons] < 0, abs(exonsize[firstlastexons]), 0)
+      start = newval[1]
+      end = newval[2]
+      exonsize = ifelse(exonsize > 0, exonsize, 0)
+      firstlastexons[1] = ifelse(exonsize[firstlastexons[1]] > 0, firstlastexons[1], firstlastexons[1] + 1)
+      firstlastexons[2] = ifelse(exonsize[firstlastexons[2]] > 0, firstlastexons[2], firstlastexons[2] - 1)
+    }
+  }
+  
+  #resize GRanges
+  x[1:mid] = resize(x[1:mid], 
+                    exonsize[1:mid], 
+                    fix = ifelse(strand == '-', "start", "end"), 
+                    ignore.strand = TRUE)
+  x[mid:length(x)] = resize(x[mid:length(x)], 
+                            exonsize[mid:length(x)], 
+                            fix = ifelse(strand == '-', "end", "start"), 
+                            ignore.strand = TRUE)
+  
+  x = x[width(x) > 0]
+  return(x)
 }
