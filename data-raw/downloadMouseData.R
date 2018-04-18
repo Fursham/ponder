@@ -2,14 +2,35 @@ library("devtools")
 library("GenomicFeatures")
 library("wiggleplotr")
 library("AnnotationHub")
+library("rtracklayer")
+library("BSgenome.Mmusculus.UCSC.mm10")
+library("BSgenome.Hsapiens.UCSC.hg38")
 load_all("../NMDer/")
 
-# load mouse genome sequence
+# import mouse and human gencode basic annotations as GRanges objects
+GRCh38_basic = rtracklayer::import(
+  "/Users/Fursham/Documents/Programming/Project/020_NMD/From_HD/gencode.v28.basic.annotation.gtf", 
+  format = "gtf")
+GRCm38_basic = rtracklayer::import(
+  "/Users/Fursham/Documents/Programming/Project/020_NMD/From_HD/gencode.vM17.basic.annotation.gtf",
+  format = "gtf")
+gencode_basics = list(mm10 = GRCm38_basic, hg38 = GRCh38_basic)
+devtools::use_data(gencode_basics, overwrite = TRUE)
+
+
+# download mouse and human genome sequence from UCSC
+GRCm38_genome = BSgenome.Mmusculus.UCSC.mm10
+GRCh38_genome = BSgenome.Hsapiens.UCSC.hg38
+genomes = list(mm10 = GRCm38_genome, hg38 = GRCh38_genome)
+devtools::use_data(genomes, overwrite = TRUE)
+
+# download mouse and human genome sequence from Ensembl
 AnnHub <- AnnotationHub()
 # query(AnnHub, c("Mus musculus", "release-91"))
-mmus_dna <- AnnHub[["AH60492"]] # TwoBitFile for GRCm38 primary assembly
+Ensembl_mm10 <- AnnHub[["AH188"]] # Fasta for GRCm38 primary assembly
 ## is there a way to save the twobit file??
-devtools::use_data(mmus_dna, overwrite = TRUE)
+devtools::use_data(Ensembl_mm10, overwrite = TRUE)
+
 
 # Make TxDb from ensembl
 txdb_mm <- makeTxDbFromEnsembl("Mus musculus", server="ensembldb.ensembl.org")

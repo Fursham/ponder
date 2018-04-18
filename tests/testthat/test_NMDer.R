@@ -7,14 +7,14 @@ test_that("identifyAddedRemoveRegions works", {
   expect_equal(width(diff$ENSMUST00000029780[diff$ENSMUST00000029780$contained == 1]), 34) #Width of the middle exon is 34 nt
 })
 
-context("Test workflow1")
-test_that("workflow1", {
-  ptbp2_out1 = workflow1(ptbp2_testData$noNMD, ptbp2_testData$exons$ENSMUST00000197833, mmus_dna)
-  ptbp2_out2 = workflow1(ptbp2_testData$noNMD, ptbp2_testData$exons$ENSMUST00000029780, mmus_dna)
-  ptbp2_out3 = workflow1(ptbp2_testData$noNMD, ptbp2_testData$diffstart, mmus_dna)
+context("Test testNMDvsThisCDS")
+test_that("testNMDvsThisCDS", {
+  ptbp2_out1 = testNMDvsThisCDS(ptbp2_testData$noNMD, ptbp2_testData$exons$ENSMUST00000197833, Ensembl_mm10)
+  ptbp2_out2 = testNMDvsThisCDS(ptbp2_testData$noNMD, ptbp2_testData$exons$ENSMUST00000029780, Ensembl_mm10)
+  ptbp2_out3 = testNMDvsThisCDS(ptbp2_testData$noNMD, ptbp2_testData$diffstart, Ensembl_mm10)
   
   expect_equal(ptbp2_out1$dist_to_lastEJ, -361)
-  expect_equal(ptbp2_out2$AltSpliced_tx, FALSE)
+  expect_equal(ptbp2_out2$Alt_tx, FALSE)
   expect_equal(ptbp2_out3$annotatedStart, FALSE)
 })
 
@@ -33,7 +33,7 @@ context("Test reconstructCDSstart")
 test_that("reconstructCDSstart",  {
   newptbp2CDS = reconstructCDSstart(ptbp2_testData$noNMD, 
                                     ptbp2_testData$diffstart, 
-                                    refsequence = mmus_dna,
+                                    refsequence = Ensembl_mm10,
                                     full.output = TRUE)
   
   expect_equal(length(newptbp2CDS$txrevise_out$refTx), 9)
@@ -47,20 +47,20 @@ test_that("reconstructCDS", {
   augmented_bak1 = reconstructCDS(bak1_testData$noNMD, bak1_testData$NMD)
   augmented_negative = reconstructCDS(ptbp2_testData$noNMD, ptbp2_testData$exons$ENSMUST00000029780)
   
-  expect_equal(length(augmented_ptbp2), 13)
-  expect_equal(length(augmented_bak1), 6)
-  expect_equal(augmented_negative, NA)  # test should return NA as transcript is a ref CDS
+  expect_equal(length(augmented_ptbp2$ORF), 13)
+  expect_equal(length(augmented_bak1$ORF), 6)
+  expect_equal(augmented_negative$Alt_tx, FALSE)  # test should return FALSE as transcript is a ref CDS
 })
 
 
-context("Test testTXforNMD")
-test_that("testTXforNMD", {
-  NMDreport_ptbp2_noNMD = testTXforNMD(ptbp2_testData$noNMD, mmus_dna)
-  NMDreport_ptbp2_NMD = testTXforNMD(ptbp2_testData$NMD, mmus_dna)
-  NMDreport_psd95_noNMD = testTXforNMD(psd95_testData$noNMD, mmus_dna)
-  NMDreport_psd95_NMD = testTXforNMD(psd95_testData$NMD, mmus_dna)
+context("Test testClassicalNMD")
+test_that("testClassicalNMD", {
+  NMDreport_ptbp2_noNMD = testClassicalNMD(ptbp2_testData$noNMD, Ensembl_mm10)
+  NMDreport_ptbp2_NMD = testClassicalNMD(ptbp2_testData$NMD, Ensembl_mm10)
+  NMDreport_psd95_noNMD = testClassicalNMD(psd95_testData$noNMD, Ensembl_mm10)
+  NMDreport_psd95_NMD = testClassicalNMD(psd95_testData$NMD, Ensembl_mm10)
   
-  expect_equal(length(NMDreport_ptbp2_noNMD$stopcodons),1)
+  expect_equal(mcols(NMDreport_ptbp2_noNMD$stopcodons$lastEJ_dist),133)
   
   expect_equal(mcols(NMDreport_ptbp2_NMD$stopcodons[1])$lastEJ_dist,-361)
   expect_equal(length(NMDreport_ptbp2_NMD$stopcodons),8)
