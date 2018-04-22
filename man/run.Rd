@@ -4,12 +4,13 @@
 \alias{run}
 \title{Run _ Program}
 \usage{
-run(file, reference, fasta, primary_gene_id = NULL,
-  secondary_gene_id = NULL, nonclassical = FALSE, makegtf = FALSE,
+run(input, reference, fasta, input_format = NULL, reference_format = NULL,
+  match_chrom = FALSE, primary_gene_id = NULL, secondary_gene_id = NULL,
+  other_features = FALSE, filterbycoverage = TRUE, make_gtf = TRUE,
   PTC_dist = 50, output_dir = "NMDer", quiet = FALSE)
 }
 \arguments{
-\item{file}{I}
+\item{input}{I}
 
 \item{reference}{}
 
@@ -19,13 +20,13 @@ run(file, reference, fasta, primary_gene_id = NULL,
 
 \item{secondary_gene_id}{}
 
-\item{nonclassical}{}
-
-\item{makegtf}{}
+\item{other_features}{}
 
 \item{PTC_dist}{}
 
 \item{quiet}{}
+
+\item{makegtf}{}
 }
 \description{
 

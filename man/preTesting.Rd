@@ -4,7 +4,7 @@
 \alias{preTesting}
 \title{_ workflow: Testing and correcting transcript assembly}
 \usage{
-preTesting(inputGRanges, basicGRanges, genome, primary_gene_id,
+preTesting(inputGRanges, basicGRanges, genome, correct_chrom, primary_gene_id,
   secondary_gene_id)
 }
 \arguments{

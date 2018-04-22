@@ -4,7 +4,7 @@
 \alias{prepareInputs}
 \title{_ workflow: Load and/or import input files}
 \usage{
-prepareInputs(file, gencode, fasta)
+prepareInputs(file, gencode, fasta, in_format, ref_format)
 }
 \arguments{
 \item{file}{filename or /path/to/file of transcript assemblies. File can be of

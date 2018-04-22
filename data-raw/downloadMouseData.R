@@ -43,35 +43,35 @@ cds = cdsBy(txdb_mm, by = 'tx', use.names=TRUE)
 
 # Extract Ptbp2 transcripts
 ptbp2_testTx = c('ENSMUST00000029780', 'ENSMUST00000197833')
-ptbp2_NMDTx = cds$ENSMUST00000029780[cds$ENSMUST00000029780 != cds$ENSMUST00000029780[10]]
-ptbp2_testData = list(exons = exons[ptbp2_testTx], 
-                      cdss = cds[ptbp2_testTx], 
-                      noNMD = cds$ENSMUST00000029780, 
-                      NMD = ptbp2_NMDTx,
-                      diffstart = exons$ENSMUST00000198399)
-devtools::use_data(ptbp2_testData, overwrite = TRUE)
+# ptbp2_NMDTx = cds$ENSMUST00000029780[cds$ENSMUST00000029780 != cds$ENSMUST00000029780[10]]
+ptbp2Data = list(transcripts = exons[ptbp2_testTx], 
+                      cds = cds[ptbp2_testTx], 
+                      refCDS = cds$ENSMUST00000029780, 
+                      skipE10CDS = ptbp2_NMDTx,
+                      afCDS = exons$ENSMUST00000198399)
+devtools::use_data(ptbp2Data, overwrite = TRUE)
 
 # Extract Bak1 transcripts
 bak1_testTx = c('ENSMUST00000078691', 'ENSMUST00000025034') 
-bak1_NMDTx = sort(unlist(append(
-  reduce(cds$ENSMUST00000078691), 
-  reduce(exons$ENSMUST00000025034[5]))), 
-  decreasing=TRUE)
+#bak1_NMDTx = sort(unlist(append(
+#  reduce(cds$ENSMUST00000078691), 
+#  reduce(exons$ENSMUST00000025034[5]))), 
+#  decreasing=TRUE)
 
-bak1_testData = list(exons = exons[bak1_testTx], 
-                     cdss = cds[bak1_testTx], 
-                     noNMD = cds$ENSMUST00000078691, 
-                     NMD = exons$ENSMUST00000025034)
-devtools::use_data(bak1_testData, overwrite = TRUE)
+bak1Data = list(transcripts = exons[bak1_testTx], 
+                     cds = cds[bak1_testTx], 
+                     refCDS = cds$ENSMUST00000078691, 
+                     poisonCDS = bak1_NMDTx)
+devtools::use_data(bak1Data, overwrite = TRUE)
 
 # Extract Psd95 transcripts
 psd95_testTx = c('ENSMUST00000108589', 'ENSMUST00000123687')
-psd95_NMDTx = cds$ENSMUST00000108589[cds$ENSMUST00000108589 != cds$ENSMUST00000108589[20]]
-psd95_testData = list(exons = exons[psd95_testTx], 
-                      cdss = cds[psd95_testTx], 
-                      noNMD = cds$ENSMUST00000108589, 
-                      NMD = psd95_NMDTx)
-devtools::use_data(psd95_testData, overwrite = TRUE)
+#psd95_NMDTx = cds$ENSMUST00000108589[cds$ENSMUST00000108589 != cds$ENSMUST00000108589[20]]
+psd95Data = list(transcripts = exons[psd95_testTx], 
+                      cds = cds[psd95_testTx], 
+                      refCDS = cds$ENSMUST00000108589, 
+                      poisonCDS = psd95_NMDTx)
+devtools::use_data(psd95Data, overwrite = TRUE)
 
 
 
