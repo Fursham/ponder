@@ -58,7 +58,7 @@ test_that("testNMD", {
   expect_equal(NMDreport_ptbp2_noNMD$dist_to_lastEJ,133)
   expect_equal(NMDreport_ptbp2_noNMDfull$threeUTR,1586)
   expect_equal(NMDreport_ptbp2_noNMDfull$uORF,FALSE)
-  expect_equal(NMDreport_ptbp2_NMD$dist_to_lastEJ,-184)
+  expect_equal(NMDreport_ptbp2_NMD$dist_to_lastEJ,-361)
 
   expect_equal(NMDreport_psd95_noNMD$is_NMD, FALSE)
   expect_equal(NMDreport_psd95_NMD$dist_to_lastEJ,-80)

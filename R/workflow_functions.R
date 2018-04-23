@@ -38,13 +38,13 @@ prepareInputs <- function(file, gencode, fasta, in_format, ref_format) {
     # use file extension format if provided by user, else try to extract file format from filename
     if (!is.null(in_format)) {
       fileformat = in_format
-      } else {
+    } else {
       fileformat = tail(unlist(strsplit(file, '\\.')), "1")
       if (!fileformat%in%c('gff3','gff','gtf','bed')) {
         stopLog('Incorrect input file extension format', logf)
-        }
-    inputGRanges = rtracklayer::import(file, format = fileformat)
+      } 
     }
+    inputGRanges = rtracklayer::import(file, format = fileformat)
 
   # load provided genome_basic assembly, or import user reference annotation
   if (any(gencode == c("hg38", "mm10"))) {
@@ -61,12 +61,12 @@ prepareInputs <- function(file, gencode, fasta, in_format, ref_format) {
     if (!is.null(ref_format)) {
       fileformat = ref_format
     } else {
-    fileformat = tail(unlist(strsplit(gencode, '\\.')), "1")
-    if (!fileformat%in%c('gff3','gff','gtf','bed')) {
-      stopLog('Incorrect annotation file extension format')
+      fileformat = tail(unlist(strsplit(gencode, '\\.')), "1")
+      if (!fileformat%in%c('gff3','gff','gtf','bed')) {
+        stopLog('Incorrect annotation file extension format')
+      }
     }
     basicGRanges = rtracklayer::import(gencode, format = fileformat)
-    }
   }
   
   
@@ -262,7 +262,7 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, primar
         ifelse(x%in%gene_id_df$old_gene_id, as.integer(y)+2, y)
       }, unique_ids$gene_id, unique_ids$match_level)
     } else {
-      warnLog('No ensembl gene ids found\n', logf, quiet) # re-do this
+      warnLog('No ensembl gene ids found', logf, quiet) # re-do this
     }
   }
   
@@ -405,8 +405,8 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
     dplyr::select(NMDer_ID, Gene_ID, Original_Gene_ID, Match_level, 
                   Gene_Name, Transcript_ID, Ref_TX_ID, Chrom, Strand, 
                   Tx_coordinates, annotatedStart, predictedStart, Alt_tx,
-                  ORF_considered, is_NMD, dist_to_lastEJ, uORF, threeUTR, Shared_coverage,
-                  CE, MX, A5, A3, AF, AL, IR, ce, mx, a5, a3, af, al, ir
+                  ORF_considered, is_NMD, dist_to_lastEJ, uORF, threeUTR, uATG, uATG_frame, 
+                  Shared_coverage, CE, MX, A5, A3, AF, AL, IR, ce, mx, a5, a3, af, al, ir
                   )
   
   # prepare databases
@@ -568,7 +568,7 @@ testNMDvsThisCDS <- function(knownCDS, queryTx, refsequence, PTC_dist = 50, nonC
              )
   
   # precheck for annotated start codon on query transcript and update output
-  pre_report = testTXforStart(knownCDS, queryTx, full.output=TRUE)
+  pre_report = testTXforStart(queryTx, knownCDS, full.output=TRUE)
   output = modifyList(output, pre_report["annotatedStart"])
   
   # return if there is no shared exons between transcript and CDS
@@ -579,12 +579,11 @@ testNMDvsThisCDS <- function(knownCDS, queryTx, refsequence, PTC_dist = 50, nonC
   # attempt to reconstruct CDS for transcripts with unannotated start
   if ((pre_report$annotatedStart == FALSE) |
       (pre_report$annotatedStart == TRUE & pre_report$firstexlen < 3)) {
-    pre_report = reconstructCDSstart(knownCDS = knownCDS, 
-                                     queryTx = queryTx,
-                                     txrevise_out = pre_report$txrevise_out,
-                                     refsequence = refsequence,
+    pre_report = reconstructCDSstart(queryTx, knownCDS,
+                                     refsequence,
+                                     pre_report$txrevise_out,
                                      full.output = TRUE)
-    output = modifyList(output, pre_report$predictedStart)
+    output = modifyList(output, list(predictedStart = pre_report$predictedStart))
 
     # return if CDS with new 5' do not contain a start codon
     if (is.na(pre_report$ORF[1])) {
@@ -596,8 +595,8 @@ testNMDvsThisCDS <- function(knownCDS, queryTx, refsequence, PTC_dist = 50, nonC
   augmentedCDS = reconstructCDS(txrevise_out = pre_report$txrevise_out, fasta = refsequence)
   output = modifyList(output, augmentedCDS)
   
-  if (!is.na(augmentedCDS$ORF)) {
-    NMDreport = testNMD(augmentedCDS$ORF, queryTx, fasta = refsequence, minmPTCdist = PTC_dist, other_features = nonClassicalNMD)
+  if (!is.na(augmentedCDS$ORF_considered)) {
+    NMDreport = testNMD(augmentedCDS$ORF_considered, queryTx, fasta = refsequence, distance_stop_EJ = PTC_dist, other_features = nonClassicalNMD)
     output = modifyList(output, NMDreport)
   }
   return(output)

@@ -75,7 +75,7 @@ run <- function(input,
   
   
   # prepare GTF file, if requested
-  if (makegtf == TRUE) {
+  if (make_gtf == TRUE) {
     generateGTF(report_df, output_dir)
   }
   

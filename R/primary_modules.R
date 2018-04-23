@@ -82,7 +82,7 @@ reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL){
       # search for in-frame stop codons
     allmatches = Biostrings::matchPDict(pdict_stopcodons, thisqueryseq)
     combinedmatches = unlist(allmatches)
-    inframe_stopcodons = combinedmatches[end(combinedmatches) %% 3 == 0,]
+    inframe_stopcodons = sort(combinedmatches[end(combinedmatches) %% 3 == 0,])
     
       # append 3' end of transcript to the first stop codon if found
     if (length(inframe_stopcodons) > 0) {
@@ -93,7 +93,7 @@ reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL){
       augmentedCDS = NA
     }
   }
-  return(list(ORF = augmentedCDS, Alt_tx = Alternative_tx))
+  return(list(ORF_considered = augmentedCDS, Alt_tx = Alternative_tx))
 }
 
 
@@ -214,10 +214,10 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
         # get information on the nearest stop codon
         newORF = ORForder[startIndex:length(ORForder)]
         stopGRanges = newORF[as.vector(elementMetadata(newORF)$type == 'Stop' &
-                                         elementMetadata(newORF)$frame == startFrame)][1]
+                                         elementMetadata(newORF)$frame == startFrame)]
         
         # if there is no in-frame stop, report this start as an uATG
-        if (is.null(stopGRanges)) {
+        if (length(stopGRanges) == 0) {
           endlength = length(fiveUTRseq) - end(startGRanges)
           startCoords = resizeTranscripts(fiveUTRGRanges, startlength, endlength)
           uATG = paste(ranges(startCoords))
@@ -287,7 +287,7 @@ classifyAltSegments <- function(transcript1, transcript2, txrevise_out = NULL) {
   diffSegments = c(diffSegments, Shared_coverage = coverage)
   
   # test for alternate segments in each transcripts, one at a time
-  strand = as.character(strand(diffSegments[[1]])[1])
+  strand = as.character(strand(transcript1)[1])
   for (i in 1:2) {
     
     # set a vector to store alternative splicing classes
