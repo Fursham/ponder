@@ -144,6 +144,7 @@ reconstructCDSstart <- function(queryTranscript, refCDS, fasta, txrevise_out = N
     inFrameStartStopCodons = inFrameStartStopCodons[1:(length(inFrameStartStopCodons)-1)]
     
     # obtain the start codon which do not have other stop codons downstream except for the CDS stop codon
+    predictedStart = inFrameStartStopCodons[1]
     for (i in length(inFrameStartStopCodons):1) {
       if (elementMetadata(inFrameStartStopCodons)$type[i] == 'Stop'){
         predictedStart = inFrameStartStopCodons[(i+1)]

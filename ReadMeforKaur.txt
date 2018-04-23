@@ -9,8 +9,8 @@ classifyAltSegments() -> Extend indentifyAddedRemovedRegions function by adding 
 
 resizeTranscripts() -> Resize a GRanges object containing exon coordinates of a transcript
 
-matching()
-ORF()
+matchGeneIDs() -> Correct Gene_IDs from a transcript assembly with reference to a reference assembly
+ORF() -> IN PROGRESS
 
 # Secondary Modules
 testTXforStart() -> tests whether a query transcript contain the same annotated start codon as from a reference CDS

@@ -49,7 +49,7 @@ run <- function(input,
   c(inputGRanges, basicGRanges, genome) %<-% prepareInputs(input, reference, fasta, input_format, reference_format)
 
   # test for standard chromosome names, and gene_ids between input files
-  inputGRanges = preTesting(inputGRanges, basicGRanges, genome, correct_chrom, primary_gene_id, secondary_gene_id)
+  inputGRanges = preTesting(inputGRanges, basicGRanges, genome, match_chrom, primary_gene_id, secondary_gene_id)
   
   # prepare dataframe and databases
   c(report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx) %<-% 

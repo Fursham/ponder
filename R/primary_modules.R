@@ -182,61 +182,69 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
       # prepare output variables
     uORF = NA
     uATG = FALSE
-    uATG_frame = FALSE
+    uATG_frame = NA
     
-    loop = TRUE
-    while (loop == TRUE) {
-      
-      # get sequence of 5UTR and search for all start and stop codons
-      fiveUTRseq = unlist(Biostrings::getSeq(fasta, fiveUTRGRanges))
-      allmatches = Biostrings::matchPDict(pdict_startstopcodons, fiveUTRseq)
-      
-      # break loop if no start codons are found. this means that there are no possible uORFs or uATGs
-      if (length(allmatches[[1]]) == 0) {
-        loop = FALSE
-      } else {
-        # this part adds type and frame information into allmatches as a metadata
-        type = c(rep('Start', length(allmatches[[1]])), rep('Stop', length(unlist(allmatches))- length(allmatches[[1]])))
-        combinedmatches = unlist(allmatches)
-        elementMetadata(combinedmatches)$type = type
-        frame = dplyr::data_frame(frame = (length(fiveUTRseq) - end(combinedmatches))%%3) %>% as.data.frame()
-        elementMetadata(combinedmatches)$frame = frame
+    # get sequence of 5UTR and search for all start and stop codons
+    fiveUTRseq = unlist(Biostrings::getSeq(fasta, fiveUTRGRanges))
+    
+    # cycle each frame to find 5UTR and uATGs
+    for (i in 0:3) {
+      thisfiveUTRGRanges = fiveUTRGRanges
+      loop = TRUE
+      while (loop == TRUE) {
         
-        # sort codons distance from 5' 
-        ORForder = sort(combinedmatches)
+        # get sequence of 5UTR and search for all start and stop codons
+        fiveUTRseq = unlist(Biostrings::getSeq(fasta, thisfiveUTRGRanges))
+        allmatches = Biostrings::matchPDict(pdict_startstopcodons, fiveUTRseq)
         
-        # get information on the upstream most start codon
-        startGRanges = ORForder[elementMetadata(ORForder)$type == 'Start'][1]
-        startFrame = elementMetadata(startGRanges)$frame[[1]]
-        startIndex = match(startGRanges, ORForder)
-        startlength = start(startGRanges) - 1
-        
-        # get information on the nearest stop codon
-        newORF = ORForder[startIndex:length(ORForder)]
-        stopGRanges = newORF[as.vector(elementMetadata(newORF)$type == 'Stop' &
-                                         elementMetadata(newORF)$frame == startFrame)]
-        
-        # if there is no in-frame stop, report this start as an uATG
-        if (length(stopGRanges) == 0) {
-          endlength = length(fiveUTRseq) - end(startGRanges)
-          startCoords = resizeTranscripts(fiveUTRGRanges, startlength, endlength)
-          uATG = paste(ranges(startCoords))
-          uATG_frame = startFrame
+        # break loop if no start codons are found. this means that there are no possible uORFs or uATGs
+        if (length(allmatches[[1]]) == 0) {
           loop = FALSE
         } else {
-          # if there is, get the coordinates of the uORF and update uORF variable
-          # also the last line will update the fiveUTRGRanges to exclude the uORF and repeat the loop
-          endlength = length(fiveUTRseq) - end(stopGRanges)[1]
-          ORFcoord = resizeTranscripts(fiveUTRGRanges, startlength, endlength)
-          uORF = c(uORF, paste(ranges(ORFcoord), collapse = ';')) # need to remove NA first later
+          # this part adds type and frame information into allmatches as a metadata
+          type = c(rep('Start', length(allmatches[[1]])), rep('Stop', length(unlist(allmatches))- length(allmatches[[1]])))
+          combinedmatches = unlist(allmatches)
+          elementMetadata(combinedmatches)$type = type
+          frame = dplyr::data_frame(frame = (length(fiveUTRseq) - end(combinedmatches))%%3) %>% as.data.frame()
+          elementMetadata(combinedmatches)$frame = frame
           
-          fiveUTRGRanges = resizeTranscripts(fiveUTRGRanges, end(stopGRanges)[1])
+          # sort codons distance from 5' 
+          ORForder = sort(combinedmatches[elementMetadata(combinedmatches)$frame == i])
+          
+          # get information on the upstream most start codon
+          startGRanges = ORForder[elementMetadata(ORForder)$type == 'Start'][1]
+          startFrame = elementMetadata(startGRanges)$frame[[1]]
+          startIndex = match(startGRanges, ORForder)
+          startlength = start(startGRanges) - 1
+          
+          # get information on the nearest stop codon
+          newORF = ORForder[startIndex:length(ORForder)]
+          stopGRanges = newORF[as.vector(elementMetadata(newORF)$type == 'Stop')]
+          
+          # if there is no in-frame stop, report this start as an uATG
+          if (length(stopGRanges) == 0) {
+            endlength = length(fiveUTRseq) - end(startGRanges)
+            startCoords = resizeTranscripts(fiveUTRGRanges, startlength, endlength)
+            uATG = c(uATG, paste(ranges(startCoords)))
+            uATG_frame = c(uATG_frame, startFrame)
+            loop = FALSE
+          } else {
+            # if there is, get the coordinates of the uORF and update uORF variable
+            # also the last line will update the fiveUTRGRanges to exclude the uORF and repeat the loop
+            endlength = length(fiveUTRseq) - end(stopGRanges)[1]
+            ORFcoord = resizeTranscripts(fiveUTRGRanges, startlength, endlength)
+            uORF = c(uORF, paste(ranges(ORFcoord), collapse = ';')) # need to remove NA first later
+            
+            fiveUTRGRanges = resizeTranscripts(fiveUTRGRanges, end(stopGRanges)[1])
+          }
         }
       }
     }
-    
     # update output list
-    uORF = ifelse(all(is.na(uORF)), FALSE,paste(uORF[!is.na(uORF)], collapse = '|'))
+    uORF = ifelse(all(is.na(uORF)), FALSE, paste(uORF[!is.na(uORF)], collapse = '|'))
+    uATG = ifelse(all(is.na(uATG)), FALSE, paste(uATG[!is.na(uATG)], collapse = '|'))
+    uATG_frame = ifelse(all(is.na(uATG_frame)), FALSE, paste(uATG_frame[!is.na(uATG_frame)], collapse = '|'))
+    
     output = modifyList(output, list(uORF = uORF, threeUTR = threeUTR, uATG = uATG, uATG_frame = uATG_frame))
   }
   # return output
@@ -490,4 +498,275 @@ resizeTranscripts <- function(x, start = 0, end = 0) {
   x = x[width(x) > 0]
   return(x)
 }
+
+
+
+
+
+matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, primary_gene_id=NULL, secondary_gene_id=NULL, workflow = FALSE, outputfile = 'matched_geneIDs.gtf') {
+  
+  # check the nature of query and ref. if it's a GRanges, proceed with analysis, if not, attempt to import
+  if (is(query, 'GenomicRanges')) {
+    # return error if input and reference do not contain gene_id metadata
+    if (is.null(elementMetadata(query)$gene_id)) {
+      if (workflow == TRUE) {
+        stopLog('Gene_ID metadata error: Please ensure input assembled transcripts contain gene_id metadata\n', logf)
+      } else {
+        stop('Gene_ID metadata error: Please ensure input assembled transcripts contain gene_id metadata\n')
+      }
+    }
+    inputGRanges = query
+  } else {
+    # try to import query
+    if (!file.exists(query)){
+      if (workflow == TRUE) {
+        stopLog('Input transcript file do not exist', logf)
+      } else {
+        stop('Input transcript file do not exist')
+      }
+    }
+    
+    # use file extension format if provided by user, else try to extract file format from filename
+    if (!is.null(query_format)) {
+      fileformat = query_format
+    } else {
+      fileformat = tail(unlist(strsplit(query, '\\.')), "1")
+      if (!fileformat%in%c('gff3','gff','gtf','bed')) {
+        if (workflow == TRUE) {
+          stopLog('Incorrect input file extension format', logf)
+        } else {
+          stop('Incorrect input file extension format')
+        }
+      } 
+    }
+    inputGRanges = rtracklayer::import(query, format = fileformat)
+  }
+  
+  if (is(ref, 'GenomicRanges')) {
+    # return error if input and reference do not contain gene_id metadata
+    if (is.null(elementMetadata(ref)$gene_id)) {
+      if (workflow == TRUE) {
+        stopLog('Gene_ID metadata error: Please ensure reference assembly contain gene_id metadata', logf)
+      } else {
+        stop('Gene_ID metadata error: Please ensure reference assembly contain gene_id metadata')
+      }
+    }
+    basicGRanges = ref
+  } else {
+    # try to import ref
+    if (!file.exists(ref)){
+      if (workflow == TRUE) {
+        stopLog('Reference transcript file do not exist', logf)
+      } else {
+        stop('Reference transcript file do not exist')
+      }
+    }
+    
+    # use file extension format if provided by user, else try to extract file format from filename
+    if (!is.null(query_format)) {
+      fileformat = query_format
+    } else {
+      fileformat = tail(unlist(strsplit(ref, '\\.')), "1")
+      if (!fileformat%in%c('gff3','gff','gtf','bed')) {
+        if (workflow == TRUE) {
+          stopLog('Incorrect reference file extension format', logf)
+        } else {
+          stop('Incorrect reference file extension format')
+        }
+      } 
+    }
+    basicGRanges = rtracklayer::import(ref, format = fileformat)
+  }
+  
+  
+  # testing and matching gene_ids
+  if (workflow == TRUE) {
+    infoLog('Checking and matching gene_ids...', logf, quiet)
+  } else {
+    message('Checking and matching gene_ids...')
+  }
+  
+  # preserve gene_ids from input GTF
+  elementMetadata(inputGRanges)$old_gene_id <- elementMetadata(inputGRanges)$gene_id
+  
+  # get a list of unique gene_ids
+  unique_ids = elementMetadata(inputGRanges) %>% as.data.frame() %>%
+    dplyr::select(gene_id = gene_id) %>%
+    dplyr::distinct() %>%
+    dplyr::mutate(match_level = '0') %>%
+    as.data.frame()
+  
+  # count number of non standard ID before correction
+  nonstand_id_1 = lengths(elementMetadata(inputGRanges) %>% as.data.frame() %>%
+                            dplyr::select(gene_id = gene_id) %>%
+                            dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
+                            dplyr::distinct() %>%
+                            as.data.frame())[[1]]
+  
+  # There are 3 correction steps below.
+  # correction 1 and 2 will initiate only if arguments are provided
+  # correction 3 will always run, but may give false positive output
+  # note that in each step, ONLY the non-standard gene_ids will be corrected
+  
+  # correction 1: replace primary_gene_id with secondary_gene_id, IF both args are provided
+  if (!is.null(primary_gene_id) & !is.null(secondary_gene_id)) {
+    if (workflow == TRUE) {
+      infoLog(sprintf('->Attempting to replace %s with %s...', primary_gene_id, secondary_gene_id),
+              logf, quiet)
+    } else {
+      message(sprintf('->Attempting to replace %s with %s...', primary_gene_id, secondary_gene_id))
+    }
+    
+    
+    # make dataframe of non_standard primary_gene_ids with its secondary_gene_ids
+    gene_id_df = elementMetadata(inputGRanges) %>% as.data.frame() %>%
+      dplyr::select(primary = primary_gene_id, secondary = secondary_gene_id) %>%
+      dplyr::filter(primary%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
+      dplyr::distinct() %>%
+      as.data.frame()
+    
+    # replace nonstandard primary_gene_ids from inputGRanges with its secondary_gene_ids
+    mcols(inputGRanges)$gene_id <- sapply(mcols(inputGRanges)$gene_id, function(x) {
+      ifelse(x%in%gene_id_df$primary, gene_id_df[gene_id_df["primary"] == x][2], x)
+    })
+    
+    unique_ids$match_level = mapply(function(x,y) {
+      ifelse(x%in%gene_id_df$primary, 1, y)
+    }, unique_ids$gene_id, unique_ids$match_level)
+    
+  }
+  
+  # correction 2: replace primary_gene_id with basic gene ID IF:
+  # at least primary_gene_id is provided and if it starts with 'ENS'
+  if (!is.null(primary_gene_id)) {
+    if (workflow == TRUE) {
+      infoLog('-> Attempting to match ensembl gene_ids...', logf, quiet)
+    } else {
+      message('-> Attempting to match ensembl gene_ids...')
+    }
+    
+    
+    # make dataframe of non_standard primary_gene_ids starting with "ENS"
+    gene_id_df = elementMetadata(inputGRanges) %>% as.data.frame() %>%
+      dplyr::select(gene_id = primary_gene_id, old_gene_id = old_gene_id) %>%
+      dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
+      dplyr::distinct() %>%
+      dplyr::filter(startsWith(gene_id, "ENS") == TRUE) %>%
+      as.data.frame()
+    
+    # proceed with correction if there is an "ENS" gene_id annotation
+    if (lengths(gene_id_df)[[1]] > 0) {
+      # make dataframe of annotated gene_id starting with "ENS"
+      basic_gene_id_df = elementMetadata(basicGRanges) %>% as.data.frame() %>%
+        dplyr::select(ens_id = gene_id) %>%
+        dplyr::distinct() %>%
+        dplyr::filter(startsWith(ens_id, "ENS") == TRUE) %>%
+        as.data.frame()
+      
+      # append suffix of ENS gene_ids on both dataframes 
+      # eg. ENSMUST00000029780.11 to ENSMUST00000029780
+      gene_id_df$appended_id <-  sapply(strsplit(gene_id_df$gene_id, "\\."), `[`, 1)
+      basic_gene_id_df$appended_id <-  sapply(strsplit(basic_gene_id_df$ens_id, "\\."), `[`, 1)
+      
+      # combine both data frames based on common 'appended_id' and filter lines with empty 'ens_id'
+      gene_id_df = dplyr::left_join(gene_id_df, basic_gene_id_df, by = 'appended_id') %>%
+        dplyr::filter(!is.na(ens_id))
+      
+      # replace gene_id on assembled transcript with ens_id, if match is found
+      mcols(inputGRanges)$gene_id = sapply(mcols(inputGRanges)$gene_id, function(x) {
+        ifelse(x%in%gene_id_df$gene_id, gene_id_df[gene_id_df["gene_id"] == x][3], x)
+      })
+      
+      unique_ids$match_level = mapply(function(x,y) {
+        ifelse(x%in%gene_id_df$old_gene_id, as.integer(y)+2, y)
+      }, unique_ids$gene_id, unique_ids$match_level)
+    } else {
+      if (workflow == TRUE) {
+        warnLog('No ensembl gene ids found', logf, quiet)
+      } else {
+        message('No ensembl gene ids found')
+      }
+    }
+  }
+  
+  # correction 3: correct gene_ids by finding overlapping regions.
+  if (workflow == TRUE) {
+    infoLog('-> Attempting to correct gene_ids by finding overlapping coordinates...', logf, quiet)
+  } else {
+    message('-> Attempting to correct gene_ids by finding overlapping coordinates...')
+  }
+  
+  # make dataframe of non_standard gene_ids
+  gene_id_df = elementMetadata(inputGRanges) %>% as.data.frame() %>%
+    dplyr::select(gene_id = gene_id) %>%
+    dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
+    dplyr::distinct() %>%
+    as.data.frame()
+  
+  # retrieve first gene_id from gencode that overlaps with first exon of query
+  gene_id_df = dplyr::mutate(gene_id_df,
+                             ref_gene_id = sapply(gene_id_df$gene_id, function(x) {
+                               
+                               getfirstOverlap = findOverlaps(
+                                 inputGRanges[mcols(inputGRanges)$gene_id == x &
+                                                mcols(inputGRanges)$type == "exon"][1],
+                                 basicGRanges, 
+                                 select = "first")
+                               
+                               return(ifelse(!is.na(getfirstOverlap), 
+                                             mcols(basicGRanges[getfirstOverlap])$gene_id,
+                                             NA))
+                             })) %>%
+    dplyr::filter(!is.na(ref_gene_id))
+  
+  # replace gene_id on assembled transcript with predicted gene_id from overlap
+  mcols(inputGRanges)$gene_id = sapply(mcols(inputGRanges)$gene_id, function(x) {
+    ifelse(x%in%gene_id_df$gene_id, gene_id_df[gene_id_df["gene_id"] == x][2], x)
+  })
+  unique_ids$match_level = mapply(function(x,y) {
+    ifelse(x%in%gene_id_df$gene_id, 4, y)
+  }, unique_ids$gene_id, unique_ids$match_level)
+  
+  
+  # count remaining number of non_standard gene_ids and number of corrected ids
+  nonstand_id_list = elementMetadata(inputGRanges) %>% as.data.frame() %>%
+    dplyr::select(gene_id = gene_id) %>%
+    dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
+    dplyr::distinct() %>%
+    as.data.frame()
+  nonstand_id_2 = lengths(nonstand_id_list)[[1]]
+  corrected_ids = nonstand_id_1 - nonstand_id_2
+  
+  unique_ids$match_level = mapply(function(x,y) {
+    ifelse(x%in%nonstand_id_list$gene_id, 5, y)
+  }, unique_ids$gene_id, unique_ids$match_level)
+  
+  mcols(inputGRanges)$match_level <- sapply(mcols(inputGRanges)$old_gene_id, function(x) {
+    unique_ids[unique_ids["gene_id"] == x][2]
+  })
+  
+  
+  # report pre-testing analysis and return inputGRanges
+  if (workflow == TRUE) {
+    infoLog(sprintf('--> Number of gene_ids corrected: %s', corrected_ids), logf, quiet)
+    infoLog(sprintf('--> Remaining number of non-standard gene_ids: %s', nonstand_id_2), logf, quiet)
+    if (nonstand_id_2 > 0) {
+      warnLog('Transcripts with non-standard gene_ids will skip analysis', logf, quiet)
+    }
+  } else {
+    message(sprintf('--> Number of gene_ids corrected: %s', corrected_ids))
+    message(sprintf('--> Remaining number of non-standard gene_ids: %s', nonstand_id_2))
+    if (nonstand_id_2 > 0) {
+      message('Transcripts with non-standard gene_ids will skip analysis')
+    }
+  }
+  if (workflow == FALSE) {
+    rtracklayer::export(inputGRanges, outputfile)
+    message(sprintf('Done. GTF saved as %s in current working directory', outputfile))
+  } else {
+    return(inputGRanges)
+  }
+}
+
+
 
