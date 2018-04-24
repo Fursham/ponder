@@ -166,7 +166,7 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, primar
       warnLog('Non-standard chromosome IDs in reference were found. ', logf, quiet)
     }
   }
-  inputGRanges = match_geneIDs(inputGRanges, basicGRanges, 
+  inputGRanges = matchGeneIDs(inputGRanges, basicGRanges, 
                                primary_gene_id=primary_gene_id, secondary_gene_id=secondary_gene_id, 
                                workflow = TRUE) 
   return(inputGRanges)
@@ -225,8 +225,9 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
                   uATG = NA,
                   uATG_frame = NA,
                   threeUTR = NA) %>%
-    dplyr::mutate(Shared_coverage = 0, CE = NA, MX = NA, A5 = NA, A3 = NA, AF = NA, AL = NA, IR = NA, 
-                   ce = NA, mx = NA, a5 = NA, a3 = NA, af = NA, al = NA, ir = NA) %>%
+    dplyr::mutate(Shared_coverage = 0, 
+                  CE = NA, MX = NA, A5 = NA, A3 = NA, AF = NA, ATS = NA, AL = NA, APA = NA, IR = NA,
+                  ce = NA, mx = NA, a5 = NA, a3 = NA, af = NA, ats = NA, al = NA, apa = NA, ir = NA) %>%
     as.data.frame()
   
   # prepare df of gencode_basic transcripts
@@ -240,7 +241,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
                   Gene_Name, Transcript_ID, Ref_TX_ID, Chrom, Strand, 
                   Tx_coordinates, annotatedStart, predictedStart, Alt_tx,
                   ORF_considered, is_NMD, dist_to_lastEJ, uORF, threeUTR, uATG, uATG_frame, 
-                  Shared_coverage, CE, MX, A5, A3, AF, AL, IR, ce, mx, a5, a3, af, al, ir
+                  Shared_coverage, CE, MX, A5, A3, AF, ATS, AL, APA, IR, ce, mx, a5, a3, af, ats, al, apa, ir
                   )
   
   # prepare databases
@@ -440,8 +441,8 @@ testNMDvsThisCDS <- function(knownCDS, queryTx, refsequence, PTC_dist = 50, nonC
 
 getASevents <- function(transcript1, transcript2) {
   
-  ASlist = list(CE = NA, MX = NA, A5 = NA, A3 = NA, AF = NA, AL = NA, IR = NA, 
-             ce = NA, mx = NA, a5 = NA, a3 = NA, af = NA, al = NA, ir = NA)
+  ASlist = list(CE = NA, MX = NA, A5 = NA, A3 = NA, AF = NA, ATS = NA, AL = NA, APA = NA, IR = NA,
+                ce = NA, mx = NA, a5 = NA, a3 = NA, af = NA, ats = NA, al = NA, apa = NA, ir = NA)
   
   ASoutput = classifyAltSegments(transcript1, transcript2)
   if (is.null(ASoutput)){
@@ -489,9 +490,9 @@ summSplicing <- function(df) {
   
   # extract columns from dataframe corresponding to splicing classes
   splicing_df = dplyr::select(df, NMDer_ID, Gene_ID, Gene_Name, Transcript_ID, Ref_TX_ID,
-                              Chrom, Strand, CE:ir) %>% as.data.frame()
+                              Chrom, Strand, is_NMD, CE:ir) %>% as.data.frame()
   
-  for (i in 8:length(splicing_df)) {
+  for (i in 9:length(splicing_df)) {
     splicing_df[i] = lapply(splicing_df[i], function(x) {
       ifelse(is.na(x), 0, lengths((strsplit(x, ';'))))
     })
@@ -592,8 +593,6 @@ generateGTF <- function(df, output_dir) {
               sep = "\t", col.names = FALSE, row.names = FALSE, 
               qmethod = "double", quote = FALSE)
 }
-
-
 
 
 
