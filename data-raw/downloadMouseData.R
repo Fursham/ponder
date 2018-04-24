@@ -41,6 +41,16 @@ txdb_mm = loadDb("data-raw/txdb/mus_musculus_txdb.sqlite")
 exons = exonsBy(txdb_mm, by = 'tx', use.names=TRUE)
 cds = cdsBy(txdb_mm, by = 'tx', use.names=TRUE)
 
+
+newStyle <- mapSeqlevels(seqlevels(exons), seqlevelsStyle(genomes[['mm10']]))
+newStyle = newStyle[!is.na(newStyle)]
+exons <- renameSeqlevels(exons, newStyle)
+cds <- renameSeqlevels(cds, newStyle)
+
+seqlevels(exons, pruning.mode = 'tidy') <- as.vector(newStyle)
+seqlevels(cds, pruning.mode = 'tidy') <- as.vector(newStyle)
+
+
 # Extract Ptbp2 transcripts
 ptbp2_testTx = c('ENSMUST00000029780', 'ENSMUST00000197833')
 # ptbp2_NMDTx = cds$ENSMUST00000029780[cds$ENSMUST00000029780 != cds$ENSMUST00000029780[10]]
