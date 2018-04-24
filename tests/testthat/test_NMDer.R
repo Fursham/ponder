@@ -24,7 +24,7 @@ test_that("testTXforStart", {
 
 context("Test reconstructCDSstart")
 test_that("reconstructCDSstart",  {
-  newptbp2CDS = reconstructCDSstart(ptbp2Data$afCDS, ptbp2Data$refCDS, fasta = Ensembl_mm10, full.output = TRUE)
+  newptbp2CDS = reconstructCDSstart(ptbp2Data$afCDS, ptbp2Data$refCDS, fasta = genomes[['mm10']], full.output = TRUE)
   
   expect_equal(length(newptbp2CDS$txrevise_out$refTx), 9)
   expect_equal(newptbp2CDS$predictedStart, TRUE)
@@ -34,9 +34,9 @@ test_that("reconstructCDSstart",  {
 
 context("Test reconstructCDS")
 test_that("reconstructCDS", {
-  augmented_ptbp2 = reconstructCDS(ptbp2Data$transcripts$ENSMUST00000197833, ptbp2Data$refCDS, fasta = Ensembl_mm10)
-  augmented_bak1 = reconstructCDS(bak1Data$transcripts$ENSMUST00000025034, bak1Data$refCDS, fasta = Ensembl_mm10)
-  augmented_negative = reconstructCDS(ptbp2Data$transcripts$ENSMUST00000029780, ptbp2Data$refCDS, fasta = Ensembl_mm10)
+  augmented_ptbp2 = reconstructCDS(ptbp2Data$transcripts$ENSMUST00000197833, ptbp2Data$refCDS, fasta = genomes[['mm10']])
+  augmented_bak1 = reconstructCDS(bak1Data$transcripts$ENSMUST00000025034, bak1Data$refCDS, fasta = genomes[['mm10']])
+  augmented_negative = reconstructCDS(ptbp2Data$transcripts$ENSMUST00000029780, ptbp2Data$refCDS, fasta = genomes[['mm10']])
   
   expect_equal(length(augmented_ptbp2$ORF), 11)
   expect_equal(augmented_ptbp2$Alt_tx, TRUE)
@@ -49,7 +49,7 @@ test_that("reconstructCDS", {
 context("Test testNMD")
 test_that("testNMD", {
   NMDreport_ptbp2_noNMD = testNMD(ptbp2Data$refCDS, ptbp2Data$transcripts$ENSMUST00000029780)
-  NMDreport_ptbp2_noNMDfull = testNMD(ptbp2Data$refCDS, ptbp2Data$transcripts$ENSMUST00000029780, other_features = TRUE, fasta = Ensembl_mm10)
+  NMDreport_ptbp2_noNMDfull = testNMD(ptbp2Data$refCDS, ptbp2Data$transcripts$ENSMUST00000029780, other_features = TRUE, fasta = genomes[['mm10']])
   NMDreport_ptbp2_NMD = testNMD(ptbp2Data$skipE10CDS, ptbp2Data$transcripts$ENSMUST00000197833)
   
   NMDreport_psd95_noNMD = testNMD(psd95Data$refCDS, psd95Data$transcripts$ENSMUST00000108589)
@@ -66,8 +66,16 @@ test_that("testNMD", {
 
 context("Test resizeTranscripts")
 test_that("resizeTranscripts", {
-  output = resizeTranscripts(ptbp2_testData$exons$ENSMUST00000197833, start = 100)
+  output = resizeTranscripts(ptbp2Data$transcripts$ENSMUST00000197833, start = 100)
   
   expect_equal(length(output),11)
   expect_equal(end(output[1]),119761742)
+})
+
+context("Test classifyAltSegments")
+test_that("classifyAltSegments", {
+  output = classifyAltSegments(ptbp2Data$transcripts$ENSMUST00000029780, ptbp2Data$transcripts$ENSMUST00000197833)
+
+  expect_equal(as.character(elementMetadata(output$transcript1)[2,]),'ce')
+
 })
