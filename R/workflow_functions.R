@@ -144,7 +144,7 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, primar
       inputGRanges <- renameSeqlevels(inputGRanges, newStyle)
       
       if (any(!seqlevels(inputGRanges)%in%seqlevels(genome))) {
-        seqlevels(inputGRanges, pruning.mode = 'tidy') <- newStyle
+        seqlevels(inputGRanges, pruning.mode = 'tidy') <- as.vector(newStyle)
         warnLog('Non-standard chromosome IDs in query were removed', logf, quiet)
       }
     }
@@ -154,7 +154,7 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, primar
       basicGRanges <- renameSeqlevels(basicGRanges, newStyle)
       
       if (any(!seqlevels(basicGRanges)%in%seqlevels(genome))) {
-        seqlevels(basicGRanges, pruning.mode = 'tidy') <- newStyle
+        seqlevels(basicGRanges, pruning.mode = 'tidy') <- as.vector(newStyle)
         warnLog('Non-standard chromosome IDs in reference were removed', logf, quiet)
       }
     }
