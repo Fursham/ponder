@@ -2,6 +2,7 @@
 
 export(classifyAltSegments)
 export(indentifyAddedRemovedRegions)
+export(matchGeneIDs)
 export(preTesting)
 export(prepareAnalysis)
 export(prepareInputs)
