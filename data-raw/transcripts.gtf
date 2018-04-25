@@ -1,4 +1,4 @@
- chr17	StringTie	transcript	27019810	27029009	1000	-	.	gene_id "MSTRG.9591"; transcript_id "ENSMUST00000078691.11"; gene_name "Bak1"; ref_gene_id "ENSMUSG00000057789.13"; 
+chr17	StringTie	transcript	27019810	27029009	1000	-	.	gene_id "MSTRG.9591"; transcript_id "ENSMUST00000078691.11"; gene_name "Bak1"; ref_gene_id "ENSMUSG00000057789.13"; 
 chr17	StringTie	exon	27019810	27021035	1000	-	.	gene_id "MSTRG.9591"; transcript_id "ENSMUST00000078691.11"; exon_number "1"; gene_name "Bak1"; ref_gene_id "ENSMUSG00000057789.13"; 
 chr17	StringTie	exon	27021167	27021347	1000	-	.	gene_id "MSTRG.9591"; transcript_id "ENSMUST00000078691.11"; exon_number "2"; gene_name "Bak1"; ref_gene_id "ENSMUSG00000057789.13"; 
 chr17	StringTie	exon	27022439	27022582	1000	-	.	gene_id "MSTRG.9591"; transcript_id "ENSMUST00000078691.11"; exon_number "3"; gene_name "Bak1"; ref_gene_id "ENSMUSG00000057789.13"; 
