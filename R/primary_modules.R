@@ -30,7 +30,8 @@
 #'
 #' @examples
 #' 
-#' reconstructCDS(ptbp2Data$transcripts$ENSMUST00000197833, ptbp2Data$refCDS, fasta = Ensembl_mm10)
+#' library("BSgenome.Mmusculus.UCSC.mm10")
+#' reconstructCDS(ptbp2Data$transcripts$ENSMUST00000197833, ptbp2Data$refCDS, fasta = BSgenome.Mmusculus.UCSC.mm10)
 #' 
 #' 
 reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL){
@@ -127,11 +128,12 @@ reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL){
 #' 
 #' @examples
 #' 
+#' library("BSgenome.Mmusculus.UCSC.mm10")
 #' testNMD(ptbp2Data$refCDS, ptbp2Data$transcripts$ENSMUST00000029780)
-#' testNMD(ptbp2Data$refCDS, ptbp2Data$transcripts$ENSMUST00000029780, other_features = TRUE, fasta = Ensembl_mm10)
+#' testNMD(ptbp2Data$refCDS, ptbp2Data$transcripts$ENSMUST00000029780, other_features = TRUE, fasta = BSgenome.Mmusculus.UCSC.mm10)
 #' 
 #' testNMD(ptbp2Data$skipE10CDS, ptbp2Data$transcripts$ENSMUST00000197833)
-#' testNMD(ptbp2Data$skipE10CDS, ptbp2Data$transcripts$ENSMUST00000197833, other_features = TRUE, fasta = Ensembl_mm10)
+#' testNMD(ptbp2Data$skipE10CDS, ptbp2Data$transcripts$ENSMUST00000197833, other_features = TRUE, fasta = BSgenome.Mmusculus.UCSC.mm10)
 #' 
 #' 
 testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_features = FALSE, fasta){
@@ -516,13 +518,13 @@ resizeTranscripts <- function(x, start = 0, end = 0) {
 
 
 
-matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, primary_gene_id=NULL, secondary_gene_id=NULL, workflow = FALSE, outputfile = 'matched_geneIDs.gtf') {
+matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, primary_gene_id=NULL, secondary_gene_id=NULL, makefile = TRUE, outputfile = 'matched_geneIDs.gtf') {
   
   # check the nature of query and ref. if it's a GRanges, proceed with analysis, if not, attempt to import
   if (is(query, 'GenomicRanges')) {
     # return error if input and reference do not contain gene_id metadata
     if (is.null(elementMetadata(query)$gene_id)) {
-      if (workflow == TRUE) {
+      if (makefile == FALSE) {
         stopLog('Gene_ID metadata error: Please ensure input assembled transcripts contain gene_id metadata\n', logf)
       } else {
         stop('Gene_ID metadata error: Please ensure input assembled transcripts contain gene_id metadata\n')
@@ -532,7 +534,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
   } else {
     # try to import query
     if (!file.exists(query)){
-      if (workflow == TRUE) {
+      if (makefile == FALSE) {
         stopLog('Input transcript file do not exist', logf)
       } else {
         stop('Input transcript file do not exist')
@@ -545,7 +547,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
     } else {
       fileformat = tail(unlist(strsplit(query, '\\.')), "1")
       if (!fileformat%in%c('gff3','gff','gtf','bed')) {
-        if (workflow == TRUE) {
+        if (makefile == FALSE) {
           stopLog('Incorrect input file extension format', logf)
         } else {
           stop('Incorrect input file extension format')
@@ -558,7 +560,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
   if (is(ref, 'GenomicRanges')) {
     # return error if input and reference do not contain gene_id metadata
     if (is.null(elementMetadata(ref)$gene_id)) {
-      if (workflow == TRUE) {
+      if (makefile == FALSE) {
         stopLog('Gene_ID metadata error: Please ensure reference assembly contain gene_id metadata', logf)
       } else {
         stop('Gene_ID metadata error: Please ensure reference assembly contain gene_id metadata')
@@ -568,7 +570,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
   } else {
     # try to import ref
     if (!file.exists(ref)){
-      if (workflow == TRUE) {
+      if (makefile == FALSE) {
         stopLog('Reference transcript file do not exist', logf)
       } else {
         stop('Reference transcript file do not exist')
@@ -581,7 +583,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
     } else {
       fileformat = tail(unlist(strsplit(ref, '\\.')), "1")
       if (!fileformat%in%c('gff3','gff','gtf','bed')) {
-        if (workflow == TRUE) {
+        if (makefile == FALSE) {
           stopLog('Incorrect reference file extension format', logf)
         } else {
           stop('Incorrect reference file extension format')
@@ -593,7 +595,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
   
   
   # testing and matching gene_ids
-  if (workflow == TRUE) {
+  if (makefile == FALSE) {
     infoLog('Checking and matching gene_ids...', logf, quiet)
   } else {
     message('Checking and matching gene_ids...')
@@ -628,15 +630,21 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
   
   # correction 1: replace primary_gene_id with secondary_gene_id, IF both args are provided
   if (!is.null(primary_gene_id) & !is.null(secondary_gene_id)) {
-    if (workflow == TRUE) {
+    if (makefile == FALSE) {
       infoLog(sprintf('-> Attempting to replace %s with %s...', primary_gene_id, secondary_gene_id),
               logf, quiet)
     } else {
       message(sprintf('-> Attempting to replace %s with %s...', primary_gene_id, secondary_gene_id))
     }
     
+    countsbefore = lengths(unique_ids %>%
+                             dplyr::select(gene_id = new_id) %>%
+                             dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
+                             dplyr::distinct() %>%
+                             as.data.frame())[[1]]
+    
     gene_id_df = elementMetadata(inputGRanges) %>% as.data.frame() %>%
-      dplyr::select(gene_id = primary, secondary = secondary) %>%
+      dplyr::select(gene_id = primary_gene_id, secondary = secondary_gene_id) %>%
       dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
       dplyr::filter(!is.na(secondary)) %>%
       dplyr::distinct() %>%
@@ -645,20 +653,39 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
 
     # replace nonstandard primary_gene_ids from inputGRanges with its secondary_gene_ids
     unique_ids = unique_ids %>% left_join(gene_id_df, by=c('gene_id'='gene_id')) %>%
-      dplyr::mutate_at(vars(match_level), funs(ifelse(new_id != secondary, 1, .))) %>%
-      dplyr::mutate_at(vars(new_id), funs(ifelse(new_id != secondary, as.character(secondary), .))) %>%
+      dplyr::mutate_at(vars(match_level), funs(ifelse(!is.na(secondary), 1, .))) %>%
+      dplyr::mutate_at(vars(new_id), funs(ifelse(!is.na(secondary), as.character(secondary), .))) %>%
       dplyr::select(gene_id, new_id, match_level)
+    
+    countsafter = lengths(unique_ids %>%
+                             dplyr::select(gene_id = new_id) %>%
+                             dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
+                             dplyr::distinct() %>%
+                             as.data.frame())[[1]]
+    
+    # report number of IDs corrected
+    if (makefile == FALSE) {
+      infoLog(sprintf('-> %s gene IDs matched', (countsbefore - countsafter)), logf, quiet)
+    } else {
+      message(sprintf('-> %s gene IDs matched', (countsbefore - countsafter)))
+    }
   }
   
   # correction 2: replace primary_gene_id with basic gene ID IF:
   # at least primary_gene_id is provided and if it starts with 'ENS'
   if (!is.null(primary_gene_id)) {
-    if (workflow == TRUE) {
-      infoLog('-> Attempting to match ensembl gene_ids...', logf, quiet)
+    if (makefile == FALSE) {
+      infoLog('--> Attempting to match ensembl gene_ids...', logf, quiet)
     } else {
-      message('-> Attempting to match ensembl gene_ids...')
+      message('--> Attempting to match ensembl gene_ids...')
     }
     
+    countsbefore = lengths(unique_ids %>%
+                             dplyr::select(gene_id = new_id) %>%
+                             dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
+                             dplyr::distinct() %>%
+                             as.data.frame())[[1]]
+                              
     # make dataframe of non_standard primary_gene_ids starting with "ENS"
     gene_id_df = unique_ids %>%
       dplyr::select(gene_id = new_id) %>%
@@ -691,8 +718,21 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
         dplyr::mutate_at(vars(new_id), funs(ifelse(!is.na(ens_id), as.character(ens_id), .))) %>%
         dplyr::select(gene_id, new_id, match_level)
       
+      countsafter = lengths(unique_ids %>%
+                               dplyr::select(gene_id = new_id) %>%
+                               dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
+                               dplyr::distinct() %>%
+                               as.data.frame())[[1]]
+      
+      # report number of IDs corrected
+      if (makefile == FALSE) {
+        infoLog(sprintf('--> %s gene IDs matched', (countsbefore - countsafter)), logf, quiet)
+      } else {
+        message(sprintf('--> %s gene IDs matched', (countsbefore - countsafter)))
+      }
+      
     } else {
-      if (workflow == TRUE) {
+      if (makefile == FALSE) {
         warnLog('No ensembl gene ids found', logf, quiet)
       } else {
         message('No ensembl gene ids found')
@@ -701,11 +741,17 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
   }
   
   # correction 3: correct gene_ids by finding overlapping regions.
-  if (workflow == TRUE) {
-    infoLog('-> Attempting to correct gene_ids by finding overlapping coordinates...', logf, quiet)
+  if (makefile == FALSE) {
+    infoLog('---> Attempting to correct gene_ids by finding overlapping coordinates...', logf, quiet)
   } else {
-    message('-> Attempting to correct gene_ids by finding overlapping coordinates...')
+    message('---> Attempting to correct gene_ids by finding overlapping coordinates...')
   }
+  
+  countsbefore = lengths(unique_ids %>%
+                           dplyr::select(gene_id = new_id) %>%
+                           dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
+                           dplyr::distinct() %>%
+                           as.data.frame())[[1]]
   
   # make dataframe of non_standard gene_ids
   gene_id_df = unique_ids %>%
@@ -736,6 +782,19 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
       dplyr::mutate_at(vars(match_level), funs(ifelse(!is.na(ref_gene_id), 4, .))) %>%
       dplyr::mutate_at(vars(new_id), funs(ifelse(!is.na(ref_gene_id), as.character(ref_gene_id), .))) %>%
       dplyr::select(gene_id, new_id, match_level)
+    
+    countsafter = lengths(unique_ids %>%
+                             dplyr::select(gene_id = new_id) %>%
+                             dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
+                             dplyr::distinct() %>%
+                             as.data.frame())[[1]]
+    
+    # report number of IDs corrected
+    if (makefile == FALSE) {
+      infoLog(sprintf('---> %s gene IDs matched', (countsbefore - countsafter)), logf, quiet)
+    } else {
+      message(sprintf('---> %s gene IDs matched', (countsbefore - countsafter)))
+    }
   }
   
 
@@ -766,20 +825,20 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
 
 
   # report pre-testing analysis and return inputGRanges
-  if (workflow == TRUE) {
+  if (makefile == FALSE) {
     infoLog(sprintf('--> Number of gene_ids corrected: %s', corrected_ids), logf, quiet)
     infoLog(sprintf('--> Remaining number of non-standard gene_ids: %s', nonstand_id_2), logf, quiet)
     if (nonstand_id_2 > 0) {
       warnLog('Transcripts with non-standard gene_ids will skip analysis', logf, quiet)
     }
   } else {
-    message(sprintf('--> Number of gene_ids corrected: %s', corrected_ids))
+    message(sprintf('--> Total number of gene_ids corrected: %s', corrected_ids))
     message(sprintf('--> Remaining number of non-standard gene_ids: %s', nonstand_id_2))
     if (nonstand_id_2 > 0) {
       message('Transcripts with non-standard gene_ids will skip analysis')
     }
   }
-  if (workflow == FALSE) {
+  if (makefile == TRUE) {
     rtracklayer::export(inputGRanges, outputfile)
     message(sprintf('Done. GTF saved as %s in current working directory', outputfile))
   } else {

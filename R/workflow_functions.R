@@ -168,7 +168,7 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, primar
   }
   inputGRanges = matchGeneIDs(inputGRanges, basicGRanges, 
                                primary_gene_id=primary_gene_id, secondary_gene_id=secondary_gene_id, 
-                               workflow = TRUE) 
+                               makefile = FALSE) 
   return(inputGRanges)
 }
 
