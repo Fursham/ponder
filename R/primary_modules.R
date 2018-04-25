@@ -697,10 +697,9 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
     # make dataframe of non_standard primary_gene_ids starting with "ENS"
     gene_id_df = unique_ids %>%
       dplyr::select(gene_id = new_id) %>%
-      dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
       dplyr::distinct() %>%
-      dplyr::filter(startsWith(gene_id, "ENS") == TRUE) %>%
-      as.data.frame()
+      dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
+      dplyr::filter(startsWith(gene_id, "ENS") == TRUE)
     
     # proceed with correction if there is an "ENS" gene_id annotation
     if (nrow(gene_id_df) > 0) {
@@ -739,10 +738,23 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
       }
       
     } else {
-      if (makefile == FALSE) {
-        warnLog('No ensembl gene ids found', logf, quiet)
+      # check if there is any ENS ids to begin with
+      ENSids = unique_ids %>%
+        dplyr::distinct() %>%
+        dplyr::filter(startsWith(gene_id, "ENS") == TRUE)
+      
+      if (nrow(ENSids) > 0) {
+        if (makefile == FALSE) {
+          infoLog('--> All ensembl gene ids have been matched', logf, quiet)
+        } else {
+          message('--> All ensembl gene ids have been matched')
+        }
       } else {
-        message('No ensembl gene ids found')
+        if (makefile == FALSE) {
+          warnLog('--> No ensembl gene ids found in query', logf, quiet)
+        } else {
+          message('--> No ensembl gene ids found in query')
+        }
       }
     }
   }
@@ -812,8 +824,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
     dplyr::select(gene_id = new_id) %>%
     dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
     dplyr::distinct() %>%
-    dplyr::mutate(status = TRUE) %>%
-    as.data.frame()
+    dplyr::mutate(status = TRUE)
   nonstand_id_2 = nrow(nonstand_id_list)
   corrected_ids = nonstand_id_1 - nonstand_id_2
   
