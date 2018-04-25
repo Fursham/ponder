@@ -83,6 +83,10 @@ psd95Data = list(transcripts = exons[psd95_testTx],
                       poisonCDS = psd95_NMDTx)
 devtools::use_data(psd95Data, overwrite = TRUE)
 
+# Add test gtf file into raw data
+#   File found in /./data-raw/transcript.gtf
+testData = '../NMDer/data-raw/transcripts.gtf'
+devtools::use_data(testData, overwrite = TRUE)
 
 
 
