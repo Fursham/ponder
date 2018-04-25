@@ -89,7 +89,7 @@ run <- function(input,
   # prepare output file
   infoLog('Saving analysis report...', logf, quiet)
   if (other_features == FALSE) {
-    output_df = report_df[names(report_df) != c(uORF, threeUTR, uATG, uATG_frame)]
+    output_df = report_df[names(report_df) != c('uORF', 'threeUTR', 'uATG', 'uATG_frame')]
   } else {
     output_df = report_df
   }
