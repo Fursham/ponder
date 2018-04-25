@@ -33,7 +33,8 @@ Note: This function will not insert/remove first exons.
 }
 \examples{
 
-reconstructCDS(ptbp2Data$transcripts$ENSMUST00000197833, ptbp2Data$refCDS, fasta = Ensembl_mm10)
+library("BSgenome.Mmusculus.UCSC.mm10")
+reconstructCDS(ptbp2Data$transcripts$ENSMUST00000197833, ptbp2Data$refCDS, fasta = BSgenome.Mmusculus.UCSC.mm10)
 
 
 }

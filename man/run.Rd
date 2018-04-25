@@ -5,9 +5,10 @@
 \title{Run _ Program}
 \usage{
 run(input, reference, fasta, input_format = NULL, reference_format = NULL,
-  match_chrom = FALSE, primary_gene_id = NULL, secondary_gene_id = NULL,
-  other_features = FALSE, filterbycoverage = TRUE, make_gtf = TRUE,
-  PTC_dist = 50, output_dir = "NMDer", quiet = FALSE)
+  match_chrom = FALSE, match_geneIDs = FALSE, primary_gene_id = NULL,
+  secondary_gene_id = NULL, other_features = FALSE,
+  filterbycoverage = TRUE, make_gtf = TRUE, PTC_dist = 50,
+  output_dir = "NMDer", quiet = FALSE)
 }
 \arguments{
 \item{input}{I}
@@ -29,5 +30,13 @@ run(input, reference, fasta, input_format = NULL, reference_format = NULL,
 \item{makegtf}{}
 }
 \description{
+
+}
+\examples{
+library("BSgenome.Mmusculus.UCSC.mm10")
+run(testData, 'mm10', BSgenome.Mmusculus.UCSC.mm10, match_geneIDs = TRUE, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
+
+
+
 
 }

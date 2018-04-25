@@ -32,11 +32,12 @@ This function will test for NMD features of a transcript with a given open readi
 }
 \examples{
 
+library("BSgenome.Mmusculus.UCSC.mm10")
 testNMD(ptbp2Data$refCDS, ptbp2Data$transcripts$ENSMUST00000029780)
-testNMD(ptbp2Data$refCDS, ptbp2Data$transcripts$ENSMUST00000029780, other_features = TRUE, fasta = Ensembl_mm10)
+testNMD(ptbp2Data$refCDS, ptbp2Data$transcripts$ENSMUST00000029780, other_features = TRUE, fasta = BSgenome.Mmusculus.UCSC.mm10)
 
 testNMD(ptbp2Data$skipE10CDS, ptbp2Data$transcripts$ENSMUST00000197833)
-testNMD(ptbp2Data$skipE10CDS, ptbp2Data$transcripts$ENSMUST00000197833, other_features = TRUE, fasta = Ensembl_mm10)
+testNMD(ptbp2Data$skipE10CDS, ptbp2Data$transcripts$ENSMUST00000197833, other_features = TRUE, fasta = BSgenome.Mmusculus.UCSC.mm10)
 
 
 }
