@@ -518,6 +518,9 @@ resizeTranscripts <- function(x, start = 0, end = 0) {
 
 
 
+
+
+
 matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, primary_gene_id=NULL, secondary_gene_id=NULL, makefile = TRUE, outputfile = 'matched_geneIDs.gtf') {
   
   # check the nature of query and ref. if it's a GRanges, proceed with analysis, if not, attempt to import
@@ -604,28 +607,40 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
   # preserve gene_ids from input GTF
   elementMetadata(inputGRanges)$old_gene_id <- elementMetadata(inputGRanges)$gene_id
   
-  # get a list of unique gene_ids
-  if (!is.null(primary_gene_id)) {
+  # get a dataframe of all gene_ids
+  #  depending on the input arguments, this dataframe is constructed differently
+  #  dataframe will contain headers gene_id, new_id, match_level and might contain secondary
+  #     gene_id is a reference to the orignal gene_id
+  #     new_id is the newly changed id
+  #     match_level describes the level at which the id has been changed
+  #     0 -> ids are found in ref; 
+  #     1 -> ids are matched by secondary_gene_id
+  #     2 -> ids are matched by appending ENS... suffix
+  #     3 -> ids are matched by secondary_gene_id followed by appending ENS... suffix
+  #     4 -> ids are matched by matching overlapping coordinates
+  #     5 -> id could not be matched and will be skipped from analysis
+  if (!is.null(primary_gene_id) & !is.null(secondary_gene_id)) {
+    unique_ids = elementMetadata(inputGRanges) %>% as.data.frame() %>%
+      dplyr::select(gene_id = primary_gene_id, secondary = secondary_gene_id)
+  } else if (!is.null(primary_gene_id)) {
     unique_ids = elementMetadata(inputGRanges) %>% as.data.frame() %>%
       dplyr::select(gene_id = primary_gene_id)
   } else {
     unique_ids = elementMetadata(inputGRanges) %>% as.data.frame() %>%
       dplyr::select(gene_id = gene_id)
   }
-  unique_ids = unique_ids %>% dplyr::distinct() %>%
-    dplyr::mutate(new_id = gene_id, match_level = 0) %>%
-    as.data.frame()
+  unique_ids = unique_ids %>% 
+    dplyr::mutate(new_id = gene_id, match_level = 0)
   
   # count number of non standard ID before correction
-  nonstand_id_1 = lengths(elementMetadata(inputGRanges) %>% as.data.frame() %>%
-                            dplyr::select(gene_id = gene_id) %>%
-                            dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
-                            dplyr::distinct() %>%
-                            as.data.frame())[[1]]
+  nonstand_id_1 = nrow(elementMetadata(inputGRanges) %>% as.data.frame() %>%
+                         dplyr::select(gene_id = gene_id) %>%
+                         dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
+                         dplyr::distinct())
   
   # There are 3 correction steps below.
   # correction 1 and 2 will initiate only if arguments are provided
-  # correction 3 will always run, but may give false positive output
+  # correction 3 will always be activated, but may give false positive output
   # note that in each step, ONLY the non-standard gene_ids will be corrected
   
   # correction 1: replace primary_gene_id with secondary_gene_id, IF both args are provided
@@ -637,31 +652,23 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
       message(sprintf('-> Attempting to replace %s with %s...', primary_gene_id, secondary_gene_id))
     }
     
-    countsbefore = lengths(unique_ids %>%
-                             dplyr::select(gene_id = new_id) %>%
-                             dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
-                             dplyr::distinct() %>%
-                             as.data.frame())[[1]]
-    
-    gene_id_df = elementMetadata(inputGRanges) %>% as.data.frame() %>%
-      dplyr::select(gene_id = primary_gene_id, secondary = secondary_gene_id) %>%
-      dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
-      dplyr::filter(!is.na(secondary)) %>%
-      dplyr::distinct() %>%
-      as.data.frame()
-    
+    # count number of non-standard ids before matching
+    countsbefore = nrow(unique_ids %>%
+                          dplyr::select(gene_id = new_id) %>%
+                          dplyr::distinct() %>%
+                          dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE))
 
     # replace nonstandard primary_gene_ids from inputGRanges with its secondary_gene_ids
-    unique_ids = unique_ids %>% left_join(gene_id_df, by=c('gene_id'='gene_id')) %>%
+    unique_ids = unique_ids %>% 
       dplyr::mutate_at(vars(match_level), funs(ifelse(!is.na(secondary), 1, .))) %>%
       dplyr::mutate_at(vars(new_id), funs(ifelse(!is.na(secondary), as.character(secondary), .))) %>%
       dplyr::select(gene_id, new_id, match_level)
     
-    countsafter = lengths(unique_ids %>%
-                             dplyr::select(gene_id = new_id) %>%
-                             dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
-                             dplyr::distinct() %>%
-                             as.data.frame())[[1]]
+    # count number of non-standard ids after matching
+    countsafter = nrow(unique_ids %>%
+                         dplyr::select(gene_id = new_id) %>%
+                         dplyr::distinct() %>%
+                         dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE))
     
     # report number of IDs corrected
     if (makefile == FALSE) {
@@ -680,11 +687,12 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
       message('--> Attempting to match ensembl gene_ids...')
     }
     
-    countsbefore = lengths(unique_ids %>%
-                             dplyr::select(gene_id = new_id) %>%
-                             dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
-                             dplyr::distinct() %>%
-                             as.data.frame())[[1]]
+    # count number of non-standard ids after matching
+    countsbefore = nrow(unique_ids %>%
+                          dplyr::select(gene_id = new_id) %>%
+                          dplyr::distinct() %>%
+                          dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE))
+                             
                               
     # make dataframe of non_standard primary_gene_ids starting with "ENS"
     gene_id_df = unique_ids %>%
@@ -695,13 +703,12 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
       as.data.frame()
     
     # proceed with correction if there is an "ENS" gene_id annotation
-    if (lengths(gene_id_df)[[1]] > 0) {
+    if (nrow(gene_id_df) > 0) {
       # make dataframe of annotated gene_id starting with "ENS"
       basic_gene_id_df = elementMetadata(basicGRanges) %>% as.data.frame() %>%
         dplyr::select(ens_id = gene_id) %>%
         dplyr::distinct() %>%
-        dplyr::filter(startsWith(ens_id, "ENS") == TRUE) %>%
-        as.data.frame()
+        dplyr::filter(startsWith(ens_id, "ENS") == TRUE)
       
       # append suffix of ENS gene_ids on both dataframes 
       # eg. ENSMUST00000029780.11 to ENSMUST00000029780
@@ -712,17 +719,17 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
       gene_id_df = dplyr::left_join(gene_id_df, basic_gene_id_df, by = 'appended_id') %>%
         dplyr::filter(!is.na(ens_id))
       
-      # replace gene_id on assembled transcript with ens_id, if match is found
+      # replace new_id on unique_ids dataframe with ens_id, if match is found
       unique_ids = unique_ids %>% left_join(gene_id_df, by=c('new_id'='gene_id')) %>%
         dplyr::mutate_at(vars(match_level), funs(ifelse(!is.na(ens_id), as.integer(.)+1, .))) %>%
         dplyr::mutate_at(vars(new_id), funs(ifelse(!is.na(ens_id), as.character(ens_id), .))) %>%
         dplyr::select(gene_id, new_id, match_level)
       
-      countsafter = lengths(unique_ids %>%
-                               dplyr::select(gene_id = new_id) %>%
-                               dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
-                               dplyr::distinct() %>%
-                               as.data.frame())[[1]]
+      # count number of non-standard ids after matching
+      countsafter = nrow(unique_ids %>%
+                           dplyr::select(gene_id = new_id) %>%
+                           dplyr::distinct() %>%
+                           dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE))
       
       # report number of IDs corrected
       if (makefile == FALSE) {
@@ -747,21 +754,23 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
     message('---> Attempting to correct gene_ids by finding overlapping coordinates...')
   }
   
-  countsbefore = lengths(unique_ids %>%
-                           dplyr::select(gene_id = new_id) %>%
-                           dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
-                           dplyr::distinct() %>%
-                           as.data.frame())[[1]]
+  # count number of unmatched ids before matching
+  countsbefore = nrow(unique_ids %>%
+                        dplyr::select(gene_id = new_id) %>%
+                        dplyr::distinct() %>%
+                        dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE))
   
   # make dataframe of non_standard gene_ids
   gene_id_df = unique_ids %>%
     dplyr::select(gene_id = new_id, test_id = gene_id) %>%
-    dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
     dplyr::distinct() %>%
+    dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
     as.data.frame()
   
+  # this is the main worker of this script
+  #   function will retrieve first gene_id from gencode that overlaps with first exon of query
+  #   the below parameters give a true positive rate of 81% 
   if (nrow(gene_id_df) > 0) {
-    # retrieve first gene_id from gencode that overlaps with first exon of query
     gene_id_df = dplyr::mutate(gene_id_df,
                                ref_gene_id = sapply(gene_id_df$test_id, function(x) {
                                  
@@ -783,11 +792,11 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
       dplyr::mutate_at(vars(new_id), funs(ifelse(!is.na(ref_gene_id), as.character(ref_gene_id), .))) %>%
       dplyr::select(gene_id, new_id, match_level)
     
-    countsafter = lengths(unique_ids %>%
-                             dplyr::select(gene_id = new_id) %>%
-                             dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
-                             dplyr::distinct() %>%
-                             as.data.frame())[[1]]
+    # count number of unmatched ids after matching
+    countsafter = nrow(unique_ids %>%
+                         dplyr::select(gene_id = new_id) %>%
+                         dplyr::distinct() %>%
+                         dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE))
     
     # report number of IDs corrected
     if (makefile == FALSE) {
@@ -805,24 +814,21 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
     dplyr::distinct() %>%
     dplyr::mutate(status = TRUE) %>%
     as.data.frame()
-  nonstand_id_2 = lengths(nonstand_id_list)[[1]]
+  nonstand_id_2 = nrow(nonstand_id_list)
   corrected_ids = nonstand_id_1 - nonstand_id_2
   
-  if (nrow(nonstand_id_list) > 0) {
-    #
+  if (nonstand_id_2 > 0) {
+    
+    # if there are remaining unmatched gene_ids, update match_level to 5.
+    #   these transcripts will be skipped from further analysis
     unique_ids = unique_ids %>% left_join(nonstand_id_list, by=c('new_id'='gene_id')) %>%
       dplyr::mutate_at(vars(match_level), funs(ifelse(!is.na(status), 5, .))) %>%
       dplyr::select(gene_id, new_id, match_level)
   }
-  
-  # update inputGRanges
-  mcols(inputGRanges)$gene_id <- sapply(mcols(inputGRanges)$old_gene_id, function(x) {
-    unique_ids[unique_ids["gene_id"] == x][2]
-  })
-  mcols(inputGRanges)$match_level <- sapply(mcols(inputGRanges)$old_gene_id, function(x) {
-    unique_ids[unique_ids["gene_id"] == x][3]
-  })
 
+  # update gene_id and add match_level to inputGRanges
+  mcols(inputGRanges)$gene_id = unique_ids$new_id
+  mcols(inputGRanges)$match_level = unique_ids$match_level
 
   # report pre-testing analysis and return inputGRanges
   if (makefile == FALSE) {
