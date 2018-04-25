@@ -528,7 +528,7 @@ resizeTranscripts <- function(x, start = 0, end = 0) {
 #' transcript annotation as reference. 
 #' 
 #' The default approach to this correction relies on finding overlaps between transcripts in query with
-#' transcripts in reference. Using this method alone could result in false positive matches (19% false positives).
+#' transcripts in reference. Using this method alone could result in false positive matches (19 percent false positives).
 #' To improve this, users have an option to activate two additional layers of matching.
 #' (1) Matching by ENSEMBL Gene_IDs. If both query and reference transcript annotations containg Ensembl-style
 #' Gene IDs, this program will try to match both IDs in a less stringent manner. This correction can be invoked
@@ -547,7 +547,7 @@ resizeTranscripts <- function(x, start = 0, end = 0) {
 #' or path_to_file. Argument can also be provided as a GenomicRanges object containing transcript and/or exon ranges.
 #' @param ref 
 #' Annotated reference transcripts. This program contain gencode basic annotations from mm10 and hg38 assemblies  
-#' that will be loaded using 'mm10' or 'hg38' as input to argument. Argument can also be provided as name of 
+#' that will be loaded using 'gencode_basics[['mm10']] or gencode_basics[['hg38']] as input to argument. Argument can also be provided as name of 
 #' GTF/GFF3 file in current working directory, or path_to_file.
 #' @param query_format 
 #' Format of query file (GTF/GFF3). If this argument is not provided and input to query argument
@@ -717,6 +717,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
 
     # replace nonstandard primary_gene_ids from inputGRanges with its secondary_gene_ids
     unique_ids = unique_ids %>% 
+      dplyr::mutate_at(vars(secondary), funs(ifelse(new_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE, ., NA))) %>%
       dplyr::mutate_at(vars(match_level), funs(ifelse(!is.na(secondary), 1, .))) %>%
       dplyr::mutate_at(vars(new_id), funs(ifelse(!is.na(secondary), as.character(secondary), .))) %>%
       dplyr::select(gene_id, new_id, match_level)
