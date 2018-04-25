@@ -24,7 +24,7 @@ test_that("testTXforStart", {
 
 context("Test reconstructCDSstart")
 test_that("reconstructCDSstart",  {
-  newptbp2CDS = reconstructCDSstart(ptbp2Data$afCDS, ptbp2Data$refCDS, fasta = genomes[['mm10']], full.output = TRUE)
+  newptbp2CDS = reconstructCDSstart(ptbp2Data$afCDS, ptbp2Data$refCDS, fasta = BSgenome.Mmusculus.UCSC.mm10, full.output = TRUE)
   
   expect_equal(length(newptbp2CDS$txrevise_out$refTx), 9)
   expect_equal(newptbp2CDS$predictedStart, TRUE)
@@ -34,13 +34,13 @@ test_that("reconstructCDSstart",  {
 
 context("Test reconstructCDS")
 test_that("reconstructCDS", {
-  augmented_ptbp2 = reconstructCDS(ptbp2Data$transcripts$ENSMUST00000197833, ptbp2Data$refCDS, fasta = genomes[['mm10']])
-  augmented_bak1 = reconstructCDS(bak1Data$transcripts$ENSMUST00000025034, bak1Data$refCDS, fasta = genomes[['mm10']])
-  augmented_negative = reconstructCDS(ptbp2Data$transcripts$ENSMUST00000029780, ptbp2Data$refCDS, fasta = genomes[['mm10']])
+  augmented_ptbp2 = reconstructCDS(ptbp2Data$transcripts$ENSMUST00000197833, ptbp2Data$refCDS, fasta = BSgenome.Mmusculus.UCSC.mm10)
+  augmented_bak1 = reconstructCDS(bak1Data$transcripts$ENSMUST00000025034, bak1Data$refCDS, fasta = BSgenome.Mmusculus.UCSC.mm10)
+  augmented_negative = reconstructCDS(ptbp2Data$transcripts$ENSMUST00000029780, ptbp2Data$refCDS, fasta = BSgenome.Mmusculus.UCSC.mm10)
   
-  expect_equal(length(augmented_ptbp2$ORF), 11)
+  expect_equal(length(augmented_ptbp2$ORF_considered), 10)
   expect_equal(augmented_ptbp2$Alt_tx, TRUE)
-  expect_equal(length(augmented_bak1$ORF), 6)
+  expect_equal(length(augmented_bak1$ORF), 5)
   expect_equal(augmented_bak1$Alt_tx, TRUE)
   expect_equal(augmented_negative$Alt_tx, FALSE)  # test should return FALSE as transcript is a ref CDS
 })
@@ -49,14 +49,14 @@ test_that("reconstructCDS", {
 context("Test testNMD")
 test_that("testNMD", {
   NMDreport_ptbp2_noNMD = testNMD(ptbp2Data$refCDS, ptbp2Data$transcripts$ENSMUST00000029780)
-  NMDreport_ptbp2_noNMDfull = testNMD(ptbp2Data$refCDS, ptbp2Data$transcripts$ENSMUST00000029780, other_features = TRUE, fasta = genomes[['mm10']])
+  NMDreport_ptbp2_noNMDfull = testNMD(ptbp2Data$refCDS, ptbp2Data$transcripts$ENSMUST00000029780, other_features = TRUE, fasta = BSgenome.Mmusculus.UCSC.mm10)
   NMDreport_ptbp2_NMD = testNMD(ptbp2Data$skipE10CDS, ptbp2Data$transcripts$ENSMUST00000197833)
   
   NMDreport_psd95_noNMD = testNMD(psd95Data$refCDS, psd95Data$transcripts$ENSMUST00000108589)
   NMDreport_psd95_NMD = testNMD(psd95Data$poisonCDS, psd95Data$transcripts$ENSMUST00000123687)
   
   expect_equal(NMDreport_ptbp2_noNMD$dist_to_lastEJ,133)
-  expect_equal(NMDreport_ptbp2_noNMDfull$threeUTR,1586)
+  expect_equal(NMDreport_ptbp2_noNMDfull$threeUTR,1496)
   expect_equal(NMDreport_ptbp2_noNMDfull$uORF,FALSE)
   expect_equal(NMDreport_ptbp2_NMD$dist_to_lastEJ,-361)
 
