@@ -521,6 +521,63 @@ resizeTranscripts <- function(x, start = 0, end = 0) {
 
 
 
+#' Match Gene IDs from query GTF/GFF3 file
+#' 
+#' @description 
+#' This function will match and correct Gene IDs from a query assembled transcript file, using a 
+#' transcript annotation as reference. 
+#' 
+#' The default approach to this correction relies on finding overlaps between transcripts in query with
+#' transcripts in reference. Using this method alone could result in false positive matches (19% false positives).
+#' To improve this, users have an option to activate two additional layers of matching.
+#' (1) Matching by ENSEMBL Gene_IDs. If both query and reference transcript annotations containg Ensembl-style
+#' Gene IDs, this program will try to match both IDs in a less stringent manner. This correction can be invoked
+#' by providing the 'primary_gene_id' argument
+#' 
+#' (2) Matching by secondary Gene_IDs. Depending on the transcript assembly program, GTF/GFF3 annotations 
+#' may contain additional comments on the transcript information. This may include a distinct 
+#' secondary Gene ID annotation that potentially matches with the reference. To invoke this correction,
+#' provide 'primary_gene_id' and 'secondary_gene_id' arguments. To determine if your transcript assembly contain 
+#' possible secondary Gene IDs, try importing query GTF file using rtracklayer package and check its metadata 
+#' columns
+#' 
+#' 
+#' @param query 
+#' Assembled transcripts in query. Argument can be provided as name of GTF/GFF3 file in current working directory,
+#' or path_to_file. Argument can also be provided as a GenomicRanges object containing transcript and/or exon ranges.
+#' @param ref 
+#' Annotated reference transcripts. This program contain gencode basic annotations from mm10 and hg38 assemblies  
+#' that will be loaded using 'mm10' or 'hg38' as input to argument. Argument can also be provided as name of 
+#' GTF/GFF3 file in current working directory, or path_to_file.
+#' @param query_format 
+#' Format of query file (GTF/GFF3). If this argument is not provided and input to query argument
+#' is a filename, program will attempt to read file extension.
+#' @param ref_format 
+#' Format of reference file (GTF/GFF3). If this argument is not provided and input to query argument
+#' is a filename, program will attempt to read file extension.
+#' @param primary_gene_id 
+#' Name of the primary gene id in query file. Input to this argument is typically 'gene_id'
+#' @param secondary_gene_id 
+#' Name of the secondary gene id in query file. Example of input to this arguement is 'ref_gene_id'
+#' @param makefile 
+#' TRUE/FALSE input. If TRUE, program will output a GTF file. Else, program will return a GenomicRanges
+#' object with matched Gene IDs
+#' 
+#' @param outputfile 
+#' Name of output file (Default: 'matched_geneIDs.gtf'). File will be saved in current working directory
+#'
+#' @return
+#' GTF file with matched Gene IDs if makefile == TRUE. 
+#' GRanges object if makefile == FALSE.
+#' 
+#' @export
+#'
+#' @examples
+#' 
+#' matchGeneIDs(testData, gencode_basics[['mm10']], primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
+#' 
+#' 
+#' 
 matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, primary_gene_id=NULL, secondary_gene_id=NULL, makefile = TRUE, outputfile = 'matched_geneIDs.gtf') {
   
   # check the nature of query and ref. if it's a GRanges, proceed with analysis, if not, attempt to import
@@ -816,6 +873,12 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
     } else {
       message(sprintf('---> %s gene IDs matched', (countsbefore - countsafter)))
     }
+  } else {
+    if (makefile == FALSE) {
+      infoLog(sprintf('---> Skipped, all gene IDs matched', (countsbefore - countsafter)), logf, quiet)
+    } else {
+      message(sprintf('---> Skipped, all gene IDs matched', (countsbefore - countsafter)))
+    }
   }
   
 
@@ -843,16 +906,16 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
 
   # report pre-testing analysis and return inputGRanges
   if (makefile == FALSE) {
-    infoLog(sprintf('--> Number of gene_ids corrected: %s', corrected_ids), logf, quiet)
-    infoLog(sprintf('--> Remaining number of non-standard gene_ids: %s', nonstand_id_2), logf, quiet)
+    infoLog(sprintf('Total gene_ids corrected: %s', corrected_ids), logf, quiet)
+    infoLog(sprintf('Remaining number of non-standard gene_ids: %s', nonstand_id_2), logf, quiet)
     if (nonstand_id_2 > 0) {
-      warnLog('Transcripts with non-standard gene_ids will skip analysis', logf, quiet)
+      warnLog('Transcripts with non-standard gene_ids will be skipped', logf, quiet)
     }
   } else {
-    message(sprintf('--> Total number of gene_ids corrected: %s', corrected_ids))
-    message(sprintf('--> Remaining number of non-standard gene_ids: %s', nonstand_id_2))
+    message(sprintf('Total gene_ids corrected: %s', corrected_ids))
+    message(sprintf('Remaining number of non-standard gene_ids: %s', nonstand_id_2))
     if (nonstand_id_2 > 0) {
-      message('Transcripts with non-standard gene_ids will skip analysis')
+      message('Transcripts with non-standard gene_ids will be skipped')
     }
   }
   if (makefile == TRUE) {
