@@ -19,12 +19,19 @@
 #' @import zeallot
 #' 
 #' @examples
+#' library("BSgenome.Mmusculus.UCSC.mm10")
+#' run(testData, 'mm10', BSgenome.Mmusculus.UCSC.mm10, match_geneIDs = TRUE, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
+#' 
+#' 
+#' 
+#' 
 run <- function(input,
                 reference, 
                 fasta,
                 input_format = NULL,
                 reference_format = NULL,
                 match_chrom = FALSE,
+                match_geneIDs = FALSE,
                 primary_gene_id = NULL,
                 secondary_gene_id = NULL, 
                 other_features = FALSE,
@@ -49,7 +56,7 @@ run <- function(input,
   c(inputGRanges, basicGRanges, genome) %<-% prepareInputs(input, reference, fasta, input_format, reference_format)
 
   # test for standard chromosome names, and gene_ids between input files
-  inputGRanges = preTesting(inputGRanges, basicGRanges, genome, match_chrom, primary_gene_id, secondary_gene_id)
+  inputGRanges = preTesting(inputGRanges, basicGRanges, genome, match_chrom, match_geneIDs, primary_gene_id, secondary_gene_id)
   
   # prepare dataframe and databases
   c(report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx) %<-% 

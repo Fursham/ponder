@@ -25,6 +25,9 @@
 #' @import rtracklayer
 #' @import Biostrings
 #' 
+#' 
+#' 
+#' 
 
 prepareInputs <- function(file, gencode, fasta, in_format, ref_format) {
   
@@ -70,12 +73,12 @@ prepareInputs <- function(file, gencode, fasta, in_format, ref_format) {
   }
   
   
-  # load genome or import user-defined genome sequence
-  if (any(fasta == c("hg38", "mm10"))) {
-    infoLog(sprintf('Loading genome sequence from %s assembly', fasta), logf, quiet)
-    
-    genome = genomes[[fasta]]     
-  } else {
+  # import genome sequence
+    if (is(fasta, 'BSgenome') | typeof(fasta) == 'S4') {
+      infoLog('Loading genome sequence', logf, quiet)
+      genome = fasta 
+    }
+    else if (is.character(fasta)) {
     infoLog('Importing fasta file...', logf, quiet)
     
     if (!file.exists(fasta)){
@@ -132,7 +135,7 @@ prepareInputs <- function(file, gencode, fasta, in_format, ref_format) {
 #' @import GenomeInfoDb
 #'
 #' @examples
-preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, primary_gene_id, secondary_gene_id) {
+preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correct_gene_id, primary_gene_id, secondary_gene_id) {
   
   # testing and correcting chromosome names
   infoLog('Checking and correcting chromosome names...', logf, quiet)
@@ -166,9 +169,36 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, primar
       warnLog('Non-standard chromosome IDs in reference were found. ', logf, quiet)
     }
   }
-  inputGRanges = matchGeneIDs(inputGRanges, basicGRanges, 
-                               primary_gene_id=primary_gene_id, secondary_gene_id=secondary_gene_id, 
-                               makefile = FALSE) 
+  
+  # correct gene ids if requested by user
+  #   else, calculate the number of unmatched gene_ids and return warning
+  if (correct_gene_id == TRUE) {
+    inputGRanges = matchGeneIDs(inputGRanges, basicGRanges, 
+                                primary_gene_id=primary_gene_id, secondary_gene_id=secondary_gene_id, 
+                                makefile = FALSE)
+  } else {
+    
+    # get a list of unmatched gene_ids
+    nonstand_ids = elementMetadata(inputGRanges) %>% as.data.frame() %>%
+                              dplyr::select(gene_id = gene_id) %>%
+                              dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
+                              dplyr::distinct()
+    
+    if (nrow(nonstand_ids) > 0) {
+      
+      # return warning
+      warnLog(sprintf('%s transcripts have unmatched gene_ids and will not be analyzed', nrow(nonstand_ids)), logf, quiet)
+      
+      # and add match_level metadata to inputGRanges
+      unique_ids = unique_ids = elementMetadata(inputGRanges) %>% as.data.frame() %>%
+        dplyr::select(gene_id = gene_id) %>% 
+        dplyr::mutate(match_level = 0) %>%
+        unique_ids %>% left_join(nonstand_ids, by=c('gene_id'='gene_id')) %>%
+        dplyr::mutate_at(vars(match_level), funs(ifelse(!is.na(status), 5, .))) %>%
+        dplyr::select(gene_id, new_id, match_level)
+      mcols(inputGRanges)$match_level = unique_ids$match_level
+    }
+  }
   return(inputGRanges)
 }
 
