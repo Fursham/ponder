@@ -163,7 +163,7 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
     }
   } else {
     if (any(!seqlevels(inputGRanges)%in%seqlevels(genome))) {
-      stopLog('Non-standard chromosome IDs in query were found')
+      warnLog('Non-standard chromosome IDs in query were found', logf, quiet)
     }
     if (any(!seqlevels(basicGRanges)%in%seqlevels(genome))) {
       warnLog('Non-standard chromosome IDs in reference were found. ', logf, quiet)
@@ -583,7 +583,7 @@ generateGTF <- function(df, output_dir) {
       startmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s;', 
                             dQuote(line$Gene_ID), dQuote(line$NMDer_ID), dQuote(line$Gene_Name))
       start = data.frame(chrom = line$Chrom, source = 'NMDer', type = 'start_codon', start = startcodonstart, end = startcodonend,
-                       score = 1000, strand = line$Strand, frame = 0, meta = startmetainfo)
+                       score = 1000, strand = line$Strand, frame = as.character(0), meta = startmetainfo)
       tempdf = rbind(tempdf, start)
       
       
@@ -596,7 +596,7 @@ generateGTF <- function(df, output_dir) {
       stopmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s;', 
                               dQuote(line$Gene_ID), dQuote(line$NMDer_ID), dQuote(line$Gene_Name))
       stop = data.frame(chrom = line$Chrom, source = 'NMDer', type = 'stop_codon', start = stopcodonstart, end = stopcodonend,
-                         score = 1000, strand = line$Strand, frame = stopframe, meta = stopmetainfo)
+                         score = 1000, strand = line$Strand, frame = as.character(stopframe), meta = stopmetainfo)
       tempdf = rbind(tempdf, stop)
       
       
@@ -604,7 +604,7 @@ generateGTF <- function(df, output_dir) {
         cdsmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s;', 
                              dQuote(line$Gene_ID), dQuote(line$NMDer_ID), dQuote(line$Gene_Name))
         cds = data.frame(chrom = line$Chrom, source = 'NMDer', type = 'CDS', start = as.integer(cds_coords[k,1]), end = as.integer(cds_coords[k,2]),
-                        score = 1000, strand = line$Strand, frame = frames[k], meta = cdsmetainfo)
+                        score = 1000, strand = line$Strand, frame = as.character(frames[k]), meta = cdsmetainfo)
         tempdf = rbind(tempdf, cds)
       }
     }
