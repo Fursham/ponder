@@ -516,6 +516,45 @@ filterdata <- function(df) {
 }
 
 
+outputAnalysis <- function(report_df, filterbycoverage, other_features, make_gtf, output_dir, input, reference, PTC_dist) {
+  
+  # filter data based 
+  if (filterbycoverage == TRUE) {
+    report_df = filterdata(report_df)
+  }
+  
+  # prepare splicing summary
+  splicingsummarydf = summSplicing(report_df)
+  write.table(splicingsummarydf, file = sprintf("%s/NMDer_splicing_summary.txt", output_dir), 
+              sep = "\t", row.names = FALSE, quote = FALSE)
+  
+  # prepare GTF file, if requested
+  if (make_gtf == TRUE) {
+    generateGTF(report_df, output_dir)
+  }
+  
+  # prepare output file
+  infoLog('Saving analysis report...', logf, quiet)
+  if (other_features == FALSE) {
+    output_df = report_df[names(report_df) != c('uORF', 'threeUTR', 'uATG', 'uATG_frame')]
+  } else {
+    output_df = report_df
+  }
+  write(sprintf('# description; Input: %s; Reference: %s; PTC_to_EJ: %snt', 
+                tail(unlist(strsplit(input, '/')), '1'), 
+                tail(unlist(strsplit(reference, '/')), '1'), PTC_dist), 
+        file = sprintf("%s/NMDer_report.txt", output_dir))
+  write.table(output_df, file = sprintf("%s/NMDer_report.txt", output_dir), 
+              sep = "\t", row.names = FALSE, quote = FALSE, append = TRUE)
+  unlink(logf)
+}
+
+
+
+
+
+
+
 summSplicing <- function(df) {
   
   # extract columns from dataframe corresponding to splicing classes
