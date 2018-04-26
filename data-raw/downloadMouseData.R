@@ -14,15 +14,11 @@ GRCh38_basic = rtracklayer::import(
 GRCm38_basic = rtracklayer::import(
   "/Users/Fursham/Documents/Programming/Project/020_NMD/From_HD/gencode.vM17.basic.annotation.gtf",
   format = "gtf")
-gencode_basics = list(mm10 = GRCm38_basic, hg38 = GRCh38_basic)
-devtools::use_data(gencode_basics, overwrite = TRUE)
+mm10 = GRCm38_basic
+hg38 = GRCh38_basic
+devtools::use_data(mm10, overwrite = TRUE)
+devtools::use_data(hg38, overwrite = TRUE)
 
-
-# download mouse and human genome sequence from UCSC
-GRCm38_genome = BSgenome.Mmusculus.UCSC.mm10
-GRCh38_genome = BSgenome.Hsapiens.UCSC.hg38
-genomes = list(mm10 = GRCm38_genome, hg38 = GRCh38_genome)
-devtools::use_data(genomes, overwrite = TRUE)
 
 # download mouse and human genome sequence from Ensembl
 AnnHub <- AnnotationHub()
