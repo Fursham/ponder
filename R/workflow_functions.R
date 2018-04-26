@@ -333,7 +333,6 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
 #' @examples
 testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx, genome, PTC_dist = 50, testNonClassicalNMD = FALSE) {
   
-  infoLog('Detecting NMD features...', logf, quiet)
   # set a progress bar for analysis
   progressbar = invisible(txtProgressBar(min = 0, max = nrow(report_df), width = 40, style = 3))
   

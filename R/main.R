@@ -17,6 +17,7 @@
 #' @return
 #' @export
 #' @import zeallot
+#' @import multidplyr
 #' 
 #' @examples
 #' library("BSgenome.Mmusculus.UCSC.mm10")
@@ -39,6 +40,7 @@ run <- function(query,
                 make_gtf = TRUE,
                 PTC_dist = 50,
                 output_dir = "NMDer",
+                clusters = 1,
                 quiet = FALSE) {
   
   # create output directory and logfile
@@ -66,10 +68,44 @@ run <- function(query,
   c(report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx) %<-% 
     prepareAnalysis(inputGRanges, basicGRanges, output_dir)
   
-  # test each transcript for NMD features
-  report_df = testNMDfeatures(report_df, inputExonsbyTx, basicExonsbyCDS,
-                              basicExonsbyTx,genome, PTC_dist,other_features)
   
+  # run NMD analysis
+  infoLog('Detecting NMD features...', logf, quiet)
+  if (clusters == 1) {
+    report_df = testNMDfeatures(report_df, inputExonsbyTx, basicExonsbyCDS,
+                                basicExonsbyTx,genome, PTC_dist,other_features)
+  } 
+  # or run in parallel
+  else {
+    specialquiet = TRUE
+    group <- rep(1:clusters, length.out = nrow(report_df))
+    report_df <- bind_cols(tibble(group), report_df)
+    cluster <- create_cluster(cores = clusters, quiet = TRUE)
+    
+    parallel_df = newdf %>% partition(group, cluster = cluster)
+    parallel_df %>%
+      # Assign libraries
+      cluster_library("NMDer") %>%
+      cluster_library("Biostrings") %>%
+      cluster_library("BSgenome") %>%
+      # Assign values (use this to load functions or data to each core)
+      cluster_assign_value("testNMDfeatures", testNMDfeatures) %>%
+      cluster_assign_value("basicExonsbyCDS", basicExonsbyCDS) %>%
+      cluster_assign_value("inputExonsbyTx", inputExonsbyTx) %>%
+      cluster_assign_value("basicExonsbyTx", basicExonsbyTx) %>% 
+      cluster_assign_value("genome", genome) %>%
+      cluster_assign_value("PTC_dist", PTC_dist) %>%
+      cluster_assign_value("other_features", other_features) %>%
+      cluster_assign_value("logf", logf) %>%
+      cluster_assign_value("quiet", specialquiet)
+    
+    report_df <- parallel_df %>% # Use by_group party_df
+      do(testNMDfeatures(., inputExonsbyTx, basicExonsbyCDS,
+                         basicExonsbyTx,genome, PTC_dist,other_features)) %>%
+      collect() %>% # Special collect() function to recombine partitions
+      as.data.frame() 
+  }
+
   # prepare outputs
   outputAnalysis(report_df, filterbycoverage, other_features, make_gtf, 
                  output_dir, query, reference, PTC_dist)
