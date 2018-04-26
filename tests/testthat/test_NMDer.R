@@ -1,7 +1,7 @@
 context("Test txrevise")
 
 test_that("identifyAddedRemoveRegions works", {
-  diff = indentifyAddedRemovedRegions('ENSMUST00000029780','ENSMUST00000197833', ptbp2_testData$exons)
+  diff = indentifyAddedRemovedRegions('ENSMUST00000029780','ENSMUST00000197833', ptbp2Data$transcripts)
   
   expect_equal(length(diff$ENSMUST00000029780),3) #Has three elements
   expect_equal(width(diff$ENSMUST00000029780[diff$ENSMUST00000029780$contained == 1]), 34) #Width of the middle exon is 34 nt
@@ -56,7 +56,7 @@ test_that("testNMD", {
   NMDreport_psd95_NMD = testNMD(psd95Data$poisonCDS, psd95Data$transcripts$ENSMUST00000123687)
   
   expect_equal(NMDreport_ptbp2_noNMD$dist_to_lastEJ,133)
-  expect_equal(NMDreport_ptbp2_noNMDfull$threeUTR,1496)
+  expect_equal(NMDreport_ptbp2_noNMDfull$threeUTR,1586)
   expect_equal(NMDreport_ptbp2_noNMDfull$uORF,FALSE)
   expect_equal(NMDreport_ptbp2_NMD$dist_to_lastEJ,-361)
 
