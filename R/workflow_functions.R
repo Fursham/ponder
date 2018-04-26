@@ -553,9 +553,8 @@ outputAnalysis <- function(report_df, filterbycoverage, other_features, make_gtf
   } else {
     output_df = report_df
   }
-  write(sprintf('# description; Input: %s; Reference: %s; PTC_to_EJ: %snt', 
-                tail(unlist(strsplit(input, '/')), '1'), 
-                tail(unlist(strsplit(reference, '/')), '1'), PTC_dist), 
+  write(sprintf('# description; Input: %s; PTC_to_EJ: %snt', 
+                tail(unlist(strsplit(input, '/')), '1'), PTC_dist), 
         file = sprintf("%s/NMDer_report.txt", output_dir))
   write.table(output_df, file = sprintf("%s/NMDer_report.txt", output_dir), 
               sep = "\t", row.names = FALSE, quote = FALSE, append = TRUE)
