@@ -42,7 +42,7 @@ exons = exonsBy(txdb_mm, by = 'tx', use.names=TRUE)
 cds = cdsBy(txdb_mm, by = 'tx', use.names=TRUE)
 
 
-newStyle <- mapSeqlevels(seqlevels(exons), seqlevelsStyle(genomes[['mm10']]))
+newStyle <- mapSeqlevels(seqlevels(exons), seqlevelsStyle(Mmusculus))
 newStyle = newStyle[!is.na(newStyle)]
 exons <- renameSeqlevels(exons, newStyle)
 cds <- renameSeqlevels(cds, newStyle)
