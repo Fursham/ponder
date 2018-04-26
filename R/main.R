@@ -40,7 +40,7 @@ run <- function(query,
                 make_gtf = TRUE,
                 PTC_dist = 50,
                 output_dir = "NMDer",
-                clusters = 1,
+                clusters = 4,
                 quiet = FALSE) {
   
   # create output directory and logfile
@@ -82,7 +82,7 @@ run <- function(query,
     report_df <- bind_cols(tibble(group), report_df)
     cluster <- create_cluster(cores = clusters, quiet = TRUE)
     
-    parallel_df = newdf %>% partition(group, cluster = cluster)
+    parallel_df = report_df %>% partition(group, cluster = cluster)
     parallel_df %>%
       # Assign libraries
       cluster_library("NMDer") %>%
@@ -103,7 +103,8 @@ run <- function(query,
       do(testNMDfeatures(., inputExonsbyTx, basicExonsbyCDS,
                          basicExonsbyTx,genome, PTC_dist,other_features)) %>%
       collect() %>% # Special collect() function to recombine partitions
-      as.data.frame() 
+      as.data.frame() %>%
+      dplyr::arrange(NMDerID)
   }
 
   # prepare outputs
