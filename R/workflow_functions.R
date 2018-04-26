@@ -281,6 +281,8 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
                   ORF_considered, is_NMD, dist_to_lastEJ, uORF, threeUTR, uATG, uATG_frame, 
                   Shared_coverage, CE, MX, A5, A3, AF, AL, ATS, APA, IR, ce, mx, a5, a3, af, al, ats, apa, ir)
   
+  combined_report_df$NMDer_ID = sapply(1:nrow(combined_report_df), function(x) {paste("NMDer", formatC(as.integer(x), width=7, flag="0"), sep="")})
+
   # prepare databases
   inputDB = makeTxDbFromGRanges(inputGRanges)
   basicDB = makeTxDbFromGRanges(basicGRanges)
@@ -340,15 +342,14 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
   for (i in 1:nrow(report_df)) {
     
     # update progressbar
-    if (quiet == FALSE) {
-      setTxtProgressBar(progressbar, i); Sys.sleep(0.1); #cat(sprintf('\tTranscripts processed: %s', i))
-    }
+    #if (quiet == FALSE) {
+    #  setTxtProgressBar(progressbar, i); Sys.sleep(0.1); #cat(sprintf('\tTranscripts processed: %s', i))
+    #}
     
     # parse row information into a list
     thisline = report_df[i,] %>% as.list()
     
     # add NMDer_ID and transcript coordinates into report_df as a string of coordinates
-    thisline$NMDer_ID = paste("NMDer", formatC(as.integer(i), width=7, flag="0"), sep="")
     thisline$Tx_coordinates = paste(ranges(inputExonsbyTx[[thisline$Transcript_ID]]),
                                         collapse = ';')
     
@@ -400,7 +401,7 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
       }
     }
   }
-  cat('\n')
+  #cat('\n')
   return(report_df)
 }
 
@@ -548,9 +549,9 @@ outputAnalysis <- function(report_df, filterbycoverage, other_features, make_gtf
   # prepare output file
   infoLog('Saving analysis report...', logf, quiet)
   if (other_features == FALSE) {
-    output_df = report_df[names(report_df) != c('uORF', 'threeUTR', 'uATG', 'uATG_frame')]
+    output_df = report_df[names(report_df) != c('group', 'uORF', 'threeUTR', 'uATG', 'uATG_frame')]
   } else {
-    output_df = report_df
+    output_df = report_df[names(report_df) != 'group']
   }
   write(sprintf('# description; Input: %s; PTC_to_EJ: %snt', 
                 tail(unlist(strsplit(input, '/')), '1'), PTC_dist), 
