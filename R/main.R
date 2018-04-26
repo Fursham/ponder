@@ -3,7 +3,7 @@
 #' @description
 #' 
 #'
-#' @param input I
+#' @param query I
 #' @param reference 
 #' @param fasta 
 #' @param primary_gene_id 
@@ -25,10 +25,10 @@
 #' 
 #' 
 #' 
-run <- function(input,
+run <- function(query,
                 reference, 
                 fasta,
-                input_format = NULL,
+                query_format = NULL,
                 reference_format = NULL,
                 match_chrom = FALSE,
                 match_geneIDs = FALSE,
@@ -48,16 +48,16 @@ run <- function(input,
   options(warn=-1)
   
   # check for mandataory arguments
-  if (any(missing(input), missing(reference), missing(fasta))) {
+  if (any(missing(query), missing(reference), missing(fasta))) {
     stopLog('Missing mandatory arguments', logf)
   } 
 
-  # import and/or load input file(s)
-  c(inputGRanges, basicGRanges, genome) %<-% prepareInputs(input, reference, 
-                                                           fasta, input_format, 
+  # import and/or load query file(s)
+  c(inputGRanges, basicGRanges, genome) %<-% prepareInputs(query, reference, 
+                                                           fasta, query_format, 
                                                            reference_format)
 
-  # test for standard chromosome names, and gene_ids between input files
+  # test for standard chromosome names, and gene_ids between query files
   inputGRanges = preTesting(inputGRanges, basicGRanges, genome, 
                             match_chrom, match_geneIDs, 
                             primary_gene_id, secondary_gene_id)
@@ -72,6 +72,6 @@ run <- function(input,
   
   # prepare outputs
   outputAnalysis(report_df, filterbycoverage, other_features, make_gtf, 
-                 output_dir, input, reference, PTC_dist)
+                 output_dir, query, reference, PTC_dist)
 }
 
