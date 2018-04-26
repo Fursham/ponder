@@ -13,7 +13,7 @@ matchGeneIDs(query, ref, query_format = NULL, ref_format = NULL,
 or path_to_file. Argument can also be provided as a GenomicRanges object containing transcript and/or exon ranges.}
 
 \item{ref}{Annotated reference transcripts. This program contain gencode basic annotations from mm10 and hg38 assemblies
-that will be loaded using 'mm10' or 'hg38' as input to argument. Argument can also be provided as name of 
+that will be loaded using 'gencode_basics[['mm10']] or gencode_basics[['hg38']] as input to argument. Argument can also be provided as name of 
 GTF/GFF3 file in current working directory, or path_to_file.}
 
 \item{query_format}{Format of query file (GTF/GFF3). If this argument is not provided and input to query argument
@@ -40,7 +40,7 @@ This function will match and correct Gene IDs from a query assembled transcript 
 transcript annotation as reference. 
 
 The default approach to this correction relies on finding overlaps between transcripts in query with
-transcripts in reference. Using this method alone could result in false positive matches (19% false positives).
+transcripts in reference. Using this method alone could result in false positive matches (19 percent false positives).
 To improve this, users have an option to activate two additional layers of matching.
 (1) Matching by ENSEMBL Gene_IDs. If both query and reference transcript annotations containg Ensembl-style
 Gene IDs, this program will try to match both IDs in a less stringent manner. This correction can be invoked

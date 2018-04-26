@@ -4,9 +4,14 @@
 \alias{prepareInputs}
 \title{_ workflow: Load and/or import input files}
 \usage{
-prepareInputs(file, gencode, fasta, in_format, ref_format)
+prepareInputs(queryfile, ref, fasta, in_format, ref_format)
 }
 \arguments{
+\item{fasta}{genome sequence in fasta format. This program contain in-built fasta files for 
+GRCh38_hg38 and GRCm38_mm10 genome. These sequences can be loaded by parsing "hg38" or "mm10" 
+into this argument. If users wish to import other genomes, please provide filename or 
+/path/to/file of fasta files.}
+
 \item{file}{filename or /path/to/file of transcript assemblies. File can be of
 gtf, gff3 or bed format, and its filename should contain the corresponding extension}
 
@@ -15,11 +20,6 @@ contain in-built gencode_basic annotation for GRCh38_hg38 and GRCm38_mm10 assemb
 assemblies can be loaded by parsing "hg38" or "mm10" into this argument. If users wish to 
 import other assemblies, please provide filename or /path/to/file of reference CDS assemblies.
 File can be of gtf, gff3 or bed format, and its filename should contain the corresponding extension}
-
-\item{fasta}{genome sequence in fasta format. This program contain in-built fasta files for 
-GRCh38_hg38 and GRCm38_mm10 genome. These sequences can be loaded by parsing "hg38" or "mm10" 
-into this argument. If users wish to import other genomes, please provide filename or 
-/path/to/file of fasta files.}
 }
 \value{
 A list containing (1) GRanges object for assembled transcripts, (2) GRanges object for 
