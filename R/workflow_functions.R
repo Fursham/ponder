@@ -50,15 +50,15 @@ prepareInputs <- function(file, gencode, fasta, in_format, ref_format) {
     inputGRanges = rtracklayer::import(file, format = fileformat)
 
   # load provided genome_basic assembly, or import user reference annotation
-  if (any(gencode == c("hg38", "mm10"))) {
-    infoLog(sprintf('Loading gencode_basic transcripts from %s assembly...', gencode), logf, quiet)
+  if (is(gencode, 'GenomicRanges')) {
+    infoLog(sprintf('Loading gencode_basic transcripts...'), logf, quiet)
     
-    basicGRanges = gencode_basics[[gencode]]
-  } else {
-    infoLog('Importing user-defined reference annotations...', logf, quiet)
+    basicGRanges = gencode
+  } else if (is.character(gencode)){
+    infoLog('Importing user-provided reference annotations...', logf, quiet)
     
     if (!file.exists(gencode)){
-      stopLog('Refernce annotation file do not exist')
+      stopLog('Reference annotation file do not exist')
     }
     
     if (!is.null(ref_format)) {

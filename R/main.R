@@ -20,7 +20,7 @@
 #' 
 #' @examples
 #' library("BSgenome.Mmusculus.UCSC.mm10")
-#' run(testData, 'mm10', BSgenome.Mmusculus.UCSC.mm10, match_geneIDs = TRUE, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
+#' run(testData, mm10, BSgenome.Mmusculus.UCSC.mm10, match_geneIDs = TRUE, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
 #' 
 #' 
 #' 
