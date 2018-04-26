@@ -29,12 +29,12 @@
 #' 
 #' 
 
-prepareInputs <- function(file, gencode, fasta, in_format, ref_format) {
+prepareInputs <- function(queryfile, ref, fasta, in_format, ref_format) {
   
   # import assembled transcripts
     infoLog('Importing assembled transcripts...', logf, quiet)
   
-    if (!file.exists(file)){
+    if (!file.exists(queryfile)){
       stopLog('Input transcript file do not exist', logf)
     }
   
@@ -42,34 +42,34 @@ prepareInputs <- function(file, gencode, fasta, in_format, ref_format) {
     if (!is.null(in_format)) {
       fileformat = in_format
     } else {
-      fileformat = tail(unlist(strsplit(file, '\\.')), "1")
+      fileformat = tail(unlist(strsplit(queryfile, '\\.')), "1")
       if (!fileformat%in%c('gff3','gff','gtf','bed')) {
         stopLog('Incorrect input file extension format', logf)
       } 
     }
-    inputGRanges = rtracklayer::import(file, format = fileformat)
+    inputGRanges = rtracklayer::import(queryfile, format = fileformat)
 
   # load provided genome_basic assembly, or import user reference annotation
-  if (is(gencode, 'GenomicRanges')) {
+  if (is(ref, 'GenomicRanges')) {
     infoLog(sprintf('Loading gencode_basic transcripts...'), logf, quiet)
     
-    basicGRanges = gencode
-  } else if (is.character(gencode)){
+    basicGRanges = ref
+  } else if (is.character(ref)){
     infoLog('Importing user-provided reference annotations...', logf, quiet)
     
-    if (!file.exists(gencode)){
-      stopLog('Reference annotation file do not exist')
+    if (!file.exists(ref)){
+      stopLog('Reference annotation file do not exist', logf)
     }
     
     if (!is.null(ref_format)) {
       fileformat = ref_format
     } else {
-      fileformat = tail(unlist(strsplit(gencode, '\\.')), "1")
+      fileformat = tail(unlist(strsplit(ref, '\\.')), "1")
       if (!fileformat%in%c('gff3','gff','gtf','bed')) {
-        stopLog('Incorrect annotation file extension format')
+        stopLog('Incorrect annotation file extension format', logf)
       }
     }
-    basicGRanges = rtracklayer::import(gencode, format = fileformat)
+    basicGRanges = rtracklayer::import(ref, format = fileformat)
   }
   
   
@@ -137,7 +137,7 @@ prepareInputs <- function(file, gencode, fasta, in_format, ref_format) {
 #' @examples
 preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correct_gene_id, primary_gene_id, secondary_gene_id) {
   
-  # testing and correcting chromosome names
+  # testing and correcting chromosome names on query and annotated transcripts
   infoLog('Checking and correcting chromosome names...', logf, quiet)
   
   if (correct_chrom == TRUE) {
@@ -161,7 +161,10 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
         warnLog('Non-standard chromosome IDs in reference were removed', logf, quiet)
       }
     }
-  } else {
+  } 
+  # if user opts out of this correction service, program will test if there are non-standard IDs and return a warning
+  # program will continue
+  else {
     if (any(!seqlevels(inputGRanges)%in%seqlevels(genome))) {
       warnLog('Non-standard chromosome IDs in query were found', logf, quiet)
     }
@@ -176,13 +179,17 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
     inputGRanges = matchGeneIDs(inputGRanges, basicGRanges, 
                                 primary_gene_id=primary_gene_id, secondary_gene_id=secondary_gene_id, 
                                 makefile = FALSE)
-  } else {
+  } 
+  # if user opts out of this service, program will return warning if there are unmatched gene_ids
+  #   program will also update inputGRanges to include match_level and old_gene_id metadata
+  else {
     
     # get a list of unmatched gene_ids
     nonstand_ids = elementMetadata(inputGRanges) %>% as.data.frame() %>%
-                              dplyr::select(gene_id = gene_id) %>%
-                              dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
-                              dplyr::distinct()
+      dplyr::select(gene_id = gene_id) %>%
+      dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
+      dplyr::distinct() %>%
+      dplyr::mutate(status = TRUE)
     
     if (nrow(nonstand_ids) > 0) {
       
@@ -190,13 +197,14 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
       warnLog(sprintf('%s transcripts have unmatched gene_ids and will not be analyzed', nrow(nonstand_ids)), logf, quiet)
       
       # and add match_level metadata to inputGRanges
-      unique_ids = unique_ids = elementMetadata(inputGRanges) %>% as.data.frame() %>%
+      unique_ids = elementMetadata(inputGRanges) %>% as.data.frame() %>%
         dplyr::select(gene_id = gene_id) %>% 
         dplyr::mutate(match_level = 0) %>%
-        unique_ids %>% left_join(nonstand_ids, by=c('gene_id'='gene_id')) %>%
+        dplyr::left_join(nonstand_ids, by=c('gene_id'='gene_id')) %>%
         dplyr::mutate_at(vars(match_level), funs(ifelse(!is.na(status), 5, .))) %>%
-        dplyr::select(gene_id, new_id, match_level)
+        dplyr::select(gene_id, match_level)
       mcols(inputGRanges)$match_level = unique_ids$match_level
+      mcols(inputGRanges)$old_gene_id = mcols(inputGRanges)$gene_id
     }
   }
   return(inputGRanges)
@@ -233,7 +241,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
   
   infoLog('Preparing databases, transcripts and output files...', logf, quiet)
   
-  # prepare output dataframe
+  # prepare output dataframe by getting transcript information from inputGRanges
   report_df = inputGRanges %>% as.data.frame() %>%
     dplyr::filter(type == 'transcript') %>%
     dplyr::select(Gene_ID = gene_id, 
@@ -257,8 +265,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
                   threeUTR = NA) %>%
     dplyr::mutate(Shared_coverage = 0, 
                   CE = NA, MX = NA, A5 = NA, A3 = NA, AF = NA, ATS = NA, AL = NA, APA = NA, IR = NA,
-                  ce = NA, mx = NA, a5 = NA, a3 = NA, af = NA, ats = NA, al = NA, apa = NA, ir = NA) %>%
-    as.data.frame()
+                  ce = NA, mx = NA, a5 = NA, a3 = NA, af = NA, ats = NA, al = NA, apa = NA, ir = NA)
   
   # prepare df of gencode_basic transcripts
   basicTX_df = elementMetadata(basicGRanges) %>% as.data.frame() %>%
@@ -266,13 +273,13 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
     dplyr::select(Gene_ID = gene_id, Ref_TX_ID = transcript_id) %>%
     dplyr::distinct() %>% as.data.frame()
   
+  # join report_df and basicTX_df and generate a full list of query transcripts to be compared with every reference transcript
   combined_report_df = dplyr::right_join(basicTX_df, report_df, by = 'Gene_ID') %>%
     dplyr::select(NMDer_ID, Gene_ID, Original_Gene_ID, Match_level, 
                   Gene_Name, Transcript_ID, Ref_TX_ID, Chrom, Strand, 
                   Tx_coordinates, annotatedStart, predictedStart, Alt_tx,
                   ORF_considered, is_NMD, dist_to_lastEJ, uORF, threeUTR, uATG, uATG_frame, 
-                  Shared_coverage, CE, MX, A5, A3, AF, ATS, AL, APA, IR, ce, mx, a5, a3, af, ats, al, apa, ir
-                  )
+                  Shared_coverage, CE, MX, A5, A3, AF, AL, ATS, APA, IR, ce, mx, a5, a3, af, al, ats, apa, ir)
   
   # prepare databases
   inputDB = makeTxDbFromGRanges(inputGRanges)
@@ -330,7 +337,6 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
   # set a progress bar for analysis
   progressbar = invisible(txtProgressBar(min = 0, max = nrow(report_df), width = 40, style = 3))
   
-  
   # test for NMD features for each assembled transcript
   for (i in 1:nrow(report_df)) {
     
@@ -339,7 +345,7 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
       setTxtProgressBar(progressbar, i); Sys.sleep(0.1); #cat(sprintf('\tTranscripts processed: %s', i))
     }
     
-    # parse row information into variable
+    # parse row information into a list
     thisline = report_df[i,] %>% as.list()
     
     # add NMDer_ID and transcript coordinates into report_df as a string of coordinates
@@ -359,17 +365,19 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
         next
       } else {
         
-        infoLog(sprintf('Query : %s  Ref : %s', thisline$Transcript_ID, thisline$Ref_TX_ID), logf, quiet = TRUE)
+        # infoLog(sprintf('Query : %s  Ref : %s', thisline$Transcript_ID, thisline$Ref_TX_ID), logf, quiet = TRUE)
         
         # run test and update output list
         NMDreport = testNMDvsThisCDS(thisbasicCDS, 
                                      inputExonsbyTx[[thisline$Transcript_ID]], 
-                                     refsequence = genome, 
+                                     genome, 
                                      PTC_dist, 
                                      testNonClassicalNMD)
         thisline = modifyList(thisline, NMDreport)
         
         # update analyzed ORF coordinates into output
+        #  this part have to be done this way because some terminal exons have length of 1
+        #  and doing the conventional way will output 'xxx' rather than 'xxx-xxx'
         if (!is.na(thisline$ORF_considered[1])) {
           ORFstringlist = c()
           for (j in 1:length(thisline$ORF_considered)) {
@@ -390,7 +398,6 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
         
         # update transcript information with NMD data
         report_df[i,] = modifyList(report_df[i,], thisline)
-        
       }
     }
   }
@@ -460,6 +467,7 @@ testNMDvsThisCDS <- function(knownCDS, queryTx, refsequence, PTC_dist = 50, nonC
   augmentedCDS = reconstructCDS(txrevise_out = pre_report$txrevise_out, fasta = refsequence)
   output = modifyList(output, augmentedCDS)
   
+  # test NMD only if there transcript contain an ORF
   if (!is.na(augmentedCDS$ORF_considered)) {
     NMDreport = testNMD(augmentedCDS$ORF_considered, queryTx, fasta = refsequence, distance_stop_EJ = PTC_dist, other_features = nonClassicalNMD)
     output = modifyList(output, NMDreport)
@@ -471,16 +479,21 @@ testNMDvsThisCDS <- function(knownCDS, queryTx, refsequence, PTC_dist = 50, nonC
 
 getASevents <- function(transcript1, transcript2) {
   
+  # prepare list to be returned
   ASlist = list(CE = NA, MX = NA, A5 = NA, A3 = NA, AF = NA, ATS = NA, AL = NA, APA = NA, IR = NA,
                 ce = NA, mx = NA, a5 = NA, a3 = NA, af = NA, ats = NA, al = NA, apa = NA, ir = NA)
   
+  # get AS classifications. transcript 1 is reference and transcript 2 is query in this case
   ASoutput = classifyAltSegments(transcript1, transcript2)
+  
+  # return if there is no alternative segments between transcripts
   if (is.null(ASoutput)){
     return(NULL)
   } else if (length(ASoutput[[1]]) == 0 & length(ASoutput[[2]]) == 0) {
     return(NULL)
   }
   
+  # combine alternative segments and update ASlist with segment coordinates by matching class annotations with the named ASlist
   combinedASoutput = unlist(append(ASoutput[[1]], ASoutput[[2]]))
   for (i in 1:length(combinedASoutput)) {
     eventindex = match(elementMetadata(combinedASoutput[i])$AS_class, names(ASlist))
@@ -561,6 +574,7 @@ summSplicing <- function(df) {
   splicing_df = dplyr::select(df, NMDer_ID, Gene_ID, Gene_Name, Transcript_ID, Ref_TX_ID,
                               Chrom, Strand, is_NMD, CE:ir) %>% as.data.frame()
   
+  # count number of segments in each classifications
   for (i in 9:length(splicing_df)) {
     splicing_df[i] = lapply(splicing_df[i], function(x) {
       ifelse(is.na(x), 0, lengths((strsplit(x, ';'))))
@@ -579,7 +593,7 @@ generateGTF <- function(df, output_dir) {
   gtfoutput = data.frame(chrom = NULL, source = NULL, type = NULL, start = NULL, end = NULL, score = NULL, 
                    strand = NULL, frame = NULL, meta = NULL)
   
-  # for loop
+  # for loop to go through every NMDer analysis
   for (i in 1:nrow(df)) {
     
     tempdf = data.frame(chrom = NULL, source = NULL, type = NULL, start = NULL, end = NULL, score = NULL, 
@@ -590,7 +604,7 @@ generateGTF <- function(df, output_dir) {
     exon_coords = unlist(strsplit(line$Tx_coordinates, ';')) %>% as.data.frame() %>% 
       tidyr::separate('.', into = c('start', 'end'), sep = '-')
     
-    # prepare transcript info
+    # prepare transcript info and add to tempdf
     txstart = ifelse(line$Strand == '-', exon_coords[nrow(exon_coords),1], exon_coords[1,1])
     txstop = ifelse(line$Strand == '-',exon_coords[1,2], exon_coords[nrow(exon_coords),2])
     txmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s; is_nmd %s;', 
@@ -599,7 +613,7 @@ generateGTF <- function(df, output_dir) {
                     score = 1000, strand = line$Strand, frame = '.', meta = txmetainfo)
     tempdf = rbind(tempdf, tx)
     
-    # return exon info
+    # prepare exon info and add to tempdf
     for (j in 1:nrow(exon_coords)) {
       exmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s; exon_number %s;', 
                            dQuote(line$Gene_ID), dQuote(line$NMDer_ID), dQuote(line$Gene_Name), j)
@@ -608,37 +622,35 @@ generateGTF <- function(df, output_dir) {
       tempdf = rbind(tempdf, ex)
     }
     
-    # return cds info
+    # return cds info if transcript has one
     if (!is.na(line$ORF_considered)) {
       cds_coords = unlist(strsplit(line$ORF_considered, ';')) %>% as.data.frame() %>% 
         tidyr::separate('.', into = c('start', 'end'), sep = '-')
       
+      # extract information about frames of the CDS
       cdsIRanges = IRanges(start = as.integer(cds_coords[,1]), end = as.integer(cds_coords[,2]))
       frames = c(0, head(cumsum(width(cdsIRanges)%%3)%%3, -1))
       
+      # prepare and add start_codon information
       startcodonstart = ifelse(line$Strand == '-', as.integer(cds_coords[1,2]) - 2, cds_coords[1,1])
       startcodonend = ifelse(line$Strand == '-', cds_coords[1,2], as.integer(cds_coords[1,1])+2)
-      
       startmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s;', 
                             dQuote(line$Gene_ID), dQuote(line$NMDer_ID), dQuote(line$Gene_Name))
       start = data.frame(chrom = line$Chrom, source = 'NMDer', type = 'start_codon', start = startcodonstart, end = startcodonend,
                        score = 1000, strand = line$Strand, frame = as.character(0), meta = startmetainfo)
       tempdf = rbind(tempdf, start)
       
-      
-      
-      
+      # prepare and add stop_codon information
       stopcodonstart = ifelse(line$Strand == '-', cds_coords[nrow(cds_coords),1], as.integer(cds_coords[nrow(cds_coords),2]) - 2)
       stopcodonend = ifelse(line$Strand == '-', as.integer(cds_coords[nrow(cds_coords),1])+2, cds_coords[nrow(cds_coords),2])
       stopframe = frames[length(frames)]
-      
       stopmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s;', 
                               dQuote(line$Gene_ID), dQuote(line$NMDer_ID), dQuote(line$Gene_Name))
       stop = data.frame(chrom = line$Chrom, source = 'NMDer', type = 'stop_codon', start = stopcodonstart, end = stopcodonend,
                          score = 1000, strand = line$Strand, frame = as.character(stopframe), meta = stopmetainfo)
       tempdf = rbind(tempdf, stop)
       
-      
+      # prepare CDS cooords information
       for (k in 1:nrow(cds_coords)) {
         cdsmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s;', 
                              dQuote(line$Gene_ID), dQuote(line$NMDer_ID), dQuote(line$Gene_Name))
@@ -648,7 +660,7 @@ generateGTF <- function(df, output_dir) {
       }
     }
    
-    # sort table
+    # sort table. this is not necessary because the order of the gtf is not important. the transcript_ID is.
     if (line$Strand == '-') {
       tempdf = dplyr::arrange(tempdf, desc(end), type)
     } else {
@@ -669,7 +681,10 @@ generateGTF <- function(df, output_dir) {
 
 
 
-
+## Below are functions to write and possibly print the warnings and information
+#   There are packages out there that can do this professionally, but I want the ability
+#   for user to decide whether to print these info into console
+#   this is where the quiet argument comes in
 
 stopLog <- function(text, file) {
   write(paste(sprintf("[%s]", format(Sys.time(), "%Y-%b-%d %X")),
