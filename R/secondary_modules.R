@@ -133,16 +133,16 @@ reconstructCDSstart <- function(queryTranscript, refCDS, fasta, txrevise_out = N
   pdict_startstopcodons = Biostrings::PDict(list_startstopcodons)
   StartStopCodons = Biostrings:: matchPDict(pdict_startstopcodons, thisqueryseq)
   
+  # 
+  type = c(rep('Start', length(StartStopCodons[[1]])), rep('Stop', length(unlist(StartStopCodons))- length(StartStopCodons[[1]])))
+  StartStopCodons = unlist(StartStopCodons)
+  elementMetadata(StartStopCodons)$type = type
+  inFrameStartStopCodons = sort(StartStopCodons[(sum(width(reconstructedTx)) - (end(StartStopCodons))) %%3 == 0,])
+  inFrameStartStopCodons = inFrameStartStopCodons[1:(length(inFrameStartStopCodons)-1)]
+  
   # return ORF only if an in-frame start codon is found
-  if (length(StartStopCodons[[1]]) > 0) {
-    
-    # 
-    type = c(rep('Start', length(StartStopCodons[[1]])), rep('Stop', length(unlist(StartStopCodons))- length(StartStopCodons[[1]])))
-    StartStopCodons = unlist(StartStopCodons)
-    elementMetadata(StartStopCodons)$type = type
-    inFrameStartStopCodons = sort(StartStopCodons[(sum(width(reconstructedTx)) - (end(StartStopCodons))) %%3 == 0,])
-    inFrameStartStopCodons = inFrameStartStopCodons[1:(length(inFrameStartStopCodons)-1)]
-    
+  if (length(inFrameStartStopCodons[elementMetadata(inFrameStartStopCodons)$type == 'Start']) > 0) {
+
     # obtain the start codon which do not have other stop codons downstream except for the CDS stop codon
     predictedStart = inFrameStartStopCodons[elementMetadata(inFrameStartStopCodons)$type == 'Start'][1]
     for (i in length(inFrameStartStopCodons):1) {
