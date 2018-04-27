@@ -77,7 +77,6 @@ run <- function(query,
   } 
   # or run in parallel
   else {
-    specialquiet = TRUE
     group <- rep(1:clusters, length.out = nrow(report_df))
     report_df <- bind_cols(tibble(group), report_df)
     cluster <- create_cluster(cores = clusters, quiet = TRUE)
@@ -88,8 +87,17 @@ run <- function(query,
       cluster_library("NMDer") %>%
       cluster_library("Biostrings") %>%
       cluster_library("BSgenome") %>%
+      cluster_library("dplyr") %>%
       # Assign values (use this to load functions or data to each core)
-      cluster_assign_value("testNMDfeatures", testNMDfeatures) %>%
+      #cluster_assign_value("indentifyAddedRemovedRegions", indentifyAddedRemovedRegions) %>%
+      #cluster_assign_value("extractFeature", extractFeature) %>%
+      #cluster_assign_value("testNMDfeatures", testNMDfeatures) %>%
+      #cluster_assign_value("testNMDvsThisCDS", testNMDvsThisCDS) %>%
+      #cluster_assign_value("testTXforStart", testTXforStart) %>%
+      #cluster_assign_value("reconstructCDSstart", reconstructCDSstart) %>%
+      #cluster_assign_value("reconstructCDS", reconstructCDS) %>%
+      #cluster_assign_value("testNMD", testNMD) %>%
+      cluster_assign_value("getASevents", getASevents) %>%
       cluster_assign_value("basicExonsbyCDS", basicExonsbyCDS) %>%
       cluster_assign_value("inputExonsbyTx", inputExonsbyTx) %>%
       cluster_assign_value("basicExonsbyTx", basicExonsbyTx) %>% 
@@ -97,14 +105,14 @@ run <- function(query,
       cluster_assign_value("PTC_dist", PTC_dist) %>%
       cluster_assign_value("other_features", other_features) %>%
       cluster_assign_value("logf", logf) %>%
-      cluster_assign_value("quiet", specialquiet)
+      cluster_assign_value("quiet", quiet)
     
     report_df <- parallel_df %>% # Use by_group party_df
       do(testNMDfeatures(., inputExonsbyTx, basicExonsbyCDS,
                          basicExonsbyTx,genome, PTC_dist,other_features)) %>%
       collect() %>% # Special collect() function to recombine partitions
       as.data.frame() %>%
-      dplyr::arrange(NMDerID)
+      dplyr::arrange(NMDer_ID)
   }
 
   # prepare outputs
