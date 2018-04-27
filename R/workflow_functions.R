@@ -279,7 +279,9 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
                   Gene_Name, Transcript_ID, Ref_TX_ID, Chrom, Strand, 
                   Tx_coordinates, annotatedStart, predictedStart, Alt_tx,
                   ORF_considered, is_NMD, dist_to_lastEJ, uORF, threeUTR, uATG, uATG_frame, 
-                  Shared_coverage, CE, MX, A5, A3, AF, AL, ATS, APA, IR, ce, mx, a5, a3, af, al, ats, apa, ir)
+                  Shared_coverage, CE, MX, A5, A3, AF, AL, ATS, APA, IR, ce, mx, a5, a3, af, al, ats, apa, ir) %>% 
+    as.data.frame()
+  
   
   combined_report_df$NMDer_ID = sapply(1:nrow(combined_report_df), function(x) {paste("NMDer", formatC(as.integer(x), width=7, flag="0"), sep="")})
 
@@ -549,9 +551,9 @@ outputAnalysis <- function(report_df, filterbycoverage, other_features, make_gtf
   # prepare output file
   infoLog('Saving analysis report...', logf, quiet)
   if (other_features == FALSE) {
-    output_df = report_df[names(report_df) != c('group', 'uORF', 'threeUTR', 'uATG', 'uATG_frame')]
+    output_df = report_df %>% select(-uORF, -threeUTR, -uATG, -uATG_frame, -group)
   } else {
-    output_df = report_df[names(report_df) != 'group']
+    output_df = report_df %>% select(-group)
   }
   write(sprintf('# description; Input: %s; PTC_to_EJ: %snt', 
                 tail(unlist(strsplit(input, '/')), '1'), PTC_dist), 
