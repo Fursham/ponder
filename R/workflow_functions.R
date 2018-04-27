@@ -338,7 +338,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
 testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx, genome, PTC_dist = 50, testNonClassicalNMD = FALSE) {
   
   # set a progress bar for analysis
-  progressbar = invisible(txtProgressBar(min = 0, max = nrow(report_df), width = 40, style = 3))
+  #progressbar = invisible(txtProgressBar(min = 0, max = nrow(report_df), width = 40, style = 3))
   
   # test for NMD features for each assembled transcript
   for (i in 1:nrow(report_df)) {
