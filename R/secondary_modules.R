@@ -105,6 +105,8 @@ testTXforStart <- function(queryTranscript, refCDS, full.output = FALSE) {
 #' 
 reconstructCDSstart <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL, full.output = FALSE) {
   
+  out = list(ORF = NA, txrevise_out = NA, predictedStart = FALSE)
+  
   # check if txrevise_out input is provided, and build one if not.
   if (missing(refCDS) | missing(queryTranscript)) {
     stop('Please provide input GRanges objects')
@@ -133,40 +135,40 @@ reconstructCDSstart <- function(queryTranscript, refCDS, fasta, txrevise_out = N
   pdict_startstopcodons = Biostrings::PDict(list_startstopcodons)
   StartStopCodons = Biostrings:: matchPDict(pdict_startstopcodons, thisqueryseq)
   
-  # 
-  type = c(rep('Start', length(StartStopCodons[[1]])), rep('Stop', length(unlist(StartStopCodons))- length(StartStopCodons[[1]])))
-  StartStopCodons = unlist(StartStopCodons)
-  elementMetadata(StartStopCodons)$type = type
-  inFrameStartStopCodons = sort(StartStopCodons[(sum(width(reconstructedTx)) - (end(StartStopCodons))) %%3 == 0,])
-  inFrameStartStopCodons = inFrameStartStopCodons[1:(length(inFrameStartStopCodons)-1)]
-  
-  # return ORF only if an in-frame start codon is found
-  if (length(inFrameStartStopCodons[elementMetadata(inFrameStartStopCodons)$type == 'Start']) > 0) {
-
-    # obtain the start codon which do not have other stop codons downstream except for the CDS stop codon
-    predictedStart = inFrameStartStopCodons[elementMetadata(inFrameStartStopCodons)$type == 'Start'][1]
-    for (i in length(inFrameStartStopCodons):1) {
-      if (elementMetadata(inFrameStartStopCodons)$type[i] == 'Stop'){
-        predictedStart = inFrameStartStopCodons[(i+1)]
-        break
+  if (length(StartStopCodons) > 0) {
+    
+    # 
+    type = c(rep('Start', length(StartStopCodons[[1]])), rep('Stop', length(unlist(StartStopCodons))- length(StartStopCodons[[1]])))
+    StartStopCodons = unlist(StartStopCodons)
+    elementMetadata(StartStopCodons)$type = type
+    inFrameStartStopCodons = sort(StartStopCodons[(sum(width(reconstructedTx)) - (end(StartStopCodons))) %%3 == 0,])
+    inFrameStartStopCodons = inFrameStartStopCodons[1:(length(inFrameStartStopCodons)-1)]
+    
+    # return ORF only if an in-frame start codon is found
+    if (length(inFrameStartStopCodons[elementMetadata(inFrameStartStopCodons)$type == 'Start']) > 0) {
+      
+      # obtain the start codon which do not have other stop codons downstream except for the CDS stop codon
+      predictedStart = inFrameStartStopCodons[elementMetadata(inFrameStartStopCodons)$type == 'Start'][1]
+      for (i in length(inFrameStartStopCodons):1) {
+        if (elementMetadata(inFrameStartStopCodons)$type[i] == 'Stop'){
+          predictedStart = inFrameStartStopCodons[(i+1)]
+          break
+        }
       }
-    }
-    
-    # append 5' end of reconstructed transcript to the start codon
-    upUTRsize = start(predictedStart) - 1
-    setORF = resizeTranscripts(reconstructedTx, start = upUTRsize)
-    
-    # obtain txrevise output
-    combinedList = list(refTx = setORF, testTx = queryTranscript)
-    diffSegments = indentifyAddedRemovedRegions("refTx", "testTx", combinedList[c("refTx", "testTx")])
-    out = list(ORF = setORF, txrevise_out = diffSegments, predictedStart = TRUE)
-    
-    if (is.null(diffSegments)) {
-      out = list(ORF = NA, txrevise_out = NA, predictedStart = FALSE)
-    }
-    
-  } else {
-    out = list(ORF = NA, txrevise_out = NA, predictedStart = FALSE)
+      
+      # append 5' end of reconstructed transcript to the start codon
+      upUTRsize = start(predictedStart) - 1
+      setORF = resizeTranscripts(reconstructedTx, start = upUTRsize)
+      
+      # obtain txrevise output
+      combinedList = list(refTx = setORF, testTx = queryTranscript)
+      diffSegments = indentifyAddedRemovedRegions("refTx", "testTx", combinedList[c("refTx", "testTx")])
+      out = list(ORF = setORF, txrevise_out = diffSegments, predictedStart = TRUE)
+      
+      if (is.null(diffSegments)) {
+        out = list(ORF = NA, txrevise_out = NA, predictedStart = FALSE)
+      }
+    } 
   }
   ifelse(full.output == TRUE, return(out), return(out["ORF"]))
 }

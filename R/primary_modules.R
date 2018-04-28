@@ -233,7 +233,7 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
         } else {
           # return uORF
           stopGRanges = ORForder[(j+1)]
-          endlength = length(fiveUTRseq) - end(stopGRanges)[1]
+          endlength = length(fiveUTRseq) - end(stopGRanges)
           ORFcoord = resizeTranscripts(thisfiveUTRGRanges, startlength, endlength)
           uORF = c(uORF, paste(ranges(ORFcoord), collapse = ';')) # need to remove NA first later
         }
