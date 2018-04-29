@@ -135,7 +135,7 @@ prepareInputs <- function(queryfile, ref, fasta, in_format, ref_format) {
 #' @import GenomeInfoDb
 #'
 #' @examples
-preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correct_gene_id, primary_gene_id, secondary_gene_id) {
+preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correct_gene_id, primary_gene_id, secondary_gene_id, clusters) {
   
   # testing and correcting chromosome names on query and annotated transcripts
   infoLog('Checking and correcting chromosome names...', logf, quiet)
@@ -178,7 +178,7 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
   if (correct_gene_id == TRUE) {
     inputGRanges = matchGeneIDs(inputGRanges, basicGRanges, 
                                 primary_gene_id=primary_gene_id, secondary_gene_id=secondary_gene_id, 
-                                makefile = FALSE)
+                                makefile = FALSE, clusters = clusters)
   } 
   # if user opts out of this service, program will return warning if there are unmatched gene_ids
   #   program will also update inputGRanges to include match_level and old_gene_id metadata
@@ -367,7 +367,7 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
         next
       } else {
         
-        # infoLog(sprintf('Query : %s  Ref : %s', thisline$Transcript_ID, thisline$Ref_TX_ID), logf, quiet = TRUE)
+        infoLog(sprintf('Query : %s  Ref : %s', thisline$Transcript_ID, thisline$Ref_TX_ID), logf, quiet = TRUE)
         
         # run test and update output list
         NMDreport = testNMDvsThisCDS(thisbasicCDS, 
