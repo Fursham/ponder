@@ -574,11 +574,11 @@ resizeTranscripts <- function(x, start = 0, end = 0) {
 #'
 #' @examples
 #' 
-#' matchGeneIDs(testData, gencode_basics[['mm10']], primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
+#' matchGeneIDs(testData, gencode_basics[['mm10']], primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id', clusters = 4)
 #' 
 #' 
 #' 
-matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, primary_gene_id=NULL, secondary_gene_id=NULL, makefile = TRUE, outputfile = 'matched_geneIDs.gtf') {
+matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, primary_gene_id=NULL, secondary_gene_id=NULL, makefile = TRUE, outputfile = 'matched_geneIDs.gtf', clusters = 4) {
   
   # check the nature of query and ref. if it's a GRanges, proceed with analysis, if not, attempt to import
   if (is(query, 'GenomicRanges')) {
@@ -841,20 +841,38 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
   #   function will retrieve first gene_id from gencode that overlaps with first exon of query
   #   the below parameters give a true positive rate of 81% 
   if (nrow(gene_id_df) > 0) {
-    gene_id_df = dplyr::mutate(gene_id_df,
-                               ref_gene_id = sapply(gene_id_df$test_id, function(x) {
-                                 
-                                 getfirstOverlap = findOverlaps(
-                                   inputGRanges[mcols(inputGRanges)$gene_id == x &
-                                                  mcols(inputGRanges)$type == "exon"][1],
-                                   basicGRanges, 
-                                   select = "first")
-                                 
-                                 return(ifelse(!is.na(getfirstOverlap), 
-                                               mcols(basicGRanges[getfirstOverlap])$gene_id,
-                                               NA))
-                               })) %>%
+    
+    group <- rep(1:clusters, length.out = nrow(gene_id_df))
+    gene_id_df <- bind_cols(tibble(group), gene_id_df)
+    cluster <- create_cluster(cores = clusters, quiet = TRUE)
+    
+    parallel_df = gene_id_df %>% partition(group, cluster = cluster)
+    parallel_df %>%
+      # Assign libraries
+      cluster_library("GenomicRanges") %>%
+      cluster_library("dplyr") %>%
+      # Assign values (use this to load functions or data to each core)
+      cluster_assign_value("inputGRanges", inputGRanges) %>%
+      cluster_assign_value("basicGRanges", basicGRanges)
+    
+    gene_id_df <- parallel_df %>% # Use by_group party_df
+      do(dplyr::mutate(ref_gene_id = sapply(.$test_id, function(x) {
+                      
+                      getfirstOverlap = findOverlaps(
+                        inputGRanges[mcols(inputGRanges)$gene_id == x &
+                                       mcols(inputGRanges)$type == "exon"][1],
+                        basicGRanges, 
+                        select = "first")
+                      
+                      return(ifelse(!is.na(getfirstOverlap), 
+                                    mcols(basicGRanges[getfirstOverlap])$gene_id,
+                                    NA))
+                    }))) %>%
+      collect() %>% # Special collect() function to recombine partitions
+      as.data.frame() %>%
       dplyr::filter(!is.na(ref_gene_id))
+    
+
     
     # replace gene_id on assembled transcript with predicted gene_id from overlap
     unique_ids = unique_ids %>% left_join(gene_id_df, by=c('new_id'='gene_id')) %>%

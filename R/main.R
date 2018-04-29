@@ -62,7 +62,8 @@ run <- function(query,
   # test for standard chromosome names, and gene_ids between query files
   inputGRanges = preTesting(inputGRanges, basicGRanges, genome, 
                             match_chrom, match_geneIDs, 
-                            primary_gene_id, secondary_gene_id)
+                            primary_gene_id, secondary_gene_id,
+                            clusters)
   
   # prepare dataframe and databases
   c(report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx) %<-% 
