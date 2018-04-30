@@ -152,14 +152,8 @@ reconstructCDSstart <- function(queryTranscript, refCDS, fasta, txrevise_out = N
     # return ORF only if an in-frame start codon is found
     if (length(inFrameStartStopCodons[elementMetadata(inFrameStartStopCodons)$type == 'Start']) > 0) {
       if (elementMetadata(inFrameStartStopCodons)$type[length(inFrameStartStopCodons)] != 'Stop') {
-        # obtain the start codon which do not have other stop codons downstream except for the CDS stop codon
-        predictedStart = inFrameStartStopCodons[elementMetadata(inFrameStartStopCodons)$type == 'Start'][1]
-        for (i in length(inFrameStartStopCodons):1) {
-          if (elementMetadata(inFrameStartStopCodons)$type[i] == 'Stop'){
-            predictedStart = inFrameStartStopCodons[(i+1)]
-            break
-          }
-        }
+        predictedStart = inFrameStartStopCodons[length(inFrameStartStopCodons)]
+
         
         # append 5' end of reconstructed transcript to the start codon
         upUTRsize = start(predictedStart) - 1

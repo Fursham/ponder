@@ -463,12 +463,12 @@ resizeTranscripts <- function(x, start = 0, end = 0) {
   
   # retrieve important information
   strand = as.character(strand(x))[1]
-  exonsize = width(x) # get the size of each exons as a list
   firstlastexons = c(1, length(x))  # initiate index of first and last exons
   startend = c(start,end) # store value for appending
   
   # append the start followed by the end
   for (i in 1:2) {
+    exonsize = width(x) # get the size of each exons as a list
     loop = TRUE
     while (loop == TRUE) {
       # change the size of the first or last exon
@@ -856,7 +856,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
       cluster_assign_value("basicGRanges", basicGRanges)
     
     gene_id_df <- parallel_df %>% # Use by_group party_df
-      do(dplyr::mutate(ref_gene_id = sapply(.$test_id, function(x) {
+      do(dplyr::mutate(., ref_gene_id = sapply(.$test_id, function(x) {
                       
                       getfirstOverlap = findOverlaps(
                         inputGRanges[mcols(inputGRanges)$gene_id == x &
