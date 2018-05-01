@@ -338,15 +338,15 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
 testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx, genome, PTC_dist = 50, testNonClassicalNMD = FALSE) {
   
   # set a progress bar for analysis
-  progressbar = invisible(txtProgressBar(min = 0, max = nrow(report_df), width = 40, style = 3))
+  #progressbar = invisible(txtProgressBar(min = 0, max = nrow(report_df), width = 40, style = 3))
   
   # test for NMD features for each assembled transcript
   for (i in 1:nrow(report_df)) {
     
     # update progressbar
-    if (quiet == FALSE) {
-      setTxtProgressBar(progressbar, i); Sys.sleep(0.1); #cat(sprintf('\r\tTranscripts processed: %s', i))
-    }
+    #if (quiet == FALSE) {
+    #  setTxtProgressBar(progressbar, i); Sys.sleep(0.1); #cat(sprintf('\r\tTranscripts processed: %s', i))
+    #}
     
     # parse row information into a list
     thisline = report_df[i,] %>% as.list()
@@ -367,7 +367,7 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
         next
       } else {
         
-        infoLog(sprintf('Query : %s  Ref : %s', thisline$Transcript_ID, thisline$Ref_TX_ID), logf, quiet = TRUE)
+        #infoLog(sprintf('Query : %s  Ref : %s', thisline$Transcript_ID, thisline$Ref_TX_ID), logf, quiet = TRUE)
       
         
         # run test and update output list
@@ -448,6 +448,8 @@ testNMDvsThisCDS <- function(knownCDS, queryTx, refsequence, PTC_dist = 50, nonC
   
   # return if there is no shared exons between transcript and CDS
   if (is.na(pre_report$txrevise_out[1])) {
+    return(output)
+  } else if (pre_report$annotatedStart == FALSE) {
     return(output)
   }
   
