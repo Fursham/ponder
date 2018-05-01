@@ -394,10 +394,10 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
         }
         
         # classify alternative splicing events
-        #altevents = getASevents(basicExonsbyTx[[thisline$Ref_TX_ID]], inputExonsbyTx[[thisline$Transcript_ID]])
-        #if (!is.null(altevents)) {
-        #  thisline = modifyList(thisline, altevents)
-        #}
+        altevents = getASevents(basicExonsbyTx[[thisline$Ref_TX_ID]], inputExonsbyTx[[thisline$Transcript_ID]])
+        if (!is.null(altevents)) {
+          thisline = modifyList(thisline, altevents)
+        }
         
         # update transcript information with NMD data
         report_df[i,] = modifyList(report_df[i,], thisline)
@@ -449,9 +449,7 @@ testNMDvsThisCDS <- function(knownCDS, queryTx, refsequence, PTC_dist = 50, nonC
   # return if there is no shared exons between transcript and CDS
   if (is.na(pre_report$txrevise_out[1])) {
     return(output)
-  } else if (pre_report$annotatedStart == FALSE) {
-    return(output)
-  }
+  } 
   
   # attempt to reconstruct CDS for transcripts with unannotated start
   if ((pre_report$annotatedStart == FALSE) |
