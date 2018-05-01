@@ -73,7 +73,6 @@ reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL){
     # this part will correct the open reading frame
       # obtain critical information on the new CDS
     queryStrand = as.character(strand(augmentedCDS))[1]
-    exon_boundaries = cumsum(width(augmentedCDS))
     thisqueryseq = unlist(Biostrings::getSeq(fasta, augmentedCDS))
     
       # prepare a dict of stop codons for pattern matching
@@ -154,7 +153,7 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
   cds3UTR = sort(reduce(unlist(append(
     noncodingSegments$shared_exons, 
     reduce(noncodingSegments$Tx[noncodingSegments$Tx$downstream == TRUE])))),
-    decreasing = as.character(strand(noncodingSegments$shared_exons))[1] == '-')
+    decreasing = (strand == '-'))
   
   # obtain distance of stop codon to last exon-exon junction and modify output list
   stop_codon_position = sum(width(queryCDS))
@@ -221,7 +220,7 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
       for (j in seq(1, length(ORForder), 2)) {
         
         startGRanges = ORForder[j]
-        startFrame = elementMetadata(startGRanges)$frame[[1]]
+        startFrame = elementMetadata(startGRanges)$frame
         startlength = start(startGRanges) - 1
         
         if (match(startGRanges, ORForder) == length(ORForder)) {
@@ -460,6 +459,10 @@ classifyAltSegments <- function(transcript1, transcript2, txrevise_out = NULL) {
 #' resizeTranscripts(ptbp2Data$transcripts$ENSMUST00000197833, start = 100)
 #' 
 resizeTranscripts <- function(x, start = 0, end = 0) {
+  
+  if (sum(width(x)) < (start + end)) {
+    stop('Appending length is larger than size of transcript')
+  }
   
   # retrieve important information
   strand = as.character(strand(x))[1]

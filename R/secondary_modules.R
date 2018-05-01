@@ -43,7 +43,7 @@ testTXforStart <- function(queryTranscript, refCDS, full.output = FALSE) {
   
   # test if the transcript contain same start codon as in CDS
   
-  # do not test transcript and CDS do not overlap at all
+  # do not test if transcript and CDS do not overlap at all
   if (is.null(diffSegments)) {
     output = modifyList(output, 
                         list(txrevise_out = NA, 
@@ -52,7 +52,7 @@ testTXforStart <- function(queryTranscript, refCDS, full.output = FALSE) {
     # transcripts that contain same start codon as CDS will return true for the above if statement
     
     # and also calculate size of first coding exon
-    lenfirstsharedexon = width(diffSegments$shared_exons[1])
+    lenfirstsharedexon = width(sort(diffSegments$shared_exons[1], decreasing = (as.character(strand(refCDS))[1] == '-')))
     output = modifyList(output, 
                         list(txrevise_out = diffSegments, 
                              annotatedStart = TRUE, 
