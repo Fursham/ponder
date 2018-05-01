@@ -142,33 +142,35 @@ reconstructCDSstart <- function(queryTranscript, refCDS, fasta, txrevise_out = N
     StartStopCodons = unlist(StartStopCodons)
     elementMetadata(StartStopCodons)$type = type
     inFrameStartStopCodons = sort(StartStopCodons[(sum(width(reconstructedTx)) - (end(StartStopCodons))) %%3 == 0,])
-    inFrameStartStopCodons = inFrameStartStopCodons[1:(length(inFrameStartStopCodons)-1)]
     
-    
-    shiftype = c('Stop', head(elementMetadata(inFrameStartStopCodons)$type, length(elementMetadata(inFrameStartStopCodons)$type)-1))
-    elementMetadata(inFrameStartStopCodons)$shiftype = shiftype
-    inFrameStartStopCodons = inFrameStartStopCodons[elementMetadata(inFrameStartStopCodons)$type != elementMetadata(inFrameStartStopCodons)$shiftype]
-    
-    # return ORF only if an in-frame start codon is found
-    if (length(inFrameStartStopCodons[elementMetadata(inFrameStartStopCodons)$type == 'Start']) > 0) {
-      if (elementMetadata(inFrameStartStopCodons)$type[length(inFrameStartStopCodons)] != 'Stop') {
-        predictedStart = inFrameStartStopCodons[length(inFrameStartStopCodons)]
-
-        
-        # append 5' end of reconstructed transcript to the start codon
-        upUTRsize = start(predictedStart) - 1
-        setORF = resizeTranscripts(reconstructedTx, start = upUTRsize)
-        
-        # obtain txrevise output
-        combinedList = list(refTx = setORF, testTx = queryTranscript)
-        diffSegments = indentifyAddedRemovedRegions("refTx", "testTx", combinedList[c("refTx", "testTx")])
-        out = list(ORF = setORF, txrevise_out = diffSegments, predictedStart = TRUE)
-        
-        if (is.null(diffSegments)) {
-          out = list(ORF = NA, txrevise_out = NA, predictedStart = FALSE)
+    if (length(inFrameStartStopCodons) > 0) {
+      inFrameStartStopCodons = inFrameStartStopCodons[1:(length(inFrameStartStopCodons)-1)]
+      
+      shiftype = c('Stop', head(elementMetadata(inFrameStartStopCodons)$type, length(elementMetadata(inFrameStartStopCodons)$type)-1))
+      elementMetadata(inFrameStartStopCodons)$shiftype = shiftype
+      inFrameStartStopCodons = inFrameStartStopCodons[elementMetadata(inFrameStartStopCodons)$type != elementMetadata(inFrameStartStopCodons)$shiftype]
+      
+      # return ORF only if an in-frame start codon is found
+      if (length(inFrameStartStopCodons[elementMetadata(inFrameStartStopCodons)$type == 'Start']) > 0) {
+        if (elementMetadata(inFrameStartStopCodons)$type[length(inFrameStartStopCodons)] != 'Stop') {
+          predictedStart = inFrameStartStopCodons[length(inFrameStartStopCodons)]
+          
+          
+          # append 5' end of reconstructed transcript to the start codon
+          upUTRsize = start(predictedStart) - 1
+          setORF = resizeTranscripts(reconstructedTx, start = upUTRsize)
+          
+          # obtain txrevise output
+          combinedList = list(refTx = setORF, testTx = queryTranscript)
+          diffSegments = indentifyAddedRemovedRegions("refTx", "testTx", combinedList[c("refTx", "testTx")])
+          out = list(ORF = setORF, txrevise_out = diffSegments, predictedStart = TRUE)
+          
+          if (is.null(diffSegments)) {
+            out = list(ORF = NA, txrevise_out = NA, predictedStart = FALSE)
+          }
         }
       }
-    } 
+    }
   }
   ifelse(full.output == TRUE, return(out), return(out["ORF"]))
 }
