@@ -205,7 +205,10 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
         dplyr::select(gene_id, match_level)
       mcols(inputGRanges)$match_level = unique_ids$match_level
       mcols(inputGRanges)$old_gene_id = mcols(inputGRanges)$gene_id
+      
+      rm(unique_ids)
     }
+    rm(nonstand_ids)
   }
   return(inputGRanges)
 }
@@ -264,8 +267,10 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
                   uATG_frame = NA,
                   threeUTR = NA) %>%
     dplyr::mutate(Shared_coverage = 0, 
-                  CE = NA, MX = NA, A5 = NA, A3 = NA, AF = NA, ATS = NA, AL = NA, APA = NA, IR = NA,
-                  ce = NA, mx = NA, a5 = NA, a3 = NA, af = NA, ats = NA, al = NA, apa = NA, ir = NA)
+                  CE = NA, MX = NA, A5 = NA, A3 = NA, AF = NA, 
+                  ATS = NA, AL = NA, APA = NA, IR = NA,
+                  ce = NA, mx = NA, a5 = NA, a3 = NA, af = NA, 
+                  ats = NA, al = NA, apa = NA, ir = NA)
   
   # prepare df of gencode_basic transcripts
   basicTX_df = elementMetadata(basicGRanges) %>% as.data.frame() %>%
@@ -278,8 +283,9 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
     dplyr::select(NMDer_ID, Gene_ID, Original_Gene_ID, Match_level, 
                   Gene_Name, Transcript_ID, Ref_TX_ID, Chrom, Strand, 
                   Tx_coordinates, annotatedStart, predictedStart, Alt_tx,
-                  ORF_considered, is_NMD, dist_to_lastEJ, uORF, threeUTR, uATG, uATG_frame, 
-                  Shared_coverage, CE, MX, A5, A3, AF, AL, ATS, APA, IR, ce, mx, a5, a3, af, al, ats, apa, ir) %>% 
+                  ORF_considered, is_NMD, dist_to_lastEJ, uORF, threeUTR, uATG, 
+                  uATG_frame, Shared_coverage, CE, MX, A5, A3, AF, AL, ATS, APA, IR, 
+                  ce, mx, a5, a3, af, al, ats, apa, ir) %>% 
     as.data.frame()
   
   
@@ -295,6 +301,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
   basicExonsbyTx = exonsBy(basicDB, by="tx", use.names=TRUE)
   
   
+  rm(list = c('inputDB','basicDB'))
   return(list(combined_report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx))
 }
 
@@ -339,9 +346,26 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
   
   # set a progress bar for analysis
   #progressbar = invisible(txtProgressBar(min = 0, max = nrow(report_df), width = 40, style = 3))
+
+  # update transcript coordinates into report_df as a string of coordinates
+  tempdf = report_df  %>% dplyr::select(Transcript_ID) %>% unique()
+  tempdf$Tx_coordinates2 = sapply(tempdf$Transcript_ID, function(x) {
+    paste(ranges(inputExonsbyTx[[x]]),
+          collapse = ';')
+  })
+  report_df <- report_df %>% dplyr::left_join(tempdf,report_df, by = 'Transcript_ID') %>%
+    dplyr::mutate_at(vars(Tx_coordinates), funs(paste(Tx_coordinates2))) %>%
+    dplyr::select(-Tx_coordinates2)
+  rm(tempdf)
+  
+  # generate a vector containing TRUE/FALSE boolean on whether or not the transcript should be analyzed
+  #   this speeds up the code by immediately skipping transcripts
+  totest = sapply(report_df$Match_level, function(x) {
+    ifelse(x < 5, TRUE, FALSE)
+  })
   
   # test for NMD features for each assembled transcript
-  for (i in 1:nrow(report_df)) {
+  for (i in (1:nrow(report_df))[totest]) {
     
     # update progressbar
     #if (quiet == FALSE) {
@@ -351,58 +375,43 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
     # parse row information into a list
     thisline = report_df[i,] %>% as.list()
     
-    # add NMDer_ID and transcript coordinates into report_df as a string of coordinates
-    thisline$Tx_coordinates = paste(ranges(inputExonsbyTx[[thisline$Transcript_ID]]),
-                                        collapse = ';')
+    # check whether the ref transcript is a CDS, and skip if it is not
+    thisbasicCDS = basicExonsbyCDS[[thisline$Ref_TX_ID]]
+    if (is.null(thisbasicCDS[1])) {
+      next
+    } else {
     
-    # only analyze transctips with standard gene id
-    if (as.integer(thisline$Match_level) < 5) {
+      #infoLog(sprintf('Query : %s  Ref : %s', thisline$Transcript_ID, thisline$Ref_TX_ID), logf, quiet = TRUE)
       
-      # get gencode_basic transcript IDs that has a CDS sequence
-        # there could be more than 1 CDS transcripts for each gene
-        # transcripts which are non-coding are omitted
-      thisbasicCDS = basicExonsbyCDS[[thisline$Ref_TX_ID]]
+      # run test and update output list
+      NMDreport = testNMDvsThisCDS(thisbasicCDS, 
+                                   inputExonsbyTx[[thisline$Transcript_ID]], 
+                                   genome, 
+                                   PTC_dist, 
+                                   testNonClassicalNMD)
+      thisline = modifyList(thisline, NMDreport)
       
-      if (is.null(thisbasicCDS[1])) {
-        next
-      } else {
-        
-        #infoLog(sprintf('Query : %s  Ref : %s', thisline$Transcript_ID, thisline$Ref_TX_ID), logf, quiet = TRUE)
-      
-        
-        # run test and update output list
-        NMDreport = testNMDvsThisCDS(thisbasicCDS, 
-                                     inputExonsbyTx[[thisline$Transcript_ID]], 
-                                     genome, 
-                                     PTC_dist, 
-                                     testNonClassicalNMD)
-        thisline = modifyList(thisline, NMDreport)
-        
-        # update analyzed ORF coordinates into output
-        #  this part have to be done this way because some terminal exons have length of 1
-        #  and doing the conventional way will output 'xxx' rather than 'xxx-xxx'
-        if (!is.na(thisline$ORF_considered[1])) {
-          ORFstringlist = c()
-          for (j in 1:length(thisline$ORF_considered)) {
-            string = paste(ranges(thisline$ORF_considered[j]))
-            if (!grepl('-', string)) {
-              string = paste(c(string, '-', string), collapse = '')
-            }
-            ORFstringlist = c(ORFstringlist, string)
-          }
-          thisline$ORF_considered = paste(ORFstringlist, collapse = ';')
-        }
-        
-        # classify alternative splicing events
-        altevents = getASevents(basicExonsbyTx[[thisline$Ref_TX_ID]], inputExonsbyTx[[thisline$Transcript_ID]])
-        if (!is.null(altevents)) {
-          thisline = modifyList(thisline, altevents)
-        }
-        
-        # update transcript information with NMD data
-        report_df[i,] = modifyList(report_df[i,], thisline)
+      # update analyzed ORF coordinates into output
+      #  this part have to be done this way because some terminal exons have length of 1
+      #  and doing the conventional way will output 'xxx' rather than 'xxx-xxx'
+      if (!is.na(thisline$ORF_considered[1])) {
+        ORFstringlist = sapply(thisline$ORF_considered, function(x) {
+          string = paste(ranges(x))
+          ifelse(!grepl('-', string), paste(c(string, '-', string), collapse = ''), string)
+        })
+        thisline$ORF_considered = paste(ORFstringlist, collapse = ';')
       }
+      
+      # classify alternative splicing events
+      altevents = getASevents(basicExonsbyTx[[thisline$Ref_TX_ID]], inputExonsbyTx[[thisline$Transcript_ID]])
+      if (!is.null(altevents)) {
+        thisline = modifyList(thisline, altevents)
+      }
+      
+      # update transcript information with NMD data
+      report_df[i,] = modifyList(report_df[i,], thisline)
     }
+  gc()
   }
   #cat('\n')
   return(report_df)
@@ -477,6 +486,9 @@ testNMDvsThisCDS <- function(knownCDS, queryTx, refsequence, PTC_dist = 50, nonC
   }
   return(output)
 }
+
+
+
 
 
 
@@ -565,11 +577,6 @@ outputAnalysis <- function(report_df, filterbycoverage, other_features, make_gtf
 }
 
 
-
-
-
-
-
 summSplicing <- function(df) {
   
   # extract columns from dataframe corresponding to splicing classes
@@ -585,7 +592,6 @@ summSplicing <- function(df) {
   
   return(splicing_df)
 }
-
 
 
 generateGTF <- function(df, output_dir) {

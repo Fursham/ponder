@@ -47,6 +47,9 @@ reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL){
     diffSegments = txrevise_out
   }
   
+  # prepare output
+  output = list(ORF_considered = NA, Alt_tx = NA)
+  
   # return NA if there is no unique internal and downstream alternative segments
   # else, construct new CDS with insertion of segments from query transcript
   
@@ -93,7 +96,9 @@ reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL){
       augmentedCDS = NA
     }
   }
-  return(list(ORF_considered = augmentedCDS, Alt_tx = Alternative_tx))
+  output = modifyList(output, 
+                      list(ORF_considered = augmentedCDS, Alt_tx = Alternative_tx))
+  return(output)
 }
 
 
@@ -294,134 +299,134 @@ classifyAltSegments <- function(transcript1, transcript2, txrevise_out = NULL) {
   
   # test for alternate segments in each transcripts, one at a time
   strand = as.character(strand(transcript1)[1])
-  for (i in 1:2) {
+  totest = sapply(list(diffSegments[[1]], diffSegments[[2]]), function(x) {
+    ifelse(length(x) == 0, FALSE, TRUE)
+  })
+  for (i in (1:2)[totest]) {
     
     # set a vector to store alternative splicing classes
     AS_class = c()
     
-    # skip transcript with no alternative segments
-    if (length(diffSegments[[i]]) == 0) {
-      next
-    } else {
-      for (j in 1:length(diffSegments[[i]])) {
-        thisexon = diffSegments[[i]][j]
+    for (j in 1:length(diffSegments[[i]])) {
+      thisexon = diffSegments[[i]][j]
+      
+      # test for alternative first and last exons first, then internal exons
+      if (elementMetadata(thisexon)$upstream == TRUE) {
         
-        # test for alternative first and last exons first, then internal exons
-        if (elementMetadata(thisexon)$upstream == TRUE) {
-          
-          # alternative segment could be an alternate transcription start or alternate first exon
-          #   to distinguish this, we merge the exon with the shared exon and determine number of exons combined
-          mergedsegment = reduce(append(ranges(thisexon), ranges(diffSegments[[3]])))
-          if (length(mergedsegment) == length(diffSegments[[3]])) {
-            AS_class = c(AS_class, 'ATS')
-            next
-          } else {
-            AS_class = c(AS_class, 'AF')
-            next
-          }
-        } else if (elementMetadata(thisexon)$downstream == TRUE) {
-          mergedsegment = reduce(append(ranges(thisexon), ranges(diffSegments[[3]])))
-          if (length(mergedsegment) == length(diffSegments[[3]])) {
-            AS_class = c(AS_class, 'APA')
-            next
-          } else {
-            AS_class = c(AS_class, 'AL')
-            next
-          }
+        # alternative segment could be an alternate transcription start or alternate first exon
+        #   to distinguish this, we merge the exon with the shared exon and determine number of exons combined
+        mergedsegment = reduce(append(ranges(thisexon), ranges(diffSegments[[3]])))
+        if (length(mergedsegment) == length(diffSegments[[3]])) {
+          AS_class = c(AS_class, 'ATS')
+          next
         } else {
+          AS_class = c(AS_class, 'AF')
+          next
+        }
+      } else if (elementMetadata(thisexon)$downstream == TRUE) {
+        mergedsegment = reduce(append(ranges(thisexon), ranges(diffSegments[[3]])))
+        if (length(mergedsegment) == length(diffSegments[[3]])) {
+          AS_class = c(AS_class, 'APA')
+          next
+        } else {
+          AS_class = c(AS_class, 'AL')
+          next
+        }
+      } else {
+        
+        # classify alternative internal segments
+        mergedsegment = reduce(append(ranges(thisexon), ranges(diffSegments[[3]])))
+        
+        # idea here is that after merging the alternate segment with shared exons,
+        #   if the number of exons remain the same, alternate segment is an alternative splice sites
+        #   if the number of exons increase by 1, segment is either casette or mutually exclusive
+        #   if the number of exons decrease by 1, segment is a retained intron
+        
+        # alternative splice sites
+        if (length(mergedsegment) == length(diffSegments[[3]])) {
           
-          # classify alternative internal segments
-          mergedsegment = reduce(append(ranges(thisexon), ranges(diffSegments[[3]])))
+          # to distinguish alternative 5' and 3' splice site events, we determine if there is an 
+          # overlap betweeen mergedsegment and shared_exons at either the start or end of the exons
           
-          # idea here is that after merging the alternate segment with shared exons,
-          #   if the number of exons remain the same, alternate segment is an alternative splice sites
-          #   if the number of exons increase by 1, segment is either casette or mutually exclusive
-          #   if the number of exons decrease by 1, segment is a retained intron
-          
-          # alternative splice sites
-          if (length(mergedsegment) == length(diffSegments[[3]])) {
-            
-            # to distinguish alternative 5' and 3' splice site events, we determine if there is an 
-            # overlap betweeen mergedsegment and shared_exons at either the start or end of the exons
-            
-            if (any(!countOverlaps(mergedsegment, ranges(diffSegments[[3]]), type = 'start'))) {
-              if (strand == '-') {
-                AS_class = c(AS_class, 'A5')
-              } else {
-                AS_class = c(AS_class, 'A3')
-              }
-              next
-            } 
-            else if (any(!countOverlaps(mergedsegment, ranges(diffSegments[[3]]), type = 'end'))) {
-              if (strand == '-') {
-                AS_class = c(AS_class, 'A3')
-              } else {
-                AS_class = c(AS_class, 'A5')
-              }
-              next
-            }
-            
-          # casette or mutually exclusive events 
-          } else if (length(mergedsegment) > length(diffSegments[[3]])){
-            
-            # get indexes and coordinates of flanking exons
-            sortedmergedsegment = sort(mergedsegment, decreasing = as.character(strand(thisexon)) == '-')
-            exonindex = match(ranges(thisexon), sortedmergedsegment)
-            flankexonsindex = c(exonindex-1, exonindex+1)
-            flankcoords = c(sortedmergedsegment[flankexonsindex[1]], sortedmergedsegment[flankexonsindex[2]])
-            mergedflanks = range(flankcoords)
-            
-            # get the list of unique segments from other transcript
-            if (i == 1) {
-              othertx = diffSegments[[2]]
+          if (any(!countOverlaps(mergedsegment, ranges(diffSegments[[3]]), type = 'start'))) {
+            if (strand == '-') {
+              AS_class = c(AS_class, 'A5')
             } else {
-              othertx = diffSegments[[1]]
+              AS_class = c(AS_class, 'A3')
             }
-            
-            # if there no other unique segments, return as casette exon
-            if (length(othertx) == 0) {
-              AS_class = c(AS_class, 'CE')
-              next
+            next
+          } 
+          else if (any(!countOverlaps(mergedsegment, ranges(diffSegments[[3]]), type = 'end'))) {
+            if (strand == '-') {
+              AS_class = c(AS_class, 'A3')
+            } else {
+              AS_class = c(AS_class, 'A5')
             }
-            
-            # find all the unique segments that fall within the flanking exons
-            matchedindex = countOverlaps(mergedflanks, ranges(othertx))
-            matchedsegments = othertx[matchedindex]
-            
-            # if there are other segments in the other transcript, this could be an MX
-            if (length(matchedsegments) > 0) {
-              tag = FALSE
-              for (k in 1:length(matchedsegments)) {
-                # test for possibility of the other segment to be a5' or a3'
-                newmergedsegment = reduce(append(ranges(matchedsegments[k]), flankcoords))
-                
-                # if newmergedsegment > 2, it means that the segment is not a5' or a3'
-                if (length(newmergedsegment) > 2) {
-                  AS_class = c(AS_class, 'MX')
-                  tag = TRUE
-                  break
-                }
+            next
+          }
+          
+          # casette or mutually exclusive events 
+        } else if (length(mergedsegment) > length(diffSegments[[3]])){
+          
+          # get indexes and coordinates of flanking exons
+          sortedmergedsegment = sort(mergedsegment, decreasing = as.character(strand(thisexon)) == '-')
+          exonindex = match(ranges(thisexon), sortedmergedsegment)
+          flankexonsindex = c(exonindex-1, exonindex+1)
+          flankcoords = c(sortedmergedsegment[flankexonsindex[1]], sortedmergedsegment[flankexonsindex[2]])
+          mergedflanks = range(flankcoords)
+          
+          # get the list of unique segments from other transcript
+          if (i == 1) {
+            othertx = diffSegments[[2]]
+          } else {
+            othertx = diffSegments[[1]]
+          }
+          
+          # if there no other unique segments, return as casette exon
+          if (length(othertx) == 0) {
+            AS_class = c(AS_class, 'CE')
+            next
+          }
+          
+          # find all the unique segments that fall within the flanking exons
+          matchedindex = countOverlaps(mergedflanks, ranges(othertx))
+          matchedsegments = othertx[matchedindex]
+          
+          # if there are other segments in the other transcript, this could be an MX
+          if (length(matchedsegments) > 0) {
+            tag = FALSE
+            for (k in 1:length(matchedsegments)) {
+              # test for possibility of the other segment to be a5' or a3'
+              newmergedsegment = reduce(append(ranges(matchedsegments[k]), flankcoords))
+              
+              # if newmergedsegment > 2, it means that the segment is not a5' or a3'
+              if (length(newmergedsegment) > 2) {
+                AS_class = c(AS_class, 'MX')
+                tag = TRUE
+                break
               }
-              # if none of the matchedsegments are MX, tag exon as 'CE'
-              if (tag == FALSE) {
-                AS_class = c(AS_class, 'CE')
-                next
-              }
             }
-            # if there are no other segments in the flanking exons in other transcript, it's most prob a casette exon
-            else {
+            # if none of the matchedsegments are MX, tag exon as 'CE'
+            if (tag == FALSE) {
               AS_class = c(AS_class, 'CE')
               next
             }
           }
-          # if length of mergedsegment is smaller, it's most likley and intron retention
-          else if (length(mergedsegment) < length(diffSegments[[3]])){
-            AS_class = c(AS_class, 'IR')
+          # if there are no other segments in the flanking exons in other transcript, it's most prob a casette exon
+          else {
+            AS_class = c(AS_class, 'CE')
             next
           }
         }
+        # if length of mergedsegment is smaller, it's most likley and intron retention
+        else if (length(mergedsegment) < length(diffSegments[[3]])){
+          AS_class = c(AS_class, 'IR')
+          next
+        }
       }
     }
+    
+
     
     # Set classes in transcript 1 as lower case and transcript 2 as upprecase
     if (i == 1) {
@@ -469,8 +474,11 @@ resizeTranscripts <- function(x, start = 0, end = 0) {
   firstlastexons = c(1, length(x))  # initiate index of first and last exons
   startend = c(start,end) # store value for appending
   
+  totest = sapply(startend, function(x) {
+    ifelse(x > 0, TRUE, FALSE)
+  })
   # append the start followed by the end
-  for (i in 1:2) {
+  for (i in (1:2)[totest]) {
     exonsize = width(x) # get the size of each exons as a list
     loop = TRUE
     while (loop == TRUE) {
@@ -693,7 +701,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
     dplyr::mutate(new_id = gene_id, match_level = 0)
   
   # count number of non standard ID before correction
-  nonstand_id_1 = nrow(elementMetadata(inputGRanges) %>% as.data.frame() %>%
+  nonstand_before = nrow(elementMetadata(inputGRanges) %>% as.data.frame() %>%
                          dplyr::select(gene_id = gene_id) %>%
                          dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
                          dplyr::distinct())
@@ -910,10 +918,10 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
     dplyr::filter(gene_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE) %>%
     dplyr::distinct() %>%
     dplyr::mutate(status = TRUE)
-  nonstand_id_2 = nrow(nonstand_id_list)
-  corrected_ids = nonstand_id_1 - nonstand_id_2
+  nonstand_after = nrow(nonstand_id_list)
+  corrected_ids = nonstand_before - nonstand_after
   
-  if (nonstand_id_2 > 0) {
+  if (nonstand_after > 0) {
     
     # if there are remaining unmatched gene_ids, update match_level to 5.
     #   these transcripts will be skipped from further analysis
@@ -929,17 +937,21 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
   # report pre-testing analysis and return inputGRanges
   if (makefile == FALSE) {
     infoLog(sprintf('Total gene_ids corrected: %s', corrected_ids), logf, quiet)
-    infoLog(sprintf('Remaining number of non-standard gene_ids: %s', nonstand_id_2), logf, quiet)
-    if (nonstand_id_2 > 0) {
+    infoLog(sprintf('Remaining number of non-standard gene_ids: %s', nonstand_after), logf, quiet)
+    if (nonstand_after > 0) {
       warnLog('Transcripts with non-standard gene_ids will be skipped', logf, quiet)
     }
   } else {
     message(sprintf('Total gene_ids corrected: %s', corrected_ids))
-    message(sprintf('Remaining number of non-standard gene_ids: %s', nonstand_id_2))
-    if (nonstand_id_2 > 0) {
+    message(sprintf('Remaining number of non-standard gene_ids: %s', nonstand_after))
+    if (nonstand_after > 0) {
       message('Transcripts with non-standard gene_ids will be skipped')
     }
   }
+  
+  # cleanup
+  rm(list = c('unique_ids','nonstand_id_list'))
+  
   if (makefile == TRUE) {
     rtracklayer::export(inputGRanges, outputfile)
     message(sprintf('Done. GTF saved as %s in current working directory', outputfile))

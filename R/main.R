@@ -69,8 +69,8 @@ run <- function(query,
   c(report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx) %<-% 
     prepareAnalysis(inputGRanges, basicGRanges, output_dir)
   
-  
-  
+  # cleanup
+  rm(list = c('reference','fasta','inputGRanges','basicGRanges'))
   
   # run NMD analysis in parallel
   infoLog('Detecting NMD features...', logf, quiet)
@@ -86,16 +86,6 @@ run <- function(query,
     cluster_library("Biostrings") %>%
     cluster_library("BSgenome") %>%
     cluster_library("dplyr") %>%
-    # Assign values (use this to load functions or data to each core)
-    #cluster_assign_value("indentifyAddedRemovedRegions", indentifyAddedRemovedRegions) %>%
-    #cluster_assign_value("extractFeature", extractFeature) %>%
-    #cluster_assign_value("testNMDfeatures", testNMDfeatures) %>%
-    #cluster_assign_value("testNMDvsThisCDS", testNMDvsThisCDS) %>%
-    #cluster_assign_value("testTXforStart", testTXforStart) %>%
-    #cluster_assign_value("reconstructCDSstart", reconstructCDSstart) %>%
-    #cluster_assign_value("reconstructCDS", reconstructCDS) %>%
-    #cluster_assign_value("testNMD", testNMD) %>%
-    cluster_assign_value("getASevents", getASevents) %>%
     cluster_assign_value("basicExonsbyCDS", basicExonsbyCDS) %>%
     cluster_assign_value("inputExonsbyTx", inputExonsbyTx) %>%
     cluster_assign_value("basicExonsbyTx", basicExonsbyTx) %>% 
@@ -111,11 +101,12 @@ run <- function(query,
     collect() %>% # Special collect() function to recombine partitions
     as.data.frame() %>%
     dplyr::arrange(NMDer_ID)
+  rm(parallel_df)
 
     
-
   # prepare outputs
   outputAnalysis(report_df, filterbycoverage, other_features, make_gtf, 
                  output_dir, query, reference, PTC_dist)
+  gc()
 }
 

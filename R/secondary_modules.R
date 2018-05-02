@@ -42,8 +42,7 @@ testTXforStart <- function(queryTranscript, refCDS, full.output = FALSE) {
   diffSegments = suppressWarnings(indentifyAddedRemovedRegions("refTx", "testTx", combinedList[c("refTx", "testTx")]))
   
   # test if the transcript contain same start codon as in CDS
-  
-  # do not test if transcript and CDS do not overlap at all
+    # do not test if transcript and CDS do not overlap at all
   if (is.null(diffSegments)) {
     output = modifyList(output, 
                         list(txrevise_out = NA, 
@@ -137,37 +136,41 @@ reconstructCDSstart <- function(queryTranscript, refCDS, fasta, txrevise_out = N
   
   if (length(unlist(StartStopCodons)) > 0) {
     
-    # 
-    type = c(rep('Start', length(StartStopCodons[[1]])), rep('Stop', length(unlist(StartStopCodons))- length(StartStopCodons[[1]])))
+    # unlist the list of matches and annotate its type (Start/Stop)
+    type = c(rep('Start', length(StartStopCodons[[1]])), 
+             rep('Stop', length(unlist(StartStopCodons))- length(StartStopCodons[[1]])))
     StartStopCodons = unlist(StartStopCodons)
     elementMetadata(StartStopCodons)$type = type
     inFrameStartStopCodons = sort(StartStopCodons[(sum(width(reconstructedTx)) - (end(StartStopCodons))) %%3 == 0,])
+    len_inFrameStartStopCodons = length(inFrameStartStopCodons)
     
-    if (length(inFrameStartStopCodons) > 0) {
-      inFrameStartStopCodons = inFrameStartStopCodons[1:(length(inFrameStartStopCodons)-1)]
+    if (len_inFrameStartStopCodons > 0) {
       
-      shiftype = c('Stop', head(elementMetadata(inFrameStartStopCodons)$type, length(elementMetadata(inFrameStartStopCodons)$type)-1))
+      # this part removes continuous stretches of Start or Stop codons
+      # and chooses only its first alternating occurence 
+      #   (ie Start,Start,Start,Stop,Stop,Start -> Start,Stop,Start)
+      inFrameStartStopCodons = inFrameStartStopCodons[1:(len_inFrameStartStopCodons-1)]
+      shiftype = c('Stop', head(elementMetadata(inFrameStartStopCodons)$type, 
+                                length(elementMetadata(inFrameStartStopCodons)$type)-1))
       elementMetadata(inFrameStartStopCodons)$shiftype = shiftype
       inFrameStartStopCodons = inFrameStartStopCodons[elementMetadata(inFrameStartStopCodons)$type != elementMetadata(inFrameStartStopCodons)$shiftype]
       
       # return ORF only if an in-frame start codon is found
-      if (length(inFrameStartStopCodons[elementMetadata(inFrameStartStopCodons)$type == 'Start']) > 0) {
-        if (elementMetadata(inFrameStartStopCodons)$type[length(inFrameStartStopCodons)] != 'Stop') {
-          predictedStart = inFrameStartStopCodons[length(inFrameStartStopCodons)]
-          
-          
-          # append 5' end of reconstructed transcript to the start codon
-          upUTRsize = start(predictedStart) - 1
-          setORF = resizeTranscripts(reconstructedTx, start = upUTRsize)
-          
-          # obtain txrevise output
-          combinedList = list(refTx = setORF, testTx = queryTranscript)
-          diffSegments = indentifyAddedRemovedRegions("refTx", "testTx", combinedList[c("refTx", "testTx")])
-          out = list(ORF = setORF, txrevise_out = diffSegments, predictedStart = TRUE)
-          
-          if (is.null(diffSegments)) {
-            out = list(ORF = NA, txrevise_out = NA, predictedStart = FALSE)
-          }
+      #   done by checking if size of object is an odd number
+      if (length(inFrameStartStopCodons) %% 2 == 1) {
+        predictedStart = inFrameStartStopCodons[length(inFrameStartStopCodons)]
+        
+        # append 5' end of reconstructed transcript to the start codon
+        upUTRsize = start(predictedStart) - 1
+        setORF = resizeTranscripts(reconstructedTx, start = upUTRsize)
+        
+        # obtain txrevise output
+        combinedList = list(refTx = setORF, testTx = queryTranscript)
+        diffSegments = indentifyAddedRemovedRegions("refTx", "testTx", combinedList[c("refTx", "testTx")])
+        out = list(ORF = setORF, txrevise_out = diffSegments, predictedStart = TRUE)
+        
+        if (is.null(diffSegments)) {
+          out = list(ORF = NA, txrevise_out = NA, predictedStart = FALSE)
         }
       }
     }
