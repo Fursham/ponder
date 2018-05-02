@@ -105,7 +105,7 @@ run <- function(query,
     cluster_assign_value("logf", logf) %>%
     cluster_assign_value("quiet", quiet)
   
-  out_df <- parallel_df %>% # Use by_group party_df
+  report_df <- parallel_df %>% # Use by_group party_df
     do(testNMDfeatures(., inputExonsbyTx, basicExonsbyCDS,
                        basicExonsbyTx,genome, PTC_dist,other_features)) %>%
     collect() %>% # Special collect() function to recombine partitions
