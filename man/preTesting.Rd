@@ -5,7 +5,7 @@
 \title{_ workflow: Testing and correcting transcript assembly}
 \usage{
 preTesting(inputGRanges, basicGRanges, genome, correct_chrom, correct_gene_id,
-  primary_gene_id, secondary_gene_id)
+  primary_gene_id, secondary_gene_id, clusters)
 }
 \arguments{
 \item{inputGRanges}{GRanges object containing transcript and exon features. It is recommended to create this object

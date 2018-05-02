@@ -6,7 +6,7 @@
 \usage{
 matchGeneIDs(query, ref, query_format = NULL, ref_format = NULL,
   primary_gene_id = NULL, secondary_gene_id = NULL, makefile = TRUE,
-  outputfile = "matched_geneIDs.gtf")
+  outputfile = "matched_geneIDs.gtf", clusters = 4)
 }
 \arguments{
 \item{query}{Assembled transcripts in query. Argument can be provided as name of GTF/GFF3 file in current working directory,
@@ -55,7 +55,7 @@ columns
 }
 \examples{
 
-matchGeneIDs(testData, gencode_basics[['mm10']], primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
+matchGeneIDs(testData, gencode_basics[['mm10']], primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id', clusters = 4)
 
 
 
