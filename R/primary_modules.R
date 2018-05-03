@@ -317,14 +317,8 @@ classifyAltSegments <- function(transcript1, transcript2, txrevise_out = NULL) {
         #   to distinguish this, we merge the exon with the shared exon and determine number of exons combined
         mergedsegment = reduce(append(ranges(thisexon), ranges(diffSegments[[3]])))
         if (length(mergedsegment) == length(diffSegments[[3]])) {
-          exonindex = which(countOverlaps(combinedList[[i]], thisexon) == 1)
-          if (exonindex == 1) {
-            AS_class = c(AS_class, 'ATS')
-            next
-          } else {
-            AS_class = c(AS_class, 'AF')
-            next
-          }
+          AS_class = c(AS_class, 'ATS')
+          next
         } else {
           AS_class = c(AS_class, 'AF')
           next
@@ -332,16 +326,8 @@ classifyAltSegments <- function(transcript1, transcript2, txrevise_out = NULL) {
       } else if (elementMetadata(thisexon)$downstream == TRUE) {
         mergedsegment = reduce(append(ranges(thisexon), ranges(diffSegments[[3]])))
         if (length(mergedsegment) == length(diffSegments[[3]])) {
-          exonindex = which(countOverlaps(combinedList[[i]], thisexon) == 1)
-          totalexonnum = length(combinedList[[i]])
-          
-          if (exonindex == totalexonnum) {
-            AS_class = c(AS_class, 'APA')
-            next
-          } else {
-            AS_class = c(AS_class, 'AL')
-            next
-          }
+          AS_class = c(AS_class, 'APA')
+          next
         } else {
           AS_class = c(AS_class, 'AL')
           next
