@@ -101,7 +101,7 @@ run <- function(query,
     collect() %>% # Special collect() function to recombine partitions
     as.data.frame() %>%
     dplyr::arrange(NMDer_ID)
-  rm(parallel_df)
+  rm(list = c('parallel_df','basicExonsbyCDS', 'basicExonsbyTx', 'inputExonsbyTx'))
 
     
   # prepare outputs
