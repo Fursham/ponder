@@ -319,8 +319,14 @@ classifyAltSegments <- function(transcript1, transcript2, txrevise_out = NULL) {
         if (length(mergedsegment) == length(diffSegments[[3]])) {
           exonindex = which(countOverlaps(combinedList[[i]], thisexon) == 1)
           if (exonindex == 1) {
-            AS_class = c(AS_class, 'ATS')
-            next
+            exonindex = which(countOverlaps(combinedList[[i]], thisexon) == 1)
+            if (exonindex == 1) {
+              AS_class = c(AS_class, 'ATS')
+              next
+            } else {
+              AS_class = c(AS_class, 'AF')
+              next
+            }
           } else {
             AS_class = c(AS_class, 'AF')
             next
@@ -336,8 +342,16 @@ classifyAltSegments <- function(transcript1, transcript2, txrevise_out = NULL) {
           totalexonnum = length(combinedList[[i]])
           
           if (exonindex == totalexonnum) {
-            AS_class = c(AS_class, 'APA')
-            next
+            exonindex = which(countOverlaps(combinedList[[i]], thisexon) == 1)
+            totalexonnum = length(combinedList[[i]])
+            
+            if (exonindex == totalexonnum) {
+              AS_class = c(AS_class, 'APA')
+              next
+            } else {
+              AS_class = c(AS_class, 'AL')
+              next
+            }
           } else {
             AS_class = c(AS_class, 'AL')
             next
