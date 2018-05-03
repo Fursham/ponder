@@ -628,6 +628,7 @@ generateGTF <- function(df, output_dir) {
     write(paste(tx, collapse = '\t'), file = outfile, append = TRUE)
     
     # prepare exon info and add to tempdf
+
     for (j in 1:nrow(exon_coords)) {
       exmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s; exon_number %s;', 
                            dQuote(all_geneID[i]), dQuote(all_NMDerID[i]), dQuote(all_GeneName[i]), j)
@@ -663,8 +664,7 @@ generateGTF <- function(df, output_dir) {
       stop = list(chrom = as.character(all_chrom[i]), source = 'NMDer', type = 'stop_codon', start = stopcodonstart, end = stopcodonend,
                          score = 1000, strand = as.character(all_strands[i]), frame = as.character(stopframe), meta = stopmetainfo)
       write(paste(stop, collapse = '\t'), file = outfile, append = TRUE)
-      
-      # prepare CDS cooords information
+
       for (k in 1:nrow(cds_coords)) {
         cdsmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s;', 
                              dQuote(all_geneID[i]), dQuote(all_NMDerID[i]), dQuote(all_GeneName[i]))
