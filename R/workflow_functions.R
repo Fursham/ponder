@@ -595,51 +595,45 @@ summSplicing <- function(df) {
 
 
 generateGTF <- function(df, output_dir) {
-
+  
   infoLog('Writing GTF file...', logf, quiet)
   
-  outfile = sprintf("%s/NMDer.gtf", output_dir)
-  write ('#', file = outfile)
+  gtfoutput = data.frame(chrom = NULL, source = NULL, type = NULL, start = NULL, end = NULL, score = NULL, 
+                   strand = NULL, frame = NULL, meta = NULL)
   
-  # preload data
-  all_txcoords = df$Tx_coordinates
-  all_cdscoords = df$ORF_considered
-  all_chrom = df$Chrom
-  all_strands = df$Strand
-  all_geneID = df$Gene_ID
-  all_NMDerID = df$NMDer_ID
-  all_GeneName = df$Gene_Name
-  all_isNMD = df$is_NMD
-    
   # for loop to go through every NMDer analysis
   for (i in 1:nrow(df)) {
     
+    tempdf = data.frame(chrom = NULL, source = NULL, type = NULL, start = NULL, end = NULL, score = NULL, 
+                        strand = NULL, frame = NULL, meta = NULL)
+    
     # get line info and extract exon coords
-    exon_coords = unlist(strsplit(all_txcoords[i], ';')) %>% as.data.frame() %>% 
+    line = df[i,]
+    exon_coords = unlist(strsplit(line$Tx_coordinates, ';')) %>% as.data.frame() %>% 
       tidyr::separate('.', into = c('start', 'end'), sep = '-')
     
     # prepare transcript info and add to tempdf
-    txstart = ifelse(all_strands[i] == '-', exon_coords[nrow(exon_coords),1], exon_coords[1,1])
-    txstop = ifelse(all_strands[i] == '-',exon_coords[1,2], exon_coords[nrow(exon_coords),2])
+    txstart = ifelse(line$Strand == '-', exon_coords[nrow(exon_coords),1], exon_coords[1,1])
+    txstop = ifelse(line$Strand == '-',exon_coords[1,2], exon_coords[nrow(exon_coords),2])
     txmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s; is_nmd %s;', 
-                       dQuote(all_geneID[i]), dQuote(all_NMDerID[i]), dQuote(all_GeneName[i]), all_isNMD[i])
-    tx = list(chrom = as.character(all_chrom[i]), source = 'NMDer', type = 'transcript', start = as.integer(txstart), end = as.integer(txstop),
-                    score = 1000, strand = as.character(all_strands[i]), frame = '.', meta = txmetainfo)
-    write(paste(tx, collapse = '\t'), file = outfile, append = TRUE)
+                       dQuote(line$Gene_ID), dQuote(line$NMDer_ID), dQuote(line$Gene_Name), line$is_NMD)
+    tx = data.frame(chrom = line$Chrom, source = 'NMDer', type = 'transcript', start = as.integer(txstart), end = as.integer(txstop),
+                    score = 1000, strand = line$Strand, frame = '.', meta = txmetainfo)
+    tempdf = rbind(tempdf, tx)
     
     # prepare exon info and add to tempdf
 
     for (j in 1:nrow(exon_coords)) {
       exmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s; exon_number %s;', 
-                           dQuote(all_geneID[i]), dQuote(all_NMDerID[i]), dQuote(all_GeneName[i]), j)
-      ex = list(chrom = as.character(all_chrom[i]), source = 'NMDer', type = 'exon', start = as.integer(exon_coords[j,1]), end = as.integer(exon_coords[j,2]),
-                      score = 1000, strand = as.character(all_strands[i]), frame = '.', meta = exmetainfo)
-      write(paste(ex, collapse = '\t'), file = outfile, append = TRUE)
+                           dQuote(line$Gene_ID), dQuote(line$NMDer_ID), dQuote(line$Gene_Name), j)
+      ex = data.frame(chrom = line$Chrom, source = 'NMDer', type = 'exon', start = as.integer(exon_coords[j,1]), end = as.integer(exon_coords[j,2]),
+                      score = 1000, strand = line$Strand, frame = '.', meta = exmetainfo)
+      tempdf = rbind(tempdf, ex)
     }
     
     # return cds info if transcript has one
-    if (!is.na(all_cdscoords[i])) {
-      cds_coords = unlist(strsplit(all_cdscoords[i], ';')) %>% as.data.frame() %>% 
+    if (!is.na(line$ORF_considered)) {
+      cds_coords = unlist(strsplit(line$ORF_considered, ';')) %>% as.data.frame() %>% 
         tidyr::separate('.', into = c('start', 'end'), sep = '-')
       
       # extract information about frames of the CDS
@@ -647,36 +641,61 @@ generateGTF <- function(df, output_dir) {
       frames = c(0, head(cumsum(width(cdsIRanges)%%3)%%3, -1))
       
       # prepare and add start_codon information
-      startcodonstart = ifelse(all_strands[i] == '-', as.integer(cds_coords[1,2]) - 2, cds_coords[1,1])
-      startcodonend = ifelse(all_strands[i] == '-', cds_coords[1,2], as.integer(cds_coords[1,1])+2)
+      startcodonstart = ifelse(line$Strand == '-', as.integer(cds_coords[1,2]) - 2, cds_coords[1,1])
+      startcodonend = ifelse(line$Strand == '-', cds_coords[1,2], as.integer(cds_coords[1,1])+2)
       startmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s;', 
-                            dQuote(all_geneID[i]), dQuote(all_NMDerID[i]), dQuote(all_GeneName[i]))
-      start = list(chrom = as.character(all_chrom[i]), source = 'NMDer', type = 'start_codon', start = startcodonstart, end = startcodonend,
-                       score = 1000, strand = as.character(all_strands[i]), frame = as.character(0), meta = startmetainfo)
-      write(paste(start, collapse = '\t'), file = outfile, append = TRUE)
+                            dQuote(line$Gene_ID), dQuote(line$NMDer_ID), dQuote(line$Gene_Name))
+      start = data.frame(chrom = line$Chrom, source = 'NMDer', type = 'start_codon', start = startcodonstart, end = startcodonend,
+                       score = 1000, strand = line$Strand, frame = as.character(0), meta = startmetainfo)
+      tempdf = rbind(tempdf, start)
       
       # prepare and add stop_codon information
-      stopcodonstart = ifelse(all_strands[i] == '-', cds_coords[nrow(cds_coords),1], as.integer(cds_coords[nrow(cds_coords),2]) - 2)
-      stopcodonend = ifelse(all_strands[i] == '-', as.integer(cds_coords[nrow(cds_coords),1])+2, cds_coords[nrow(cds_coords),2])
+      stopcodonstart = ifelse(line$Strand == '-', cds_coords[nrow(cds_coords),1], as.integer(cds_coords[nrow(cds_coords),2]) - 2)
+      stopcodonend = ifelse(line$Strand == '-', as.integer(cds_coords[nrow(cds_coords),1])+2, cds_coords[nrow(cds_coords),2])
       stopframe = frames[length(frames)]
       stopmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s;', 
+<<<<<<< HEAD
                               dQuote(all_geneID[i]), dQuote(all_NMDerID[i]), dQuote(all_GeneName[i]))
       stop = list(chrom = as.character(all_chrom[i]), source = 'NMDer', type = 'stop_codon', start = stopcodonstart, end = stopcodonend,
                          score = 1000, strand = as.character(all_strands[i]), frame = as.character(stopframe), meta = stopmetainfo)
       write(paste(stop, collapse = '\t'), file = outfile, append = TRUE)
 
+=======
+                              dQuote(line$Gene_ID), dQuote(line$NMDer_ID), dQuote(line$Gene_Name))
+      stop = data.frame(chrom = line$Chrom, source = 'NMDer', type = 'stop_codon', start = stopcodonstart, end = stopcodonend,
+                         score = 1000, strand = line$Strand, frame = as.character(stopframe), meta = stopmetainfo)
+      tempdf = rbind(tempdf, stop)
+      
+      # prepare CDS cooords information
+>>>>>>> parent of 1a41f22... Improved performance of GTF output function
       for (k in 1:nrow(cds_coords)) {
         cdsmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s;', 
-                             dQuote(all_geneID[i]), dQuote(all_NMDerID[i]), dQuote(all_GeneName[i]))
-        cds = list(chrom = as.character(all_chrom[i]), source = 'NMDer', type = 'CDS', start = as.integer(cds_coords[k,1]), end = as.integer(cds_coords[k,2]),
-                        score = 1000, strand = as.character(all_strands[i]), frame = as.character(frames[k]), meta = cdsmetainfo)
-        write(paste(cds, collapse = '\t'), file = outfile, append = TRUE)
+                             dQuote(line$Gene_ID), dQuote(line$NMDer_ID), dQuote(line$Gene_Name))
+        cds = data.frame(chrom = line$Chrom, source = 'NMDer', type = 'CDS', start = as.integer(cds_coords[k,1]), end = as.integer(cds_coords[k,2]),
+                        score = 1000, strand = line$Strand, frame = as.character(frames[k]), meta = cdsmetainfo)
+        tempdf = rbind(tempdf, cds)
       }
     }
-    gc()
+   
+    # sort table. this is not necessary because the order of the gtf is not important. the transcript_ID is.
+    if (line$Strand == '-') {
+      tempdf = dplyr::arrange(tempdf, desc(end), type)
+    } else {
+      tempdf = dplyr::arrange(tempdf, start, type)
+    }
+    gtfoutput = rbind(gtfoutput, tempdf)
   }
-
+  
+  #write table
+  write.table(gtfoutput, file = sprintf("%s/NMDer.gtf", output_dir), 
+              sep = "\t", col.names = FALSE, row.names = FALSE, 
+              qmethod = "double", quote = FALSE)
 }
+
+
+
+
+
 
 
 ## Below are functions to write and possibly print the warnings and information
