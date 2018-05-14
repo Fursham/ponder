@@ -527,19 +527,11 @@ filterdata <- function(df) {
   
   # simplify dataframe by taking NMDer_ID, Transcript_ID and coverages values and each transcript by decreasing coverage
   newdf = dplyr::select(df, NMDer_ID, Transcript_ID, Shared_coverage) %>% as.data.frame() %>%
-    dplyr::arrange(Transcript_ID, desc(Shared_coverage))
-  
-  # get a list of unique Transcript IDs
-  txdf = dplyr::select(df, Transcript_ID) %>% as.data.frame() %>%
-    dplyr::distinct()
-  
-  # update txdf with NMDer_IDs with the highest coverage for each transcript
-  txdf$NMDer_ID = sapply(txdf[[1]], function(y) {
-    newdf[newdf[2] == y][1]
-  })
+    dplyr::arrange(Transcript_ID, desc(Shared_coverage)) %>%
+    dplyr::distinct(Transcript_ID, .keep_all = TRUE)
   
   # filter df
-  outputdf = dplyr::filter(df, NMDer_ID%in%txdf$NMDer_ID == TRUE)
+  outputdf = dplyr::filter(df, NMDer_ID%in%newdf$NMDer_ID == TRUE)
   return(outputdf)
 }
 
@@ -617,7 +609,6 @@ generateGTF <- function(df, output_dir) {
     
 
     # get line info and extract exon coords
-    line = df[i,]
     exon_coords = unlist(strsplit(all_txcoords[i], ';')) %>% as.data.frame() %>% 
       tidyr::separate('.', into = c('start', 'end'), sep = '-')
     
