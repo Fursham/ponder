@@ -586,97 +586,115 @@ summSplicing <- function(df) {
 }
 
 
+#' Title
+#'
+#' @param df 
+#' @param output_dir 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 generateGTF <- function(df, output_dir) {
   
   infoLog('Writing GTF file...', logf, quiet)
 
   outfile = sprintf("%s/NMDer.gtf", output_dir)
   write ('#', file = outfile)
-  
-  # preload data
-  all_txcoords = df$Tx_coordinates
-  all_cdscoords = df$ORF_considered
-  all_chrom = df$Chrom
-  all_strands = df$Strand
-  all_geneID = df$Gene_ID
-  all_NMDerID = df$NMDer_ID
-  all_GeneName = df$Gene_Name
-  all_isNMD = df$is_NMD
-  
-  
-  # for loop to go through every NMDer analysis
-  for (i in 1:nrow(df)) {
-    
+  gtfdf = rbind(c('#chrom', 'source', 'type', 'start', 'end', 'score', 'strand', 'frame', 'comments'))
 
+  gtfdf = apply(df, 1, function(y) {
+    
+    tempdf = c()
+    
     # get line info and extract exon coords
-    exon_coords = unlist(strsplit(all_txcoords[i], ';')) %>% as.data.frame() %>% 
-      tidyr::separate('.', into = c('start', 'end'), sep = '-')
+    exon_coords = unlist(strsplit(as.character(y[['Tx_coordinates']]), ';')) %>% as.data.frame() %>% 
+      tidyr::separate('.', into = c('start', 'end'), sep = '-') %>%
+      dplyr::mutate(exon_num = row_number())
     
     # prepare transcript info and add to tempdf
-    txstart = ifelse(all_strands[i] == '-', exon_coords[nrow(exon_coords),1], exon_coords[1,1])
-    txstop = ifelse(all_strands[i] == '-',exon_coords[1,2], exon_coords[nrow(exon_coords),2])
-
-
+    txstart = ifelse(y[['Strand']]== '-', exon_coords[nrow(exon_coords),1], exon_coords[1,1])
+    txstop = ifelse(y[['Strand']]== '-',exon_coords[1,2], exon_coords[nrow(exon_coords),2])
+    
+    
     txmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s; is_nmd %s;', 
-                         dQuote(all_geneID[i]), dQuote(all_NMDerID[i]), dQuote(all_GeneName[i]), all_isNMD[i])
-    tx = list(chrom = as.character(all_chrom[i]), source = 'NMDer', type = 'transcript', start = as.integer(txstart), end = as.integer(txstop),
-              score = 1000, strand = as.character(all_strands[i]), frame = '.', meta = txmetainfo)
-    write(paste(tx, collapse = '\t'), file = outfile, append = TRUE)
+                         dQuote(y[['Gene_ID']]), dQuote(y[['NMDer_ID']]), dQuote(y[['Gene_Name']]), y[['is_NMD']])
+    tx = list(chrom = as.character(y[['Chrom']]), source = 'NMDer', type = 'transcript', start = as.integer(txstart), end = as.integer(txstop),
+              score = 1000, strand = as.character(y[['Strand']]), frame = '.', meta = txmetainfo)
+    tempdf= rbind(tempdf, tx)
+
+    
+
     
     
     # prepare exon info and add to tempdf
-
-    for (j in 1:nrow(exon_coords)) {
+    
+    out = apply(exon_coords, 1, function(x) {
       exmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s; exon_number %s;', 
-                           dQuote(all_geneID[i]), dQuote(all_NMDerID[i]), dQuote(all_GeneName[i]), j)
-      ex = list(chrom = as.character(all_chrom[i]), source = 'NMDer', type = 'exon', start = as.integer(exon_coords[j,1]), end = as.integer(exon_coords[j,2]),
-                score = 1000, strand = as.character(all_strands[i]), frame = '.', meta = exmetainfo)
-      write(paste(ex, collapse = '\t'), file = outfile, append = TRUE)
-    }
+                           dQuote(y[['Gene_ID']]), dQuote(y[['NMDer_ID']]), dQuote(y[['Gene_Name']]), x[['exon_num']])
+      ex = list(chrom = as.character(y[['Chrom']]), source = 'NMDer', type = 'exon', start = as.integer(x[['start']]), end = as.integer(x[['end']]),
+                score = 1000, strand = as.character(y[['Strand']]), frame = '.', meta = exmetainfo)
+      tempdf= rbind(tempdf, ex)
+      
+      #write(paste(ex, collapse = '\t'), file = outfile, append = TRUE)
+    })
+    
     
     # return cds info if transcript has one
-    if (!is.na(all_cdscoords[i])) {
-      cds_coords = unlist(strsplit(all_cdscoords[i], ';')) %>% as.data.frame() %>% 
-        tidyr::separate('.', into = c('start', 'end'), sep = '-')
+    if (!is.na(y[['ORF_considered']])) {
+      cds_coords = unlist(strsplit(as.character(y[['ORF_considered']]), ';')) %>% as.data.frame() %>% 
+        tidyr::separate('.', into = c('start', 'end'), sep = '-') %>%
+        dplyr::mutate(exon_num = row_number())
       
       # extract information about frames of the CDS
       cdsIRanges = IRanges(start = as.integer(cds_coords[,1]), end = as.integer(cds_coords[,2]))
       frames = c(0, head(cumsum(width(cdsIRanges)%%3)%%3, -1))
+      cds_coords$frame = frames
       
       # prepare and add start_codon information
-      startcodonstart = ifelse(all_strands[i] == '-', as.integer(cds_coords[1,2]) - 2, cds_coords[1,1])
-      startcodonend = ifelse(all_strands[i] == '-', cds_coords[1,2], as.integer(cds_coords[1,1])+2)
+      startcodonstart = ifelse(y[['Strand']]== '-', as.integer(cds_coords[1,2]) - 2, cds_coords[1,1])
+      startcodonend = ifelse(y[['Strand']]== '-', cds_coords[1,2], as.integer(cds_coords[1,1])+2)
       startmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s;', 
-                              dQuote(all_geneID[i]), dQuote(all_NMDerID[i]), dQuote(all_GeneName[i]))
-      start = list(chrom = as.character(all_chrom[i]), source = 'NMDer', type = 'start_codon', start = startcodonstart, end = startcodonend,
-                   score = 1000, strand = as.character(all_strands[i]), frame = as.character(0), meta = startmetainfo)
-      write(paste(start, collapse = '\t'), file = outfile, append = TRUE)
+                              dQuote(y[['Gene_ID']]), dQuote(y[['NMDer_ID']]), dQuote(y[['Gene_Name']]))
+      start = list(chrom = as.character(y[['Chrom']]), source = 'NMDer', type = 'start_codon', start = startcodonstart, end = startcodonend,
+                   score = 1000, strand = as.character(y[['Strand']]), frame = as.character(0), meta = startmetainfo)
+      tempdf= rbind(tempdf, start)
       
-                            
+      #write(paste(start, collapse = '\t'), file = outfile, append = TRUE)
+      
+      
       
       # prepare and add stop_codon information
-      stopcodonstart = ifelse(all_strands[i] == '-', cds_coords[nrow(cds_coords),1], as.integer(cds_coords[nrow(cds_coords),2]) - 2)
-      stopcodonend = ifelse(all_strands[i] == '-', as.integer(cds_coords[nrow(cds_coords),1])+2, cds_coords[nrow(cds_coords),2])
+      stopcodonstart = ifelse(y[['Strand']]== '-', cds_coords[nrow(cds_coords),1], as.integer(cds_coords[nrow(cds_coords),2]) - 2)
+      stopcodonend = ifelse(y[['Strand']]== '-', as.integer(cds_coords[nrow(cds_coords),1])+2, cds_coords[nrow(cds_coords),2])
       
       stopframe = frames[length(frames)]
       stopmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s;',
-                             dQuote(all_geneID[i]), dQuote(all_NMDerID[i]), dQuote(all_GeneName[i]))
-      stop = list(chrom = as.character(all_chrom[i]), source = 'NMDer', type = 'stop_codon', start = stopcodonstart, end = stopcodonend,
-                  score = 1000, strand = as.character(all_strands[i]), frame = as.character(stopframe), meta = stopmetainfo)
-      write(paste(stop, collapse = '\t'), file = outfile, append = TRUE)
+                             dQuote(y[['Gene_ID']]), dQuote(y[['NMDer_ID']]), dQuote(y[['Gene_Name']]))
+      stop = list(chrom = as.character(y[['Chrom']]), source = 'NMDer', type = 'stop_codon', start = stopcodonstart, end = stopcodonend,
+                  score = 1000, strand = as.character(y[['Strand']]), frame = as.character(stopframe), meta = stopmetainfo)
+      tempdf= rbind(tempdf, stop)
+      #write(paste(stop, collapse = '\t'), file = outfile, append = TRUE)
       
       
       # prepare CDS cooords information
-      for (k in 1:nrow(cds_coords)) {
+      out = apply(cds_coords, 1, function(x) {
         cdsmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s;', 
-                              dQuote(all_geneID[i]), dQuote(all_NMDerID[i]), dQuote(all_GeneName[i]))
-        cds = list(chrom = as.character(all_chrom[i]), source = 'NMDer', type = 'CDS', start = as.integer(cds_coords[k,1]), end = as.integer(cds_coords[k,2]),
-                   score = 1000, strand = as.character(all_strands[i]), frame = as.character(frames[k]), meta = cdsmetainfo)
-        write(paste(cds, collapse = '\t'), file = outfile, append = TRUE)
-                              
-      }
+                              dQuote(y[['Gene_ID']]), dQuote(y[['NMDer_ID']]), dQuote(y[['Gene_Name']]))
+        cds = list(chrom = as.character(y[['Chrom']]), source = 'NMDer', type = 'CDS', start = as.integer(x[['start']]), end = as.integer(x[['end']]),
+                   score = 1000, strand = as.character(y[['Strand']]), frame = as.character(x[['frame']]), meta = cdsmetainfo)
+        tempdf= rbind(tempdf, cds)
+
+        #write(paste(cds, collapse = '\t'), file = outfile, append = TRUE)
+      })
+      
+      
     }
-  }
+    
+    return(tempdf)
+  })
+  gtfdf = do.call(rbind, gtfdf)
+  write.table(gtfdf, file = outfile, row.names = FALSE, col.names = FALSE, sep = '\t', quote = FALSE)
 }
 
 
