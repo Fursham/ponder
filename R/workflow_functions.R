@@ -270,7 +270,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
                   CE = NA, MX = NA, A5 = NA, A3 = NA, AF = NA, 
                   ATS = NA, AL = NA, APA = NA, IR = NA,
                   ce = NA, mx = NA, a5 = NA, a3 = NA, af = NA, 
-                  ats = NA, al = NA, apa = NA, ir = NA)
+                  ats = NA, al = NA, apa = NA, ir = NA, NMDcausing = NA)
   
   # prepare df of gencode_basic transcripts
   basicTX_df = elementMetadata(basicGRanges) %>% as.data.frame() %>%
@@ -285,7 +285,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
                   Tx_coordinates, annotatedStart, predictedStart, Alt_tx,
                   ORF_considered, is_NMD, dist_to_lastEJ, uORF, threeUTR, uATG, 
                   uATG_frame, Shared_coverage, CE, MX, A5, A3, AF, AL, ATS, APA, IR, 
-                  ce, mx, a5, a3, af, al, ats, apa, ir) %>% 
+                  ce, mx, a5, a3, af, al, ats, apa, ir, NMDcausing) %>% 
     as.data.frame()
   
   
@@ -346,12 +346,19 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
   
   # set a progress bar for analysis
   #progressbar = invisible(txtProgressBar(min = 0, max = nrow(report_df), width = 40, style = 3))
-
+ 
+  
+  ######
   # update transcript coordinates into report_df as a string of coordinates
   tempdf = report_df  %>% dplyr::select(Transcript_ID) %>% unique()
   tempdf$Tx_coordinates2 = sapply(tempdf$Transcript_ID, function(x) {
-    paste(ranges(inputExonsbyTx[[x]]),
-          collapse = ';')
+    string = paste(ranges(inputExonsbyTx[[x]]))
+    string = sapply(string, function(y) {
+      newsstring = ifelse(!grepl('-', y), paste(c(y, '-', y), collapse = ''), y)
+      return(newsstring)
+    })
+    string = paste(string, collapse = ';')
+    return(string)
   })
   report_df <- report_df %>% dplyr::left_join(tempdf,report_df, by = 'Transcript_ID') %>%
     dplyr::mutate_at(vars(Tx_coordinates), funs(paste(Tx_coordinates2))) %>%
@@ -360,59 +367,62 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
   
   # generate a vector containing TRUE/FALSE boolean on whether or not the transcript should be analyzed
   #   this speeds up the code by immediately skipping transcripts
-  totest = sapply(report_df$Match_level, function(x) {
-    ifelse(x < 5, TRUE, FALSE)
-  })
+  #totest = sapply(report_df$Match_level, function(x) {
+  #  ifelse(x < 5, TRUE, FALSE)
+  #})
   
-  # test for NMD features for each assembled transcript
-  for (i in (1:nrow(report_df))[totest]) {
-    
-    # update progressbar
-    #if (quiet == FALSE) {
-    #  setTxtProgressBar(progressbar, i); Sys.sleep(0.1); #cat(sprintf('\r\tTranscripts processed: %s', i))
-    #}
-    
-    # parse row information into a list
-    thisline = report_df[i,] %>% as.list()
-    
-    # check whether the ref transcript is a CDS, and skip if it is not
-    thisbasicCDS = basicExonsbyCDS[[thisline$Ref_TX_ID]]
-    if (is.null(thisbasicCDS[1])) {
-      next
+  report_df = apply(report_df, 1, function(x) {
+    if (x[['Match_level']] == 5) {
+      return(x)
     } else {
-    
-      #infoLog(sprintf('Query : %s  Ref : %s', thisline$Transcript_ID, thisline$Ref_TX_ID), logf, quiet = TRUE)
+      thisline = x %>% as.list()
       
-      # run test and update output list
-      NMDreport = testNMDvsThisCDS(thisbasicCDS, 
-                                   inputExonsbyTx[[thisline$Transcript_ID]], 
-                                   genome, 
-                                   PTC_dist, 
-                                   testNonClassicalNMD)
-      thisline = modifyList(thisline, NMDreport)
-      
-      # update analyzed ORF coordinates into output
-      #  this part have to be done this way because some terminal exons have length of 1
-      #  and doing the conventional way will output 'xxx' rather than 'xxx-xxx'
-      if (!is.na(thisline$ORF_considered[1])) {
-        ORFstringlist = sapply(thisline$ORF_considered, function(x) {
-          string = paste(ranges(x))
-          ifelse(!grepl('-', string), paste(c(string, '-', string), collapse = ''), string)
-        })
-        thisline$ORF_considered = paste(ORFstringlist, collapse = ';')
+      # check whether the ref transcript is a CDS, and skip if it is not
+      thisbasicCDS = basicExonsbyCDS[[thisline$Ref_TX_ID]]
+      if (is.null(thisbasicCDS[1])) {
+        next
+      } else {
+        
+        #infoLog(sprintf('Query : %s  Ref : %s', thisline$Transcript_ID, thisline$Ref_TX_ID), logf, quiet = TRUE)
+        
+        # run test and update output list
+        NMDreport = testNMDvsThisCDS(thisbasicCDS, 
+                                     inputExonsbyTx[[thisline$Transcript_ID]], 
+                                     genome, 
+                                     PTC_dist, 
+                                     testNonClassicalNMD)
+        thisline = modifyList(thisline, NMDreport)
+        
+        # classify alternative splicing events
+        altevents = getASevents(basicExonsbyTx[[thisline$Ref_TX_ID]], 
+                                inputExonsbyTx[[thisline$Transcript_ID]], 
+                                thisline$ORF_considered,
+                                thisline$is_NMD)
+        if (!is.null(altevents)) {
+          thisline = modifyList(thisline, altevents)
+        }
+        
+        # update analyzed ORF coordinates into output
+        #  this part have to be done this way because some terminal exons have length of 1
+        #  and doing the conventional way will output 'xxx' rather than 'xxx-xxx'
+        if (!is.na(thisline$ORF_considered[1])) {
+          ORFstringlist = sapply(thisline$ORF_considered, function(x) {
+            string = paste(ranges(x))
+            ifelse(!grepl('-', string), paste(c(string, '-', string), collapse = ''), string)
+          })
+          thisline$ORF_considered = paste(ORFstringlist, collapse = ';')
+        }
+        
+
+        
+        # update transcript information with NMD data
+        return(thisline)
+        #report_df[i,] = modifyList(report_df[i,], thisline)
       }
-      
-      # classify alternative splicing events
-      altevents = getASevents(basicExonsbyTx[[thisline$Ref_TX_ID]], inputExonsbyTx[[thisline$Transcript_ID]])
-      if (!is.null(altevents)) {
-        thisline = modifyList(thisline, altevents)
-      }
-      
-      # update transcript information with NMD data
-      report_df[i,] = modifyList(report_df[i,], thisline)
     }
-  gc()
-  }
+  })
+  report_df = do.call(rbind, report_df) %>% as.data.frame()
+  
   #cat('\n')
   return(report_df)
 }
@@ -492,11 +502,12 @@ testNMDvsThisCDS <- function(knownCDS, queryTx, refsequence, PTC_dist = 50, nonC
 
 
 
-getASevents <- function(transcript1, transcript2) {
+getASevents <- function(transcript1, transcript2, orf, is_NMD) {
   
   # prepare list to be returned
-  ASlist = list(CE = NA, MX = NA, A5 = NA, A3 = NA, AF = NA, ATS = NA, AL = NA, APA = NA, IR = NA,
-                ce = NA, mx = NA, a5 = NA, a3 = NA, af = NA, ats = NA, al = NA, apa = NA, ir = NA)
+  #ASlist = data.frame(CE = NA, MX = NA, A5 = NA, A3 = NA, AF = NA, ATS = NA, AL = NA, APA = NA, IR = NA,
+  #             ce = NA, mx = NA, a5 = NA, a3 = NA, af = NA, ats = NA, al = NA, apa = NA, ir = NA,
+  #              NMDcausing = NA)
   
   # get AS classifications. transcript 1 is reference and transcript 2 is query in this case
   ASoutput = classifyAltSegments(transcript1, transcript2)
@@ -510,15 +521,51 @@ getASevents <- function(transcript1, transcript2) {
   
   # combine alternative segments and update ASlist with segment coordinates by matching class annotations with the named ASlist
   combinedASoutput = unlist(append(ASoutput[[1]], ASoutput[[2]]))
-  for (i in 1:length(combinedASoutput)) {
-    eventindex = match(elementMetadata(combinedASoutput[i])$AS_class, names(ASlist))
-    if (is.na(ASlist[[eventindex]])) {
-      ASlist[[eventindex]] = paste(ranges(combinedASoutput[i]))
-    } else {
-      ASlist[[eventindex]] = paste(c(ASlist[[eventindex]], paste(ranges(combinedASoutput[i]))), collapse = ';')
+  combinedASoutput$AS_class = as.character(combinedASoutput$AS_class)
+  
+  NMDexon = NA
+  if (!is.na(is_NMD)) {
+    if (is_NMD == TRUE) {
+      
+      # check if any of the alt segment overlaps with the last coding exon
+      altseg_NMD = combinedASoutput[overlapsAny(combinedASoutput, orf[length(orf)])]
+      if (length(altseg_NMD) == 1) {
+        
+        NMDexon = elementMetadata(altseg_NMD)$AS_class[1]
+      } 
+      # else, check if any of the alt segment overlaps with orf
+      else {
+        altseg_NMD = combinedASoutput[overlapsAny(combinedASoutput, range(orf))]
+        
+        # if only 1 segment overlaps, that should be the NMD-causing exon
+        if (length(altseg_NMD) == 1) {
+          NMDexon = elementMetadata(altseg_NMD)$AS_class[1]
+        } 
+        # else, we need to test if each segment is in frame with orf
+        else if (altseg_NMD > 1) {
+          elementMetadata(altseg_NMD)$size = as.data.frame(width(altseg_NMD))
+          
+          # filter for in-frame segments
+          altseg_NMD[elementMetadata(altseg_NMD)$size %% 3 == 0]
+          
+          # take the upstream most segment as the NMD-causing segment
+          if (length(altseg_NMD) > 0) {
+            NMDexon = elementMetadata(altseg_NMD)$AS_class[1]
+          } 
+        }
+      }
     }
-  }
-  out = c(ASlist, Shared_coverage = ASoutput$Shared_coverage)
+    
+  } 
+  
+  #########todo
+  elementMetadata(combinedASoutput)$val = as.character(paste(ranges(combinedASoutput)))
+
+  prepout = elementMetadata(combinedASoutput) %>% as.data.frame() %>%
+    group_by(AS_class) %>% summarise(vals = paste(val, collapse=";")) %>% as.data.frame()
+  ASlist = dplyr::select(prepout, vals) %>% unlist() %>% setNames(prepout[,1]) %>% as.list()
+
+  out = c(ASlist, NMDcausing = NMDexon, Shared_coverage = ASoutput$Shared_coverage)
   return(out)
 }
 
@@ -572,16 +619,11 @@ outputAnalysis <- function(report_df, filterbycoverage, other_features, make_gtf
 summSplicing <- function(df) {
   
   # extract columns from dataframe corresponding to splicing classes
-  splicing_df = dplyr::select(df, NMDer_ID, Gene_ID, Gene_Name, Transcript_ID, Ref_TX_ID,
-                              Chrom, Strand, is_NMD, CE:ir) %>% as.data.frame()
-  
-  # count number of segments in each classifications
-  for (i in 9:length(splicing_df)) {
-    splicing_df[i] = lapply(splicing_df[i], function(x) {
-      ifelse(is.na(x), 0, lengths((strsplit(x, ';'))))
-    })
-  }
-  
+  splicing_df = df %>% as.data.frame() %>% 
+    dplyr::select(NMDer_ID, Gene_ID, Gene_Name, Transcript_ID, Ref_TX_ID,
+                  Chrom, Strand, is_NMD, CE:NMDcausing) %>% 
+    dplyr::mutate_at(vars(CE:ir), funs(ifelse(is.na(.), 0, lengths((strsplit(as.character(.), ';'))))))
+
   return(splicing_df)
 }
 
@@ -634,10 +676,12 @@ generateGTF <- function(df, output_dir) {
                            dQuote(y[['Gene_ID']]), dQuote(y[['NMDer_ID']]), dQuote(y[['Gene_Name']]), x[['exon_num']])
       ex = list(chrom = as.character(y[['Chrom']]), source = 'NMDer', type = 'exon', start = as.integer(x[['start']]), end = as.integer(x[['end']]),
                 score = 1000, strand = as.character(y[['Strand']]), frame = '.', meta = exmetainfo)
-      tempdf= rbind(tempdf, ex)
+      return(ex)
       
       #write(paste(ex, collapse = '\t'), file = outfile, append = TRUE)
     })
+    out = do.call(rbind, out)
+    tempdf = rbind(tempdf, out)
     
     
     # return cds info if transcript has one
@@ -683,10 +727,12 @@ generateGTF <- function(df, output_dir) {
                               dQuote(y[['Gene_ID']]), dQuote(y[['NMDer_ID']]), dQuote(y[['Gene_Name']]))
         cds = list(chrom = as.character(y[['Chrom']]), source = 'NMDer', type = 'CDS', start = as.integer(x[['start']]), end = as.integer(x[['end']]),
                    score = 1000, strand = as.character(y[['Strand']]), frame = as.character(x[['frame']]), meta = cdsmetainfo)
-        tempdf= rbind(tempdf, cds)
+        return(cds)
 
         #write(paste(cds, collapse = '\t'), file = outfile, append = TRUE)
       })
+      out = do.call(rbind, out)
+      tempdf = rbind(tempdf, out)
       
       
     }

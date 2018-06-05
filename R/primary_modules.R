@@ -305,65 +305,48 @@ classifyAltSegments <- function(transcript1, transcript2, txrevise_out = NULL) {
   for (i in (1:2)[totest]) {
     
     # set a vector to store alternative splicing classes
-    AS_class = c()
-    
-    for (j in 1:length(diffSegments[[i]])) {
-      thisexon = diffSegments[[i]][j]
+    AS_class = apply(as.data.frame(diffSegments[[i]]), 1, function(x) {
+      
+      # convert row to list for easy referencing
+      thisexon = x %>% as.list()
+      thisGRanges = GRanges(seqnames = thisexon$seqnames, 
+                            ranges = IRanges(as.numeric(thisexon$start), as.numeric(thisexon$end)),
+                            strand = thisexon$strand)
       
       # test for alternative first and last exons first, then internal exons
-      if (elementMetadata(thisexon)$upstream == TRUE) {
+      if (as.numeric(thisexon$upstream) == 1) {
         
         # alternative segment could be an alternate transcription start or alternate first exon
         #   to distinguish this, we merge the exon with the shared exon and determine number of exons combined
-        mergedsegment = reduce(append(ranges(thisexon), ranges(diffSegments[[3]])))
+        mergedsegment = reduce(append(ranges(thisGRanges), ranges(diffSegments[[3]])))
         if (length(mergedsegment) == length(diffSegments[[3]])) {
-          exonindex = which(countOverlaps(combinedList[[i]], thisexon) == 1)
+          exonindex = which(countOverlaps(combinedList[[i]], thisGRanges) == 1)
           if (exonindex == 1) {
-            exonindex = which(countOverlaps(combinedList[[i]], thisexon) == 1)
-            if (exonindex == 1) {
-              AS_class = c(AS_class, 'ATS')
-              next
+              return('ATS')
             } else {
-              AS_class = c(AS_class, 'AF')
-              next
+              return('AF')
             }
-          } else {
-            AS_class = c(AS_class, 'AF')
-            next
-          }
         } else {
-          AS_class = c(AS_class, 'AF')
-          next
+          return('AF')
         }
-      } else if (elementMetadata(thisexon)$downstream == TRUE) {
-        mergedsegment = reduce(append(ranges(thisexon), ranges(diffSegments[[3]])))
+      } else if (as.numeric(thisexon$downstream) == 1) {
+        mergedsegment = reduce(append(ranges(thisGRanges), ranges(diffSegments[[3]])))
         if (length(mergedsegment) == length(diffSegments[[3]])) {
-          exonindex = which(countOverlaps(combinedList[[i]], thisexon) == 1)
+          exonindex = which(countOverlaps(combinedList[[i]], thisGRanges) == 1)
           totalexonnum = length(combinedList[[i]])
           
           if (exonindex == totalexonnum) {
-            exonindex = which(countOverlaps(combinedList[[i]], thisexon) == 1)
-            totalexonnum = length(combinedList[[i]])
-            
-            if (exonindex == totalexonnum) {
-              AS_class = c(AS_class, 'APA')
-              next
+              return('APA')
             } else {
-              AS_class = c(AS_class, 'AL')
-              next
+              return('AL')
             }
-          } else {
-            AS_class = c(AS_class, 'AL')
-            next
-          }
         } else {
-          AS_class = c(AS_class, 'AL')
-          next
+          return('AL')
         }
       } else {
         
         # classify alternative internal segments
-        mergedsegment = reduce(append(ranges(thisexon), ranges(diffSegments[[3]])))
+        mergedsegment = reduce(append(ranges(thisGRanges), ranges(diffSegments[[3]])))
         
         # idea here is that after merging the alternate segment with shared exons,
         #   if the number of exons remain the same, alternate segment is an alternative splice sites
@@ -378,27 +361,25 @@ classifyAltSegments <- function(transcript1, transcript2, txrevise_out = NULL) {
           
           if (any(!countOverlaps(mergedsegment, ranges(diffSegments[[3]]), type = 'start'))) {
             if (strand == '-') {
-              AS_class = c(AS_class, 'A5')
+              return('A5')
             } else {
-              AS_class = c(AS_class, 'A3')
+              return('A3')
             }
-            next
           } 
           else if (any(!countOverlaps(mergedsegment, ranges(diffSegments[[3]]), type = 'end'))) {
             if (strand == '-') {
-              AS_class = c(AS_class, 'A3')
+              return('A3')
             } else {
-              AS_class = c(AS_class, 'A5')
+              return('A5')
             }
-            next
           }
           
           # casette or mutually exclusive events 
         } else if (length(mergedsegment) > length(diffSegments[[3]])){
           
           # get indexes and coordinates of flanking exons
-          sortedmergedsegment = sort(mergedsegment, decreasing = as.character(strand(thisexon)) == '-')
-          exonindex = match(ranges(thisexon), sortedmergedsegment)
+          sortedmergedsegment = sort(mergedsegment, decreasing = as.character(strand(thisGRanges)) == '-')
+          exonindex = match(ranges(thisGRanges), sortedmergedsegment)
           flankexonsindex = c(exonindex-1, exonindex+1)
           flankcoords = c(sortedmergedsegment[flankexonsindex[1]], sortedmergedsegment[flankexonsindex[2]])
           mergedflanks = range(flankcoords)
@@ -412,8 +393,7 @@ classifyAltSegments <- function(transcript1, transcript2, txrevise_out = NULL) {
           
           # if there no other unique segments, return as casette exon
           if (length(othertx) == 0) {
-            AS_class = c(AS_class, 'CE')
-            next
+            return('CE')
           }
           
           # find all the unique segments that fall within the flanking exons
@@ -422,40 +402,37 @@ classifyAltSegments <- function(transcript1, transcript2, txrevise_out = NULL) {
           
           # if there are other segments in the other transcript, this could be an MX
           if (length(matchedsegments) > 0) {
-            tag = FALSE
-            for (k in 1:length(matchedsegments)) {
+
+            testMX = apply(as.data.frame(matchedsegments), 1, function(y) {
               # test for possibility of the other segment to be a5' or a3'
-              newmergedsegment = reduce(append(ranges(matchedsegments[k]), flankcoords))
+              y = as.list(y)
+              newmergedsegment = reduce(append(IRanges(as.numeric(y$start), as.numeric(y$end)), flankcoords))
               
               # if newmergedsegment > 2, it means that the segment is not a5' or a3'
               if (length(newmergedsegment) > 2) {
-                AS_class = c(AS_class, 'MX')
-                tag = TRUE
-                break
+                return('MX')
+              } else {
+                return(NA)
               }
-            }
-            # if none of the matchedsegments are MX, tag exon as 'CE'
-            if (tag == FALSE) {
-              AS_class = c(AS_class, 'CE')
-              next
+            })
+            if ('MX'%in%testMX) {
+              return('MX')
+            } else {
+              return('CE')
             }
           }
           # if there are no other segments in the flanking exons in other transcript, it's most prob a casette exon
           else {
-            AS_class = c(AS_class, 'CE')
-            next
+            return('CE')
           }
         }
         # if length of mergedsegment is smaller, it's most likley and intron retention
         else if (length(mergedsegment) < length(diffSegments[[3]])){
-          AS_class = c(AS_class, 'IR')
-          next
+          return('IR')
         }
       }
-    }
-    
+    })
 
-    
     # Set classes in transcript 1 as lower case and transcript 2 as upprecase
     if (i == 1) {
       AS_class = tolower(AS_class)
