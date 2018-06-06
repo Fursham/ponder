@@ -279,6 +279,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
     dplyr::distinct() %>% as.data.frame()
   
   # join report_df and basicTX_df and generate a full list of query transcripts to be compared with every reference transcript
+  # and add in NMDerIDs
   combined_report_df = dplyr::right_join(basicTX_df, report_df, by = 'Gene_ID') %>%
     dplyr::select(NMDer_ID, Gene_ID, Original_Gene_ID, Match_level, 
                   Gene_Name, Transcript_ID, Ref_TX_ID, Chrom, Strand, 
@@ -286,11 +287,11 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
                   ORF_considered, is_NMD, dist_to_lastEJ, uORF, threeUTR, uATG, 
                   uATG_frame, Shared_coverage, CE, MX, A5, A3, AF, AL, ATS, APA, IR, 
                   ce, mx, a5, a3, af, al, ats, apa, ir, NMDcausing) %>% 
-    as.data.frame()
+    dplyr::mutate(rownum = rownames(combined_report_df)) %>%
+    rowwise() %>% dplyr::mutate_at(vars(NMDer_ID), 
+                                   funs(paste("NMDer", formatC(as.integer(rownum), width=7, flag="0"), sep=""))) %>%
+    dplyr::select(-rownum)
   
-  
-  combined_report_df$NMDer_ID = sapply(1:nrow(combined_report_df), function(x) {paste("NMDer", formatC(as.integer(x), width=7, flag="0"), sep="")})
-
   # prepare databases
   inputDB = makeTxDbFromGRanges(inputGRanges)
   basicDB = makeTxDbFromGRanges(basicGRanges)
@@ -300,7 +301,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
   basicExonsbyCDS = cdsBy(basicDB, by="tx", use.names=TRUE)
   basicExonsbyTx = exonsBy(basicDB, by="tx", use.names=TRUE)
   
-  
+  # cleanup unused variables
   rm(list = c('inputDB','basicDB'))
   return(list(combined_report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx))
 }
@@ -342,39 +343,20 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
 #' @import GenomicRanges
 #'
 #' @examples
-testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx, genome, PTC_dist = 50, testNonClassicalNMD = FALSE) {
+testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, 
+                            basicExonsbyTx, genome, PTC_dist = 50, 
+                            testNonClassicalNMD = FALSE) {
   
-  # set a progress bar for analysis
-  #progressbar = invisible(txtProgressBar(min = 0, max = nrow(report_df), width = 40, style = 3))
- 
-  
-  ######
-  # update transcript coordinates into report_df as a string of coordinates
-  #tempdf = report_df  %>% dplyr::select(Transcript_ID) %>% unique()
-  #tempdf$Tx_coordinates2 = sapply(tempdf$Transcript_ID, function(x) {
-  #  string = paste(ranges(inputExonsbyTx[[x]]))
-  #  string = sapply(string, function(y) {
-  #    newsstring = ifelse(!grepl('-', y), paste(c(y, '-', y), collapse = ''), y)
-  #    return(newsstring)
-  #  })
-  #  string = paste(string, collapse = ';')
-  #  return(string)
-  #})
-  #report_df <- report_df %>% dplyr::left_join(tempdf,report_df, by = 'Transcript_ID') %>%
-  #  dplyr::mutate_at(vars(Tx_coordinates), funs(paste(Tx_coordinates2))) %>%
-  #  dplyr::select(-Tx_coordinates2)
-  #tempdf = tempdf[0,]
-  
-  # generate a vector containing TRUE/FALSE boolean on whether or not the transcript should be analyzed
-  #   this speeds up the code by immediately skipping transcripts
-  #totest = sapply(report_df$Match_level, function(x) {
-  #  ifelse(x < 5, TRUE, FALSE)
-  #})
-  
-  superf = function(x) {
+  # this is an internal function for testing NMD features on report_df rowwise
+  internalfunc = function(x) {
     
+    # convert each line into a list so that elements 
+    # can be referenced as thisline$_
     thisline = as.list(x)
     
+    # Add in coordinates of query transcripts
+    #  this part have to be done this way because some exons are 1 nt in length
+    #  and doing the conventional way will output 'xxx' rather than 'xxx-xxx'
     string = paste(ranges(inputExonsbyTx[[thisline$Transcript_ID]]))
     string = sapply(string, function(y) {
       newsstring = ifelse(!grepl('-', y), paste(c(y, '-', y), collapse = ''), y)
@@ -382,17 +364,16 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
     })
     thisline$Tx_coordinates = paste(string, collapse = ';')
     
+    # return if query do not correspond to an annotated gene
     if (thisline$Match_level == 5) {
       return(thisline)
     } else {
     
-      # check whether the ref transcript is a CDS, and skip if it is not
+      # return if reference transcript is not a CDS
       thisbasicCDS = basicExonsbyCDS[[thisline$Ref_TX_ID]]
       if (is.null(thisbasicCDS[1])) {
         return(thisline)
       } else {
-        
-        #infoLog(sprintf('Query : %s  Ref : %s', thisline$Transcript_ID, thisline$Ref_TX_ID), logf, quiet = TRUE)
         
         # run test and update output list
         NMDreport = testNMDvsThisCDS(thisbasicCDS, 
@@ -430,8 +411,9 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
       }
     }
   }
+  
   report_df = report_df %>% 
-    rowwise() %>% do(data.frame(superf(.))) %>% 
+    rowwise() %>% do(data.frame(internalfunc(.))) %>% 
     dplyr::mutate_all(funs(replace(., . == "NA", NA)))
   
   #report_df = rbind(tempdf, do.call(rbind, report_df))
