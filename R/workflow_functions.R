@@ -33,43 +33,36 @@ prepareInputs <- function(queryfile, ref, fasta, in_format, ref_format) {
   
   # import assembled transcripts
     infoLog('Importing assembled transcripts...', logf, quiet)
-  
+    
     if (!file.exists(queryfile)){
-      stopLog('Input transcript file do not exist', logf)
+      stopLog('Input transcript file do not exist')
     }
   
-    # use file extension format if provided by user, else try to extract file format from filename
+    # use file extension format if provided by user
     if (!is.null(in_format)) {
       fileformat = in_format
-    } else {
-      fileformat = tail(unlist(strsplit(queryfile, '\\.')), "1")
-      if (!fileformat%in%c('gff3','gff','gtf','bed')) {
-        stopLog('Incorrect input file extension format', logf)
-      } 
     }
-    inputGRanges = rtracklayer::import(queryfile, format = fileformat)
+    
+    inputGRanges = rtracklayer::import(queryfile)
 
   # load provided genome_basic assembly, or import user reference annotation
   if (is(ref, 'GenomicRanges')) {
     infoLog(sprintf('Loading gencode_basic transcripts...'), logf, quiet)
-    
+
     basicGRanges = ref
   } else if (is.character(ref)){
     infoLog('Importing user-provided reference annotations...', logf, quiet)
     
+    # return if file does not exist
     if (!file.exists(ref)){
-      stopLog('Reference annotation file do not exist', logf)
+      stopLog('Reference annotation file do not exist')
     }
     
+    # use file extension format if provided by user and import file
     if (!is.null(ref_format)) {
       fileformat = ref_format
-    } else {
-      fileformat = tail(unlist(strsplit(ref, '\\.')), "1")
-      if (!fileformat%in%c('gff3','gff','gtf','bed')) {
-        stopLog('Incorrect annotation file extension format', logf)
-      }
-    }
-    basicGRanges = rtracklayer::import(ref, format = fileformat)
+    } 
+    basicGRanges = rtracklayer::import(ref)
   }
   
   
@@ -77,7 +70,7 @@ prepareInputs <- function(queryfile, ref, fasta, in_format, ref_format) {
     if (is(fasta, 'BSgenome') | typeof(fasta) == 'S4') {
       infoLog('Loading genome sequence', logf, quiet)
       genome = fasta 
-    }
+    } 
     else if (is.character(fasta)) {
     infoLog('Importing fasta file...', logf, quiet)
     
@@ -87,7 +80,9 @@ prepareInputs <- function(queryfile, ref, fasta, in_format, ref_format) {
       genome = Biostrings::readDNAStringSet(fasta, format="fasta")
     }
   } 
-  return(list(inputGRanges, basicGRanges, genome))
+  return(list('inputGRanges' = inputGRanges, 
+              'basicGRanges' = basicGRanges, 
+              'genome' = genome))
 }
 
 
@@ -148,7 +143,7 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
       
       if (any(!seqlevels(inputGRanges)%in%seqlevels(genome))) {
         seqlevels(inputGRanges, pruning.mode = 'tidy') <- as.vector(newStyle)
-        warnLog('Non-standard chromosome IDs in query were removed', logf, quiet)
+        warnLog('Non-standard chromosome IDs in query were removed')
       }
     }
     if (seqlevelsStyle(basicGRanges) != seqlevelsStyle(genome)) {
@@ -158,7 +153,7 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
       
       if (any(!seqlevels(basicGRanges)%in%seqlevels(genome))) {
         seqlevels(basicGRanges, pruning.mode = 'tidy') <- as.vector(newStyle)
-        warnLog('Non-standard chromosome IDs in reference were removed', logf, quiet)
+        warnLog('Non-standard chromosome IDs in reference were removed')
       }
     }
   } 
@@ -166,10 +161,10 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
   # program will continue
   else {
     if (any(!seqlevels(inputGRanges)%in%seqlevels(genome))) {
-      warnLog('Non-standard chromosome IDs in query were found', logf, quiet)
+      warnLog('Non-standard chromosome IDs in query were found')
     }
     if (any(!seqlevels(basicGRanges)%in%seqlevels(genome))) {
-      warnLog('Non-standard chromosome IDs in reference were found. ', logf, quiet)
+      warnLog('Non-standard chromosome IDs in reference were found')
     }
   }
   
@@ -194,7 +189,7 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
     if (nrow(nonstand_ids) > 0) {
       
       # return warning
-      warnLog(sprintf('%s transcripts have unmatched gene_ids and will not be analyzed', nrow(nonstand_ids)), logf, quiet)
+      warnLog(sprintf('%s transcripts have unmatched gene_ids and will not be analyzed', nrow(nonstand_ids)))
       
       # and add match_level metadata to inputGRanges
       unique_ids = elementMetadata(inputGRanges) %>% as.data.frame() %>%
@@ -287,7 +282,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
                   ORF_considered, is_NMD, dist_to_lastEJ, uORF, threeUTR, uATG, 
                   uATG_frame, Shared_coverage, CE, MX, A5, A3, AF, AL, ATS, APA, IR, 
                   ce, mx, a5, a3, af, al, ats, apa, ir, NMDcausing) %>% 
-    dplyr::mutate(rownum = rownames(combined_report_df)) %>%
+    dplyr::mutate(rownum = rownames(.)) %>%
     rowwise() %>% dplyr::mutate_at(vars(NMDer_ID), 
                                    funs(paste("NMDer", formatC(as.integer(rownum), width=7, flag="0"), sep=""))) %>%
     dplyr::select(-rownum)
@@ -402,6 +397,8 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
           })
           thisline$ORF_considered = paste(ORFstringlist, collapse = ';')
         }
+        
+        thisline[11:40] = as.character(thisline[11:40])
         return(thisline)
       }
     }
@@ -736,9 +733,8 @@ generateGTF <- function(df, output_dir) {
 #   for user to decide whether to print these info into console
 #   this is where the quiet argument comes in
 
-stopLog <- function(text, file) {
-  write(paste(sprintf("[%s]", format(Sys.time(), "%Y-%b-%d %X")),
-              sprintf("[STOP] %s", text)), file)
+stopLog <- function(text) {
+
   message(paste(sprintf("[%s]", format(Sys.time(), "%Y-%b-%d %X")),
                 sprintf("[ERROR] %s", text)))
   blankMsg <- sprintf("\r%s\r", paste(rep(" ", getOption("width")-1L), collapse=" "))
@@ -747,23 +743,17 @@ stopLog <- function(text, file) {
 
 infoLog <- function(text, file, quiet = FALSE) {
   
-  write(paste(sprintf("[%s]", format(Sys.time(), "%Y-%b-%d %X")),
-              sprintf("[INFO] %s", text)), file)
-  if (quiet == FALSE) {
-    message(paste(sprintf("[%s]", format(Sys.time(), "%Y-%b-%d %X")),
-                  sprintf("[INFO] %s", text)))
-  }
+  message(paste(sprintf("[%s]", format(Sys.time(), "%Y-%b-%d %X")),
+                sprintf("[INFO] %s", text)))
+
   Sys.sleep(0.3)
 }
 
-warnLog <- function(text, file, quiet = FALSE) {
+warnLog <- function(text) {
   
-  write(paste(sprintf("[%s]", format(Sys.time(), "%Y-%b-%d %X")),
-              sprintf("[WARN] %s", text)), file)
-  if (quiet == FALSE) {
-    message(paste(sprintf("[%s]", format(Sys.time(), "%Y-%b-%d %X")),
-                  sprintf("[WARN] %s", text)))
-  }
+  message(paste(sprintf("[%s]", format(Sys.time(), "%Y-%b-%d %X")),
+                sprintf("[WARN] %s", text)))
+  
   Sys.sleep(0.3)
 }
 

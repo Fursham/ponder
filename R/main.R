@@ -8,16 +8,10 @@ prep <- function(query,
                  primary_gene_id = NULL,
                  secondary_gene_id = NULL,
                  clusters = 4) {
-  
-  # create output directory and logfile
-  dir.create(output_dir, showWarnings = FALSE)
-  assign('logf', file(sprintf('%s/NMDer.log', output_dir), 'wt'), envir = .GlobalEnv)
-  assign("quiet", quiet, envir = .GlobalEnv)
-  options(warn=-1)
-  
+
   # check for mandataory arguments
   if (any(missing(query), missing(reference), missing(fasta))) {
-    stopLog('Missing mandatory arguments', logf)
+    stopLog('Missing mandatory arguments')
   } 
   
   # import and/or load query file(s)
@@ -137,7 +131,7 @@ run <- function(query,
   
   # check for mandataory arguments
   if (any(missing(query), missing(reference), missing(fasta))) {
-    stopLog('Missing mandatory arguments', logf)
+    stopLog('Missing mandatory arguments')
   } 
 
   # import and/or load query file(s)
