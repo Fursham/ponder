@@ -1,3 +1,89 @@
+prep <- function(query,
+                 reference, 
+                 fasta,
+                 query_format = NULL,
+                 reference_format = NULL,
+                 match_chrom = FALSE,
+                 match_geneIDs = FALSE,
+                 primary_gene_id = NULL,
+                 secondary_gene_id = NULL,
+                 clusters = 4) {
+  
+  # create output directory and logfile
+  dir.create(output_dir, showWarnings = FALSE)
+  assign('logf', file(sprintf('%s/NMDer.log', output_dir), 'wt'), envir = .GlobalEnv)
+  assign("quiet", quiet, envir = .GlobalEnv)
+  options(warn=-1)
+  
+  # check for mandataory arguments
+  if (any(missing(query), missing(reference), missing(fasta))) {
+    stopLog('Missing mandatory arguments', logf)
+  } 
+  
+  # import and/or load query file(s)
+  packedInput = prepareInputs(query, reference, fasta,
+                              query_format, reference_format)
+  
+  # unpacking objects
+  inputGRanges = packedInput$inputGRanges
+  basicGRanges = packedInput$basicGRanges
+  genome = packedInput$genome
+  
+  # matching chromosome names and gene IDs
+  inputGRanges = preTesting(inputGRanges, basicGRanges, genome, 
+                            match_chrom, match_geneIDs, 
+                            primary_gene_id, secondary_gene_id,
+                            clusters)
+  
+  # prepare dataframes and transcript GRanges objects
+  packedObjects = prepareAnalysis(inputGRanges, basicGRanges, output_dir)
+  
+  # unpacking objects
+  report_df = packedObjects[[1]]
+  inputExonsbyTx = packedObjects[[2]]
+  basicExonsbyCDS = packedObjects[[3]]
+  basicExonsbyTx =  packedObjects[[4]]
+  
+  return(list(report_df, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS))
+}
+
+
+run2 <- function() {
+  
+  # run NMD analysis in parallel
+  infoLog('Detecting NMD features...', logf, quiet)
+  
+  group <- rep(1:clusters, length.out = nrow(report_df))
+  report_df <- bind_cols(tibble(group), report_df)
+  cluster <- create_cluster(cores = clusters, quiet = TRUE)
+  
+  parallel_df = report_df %>% partition(group, cluster = cluster)
+  parallel_df %>%
+    # Assign libraries
+    cluster_library("NMDer") %>%
+    cluster_library("Biostrings") %>%
+    cluster_library("BSgenome") %>%
+    cluster_library("dplyr") %>%
+    cluster_assign_value("basicExonsbyCDS", basicExonsbyCDS) %>%
+    cluster_assign_value("inputExonsbyTx", inputExonsbyTx) %>%
+    cluster_assign_value("basicExonsbyTx", basicExonsbyTx) %>% 
+    cluster_assign_value("genome", genome) %>%
+    cluster_assign_value("PTC_dist", PTC_dist) %>%
+    cluster_assign_value("other_features", other_features) %>%
+    cluster_assign_value("logf", logf) %>%
+    cluster_assign_value("quiet", quiet)
+  
+  report_df <- parallel_df %>% # Use by_group party_df
+    do(testNMDfeatures(., inputExonsbyTx, basicExonsbyCDS,
+                       basicExonsbyTx,genome, PTC_dist,other_features)) %>%
+    collect() %>% # Special collect() function to recombine partitions
+    as.data.frame() %>%
+    dplyr::arrange(NMDer_ID)
+  rm(list = c('parallel_df','basicExonsbyCDS', 'basicExonsbyTx', 'inputExonsbyTx'))
+  
+  return(report_df)
+}
+
 #' Run _ Program
 #' 
 #' @description
