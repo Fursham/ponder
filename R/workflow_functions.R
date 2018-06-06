@@ -402,23 +402,16 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
           })
           thisline$ORF_considered = paste(ORFstringlist, collapse = ';')
         }
-        
-
-        thisline[11:41] = as.character(thisline[11:41])
-        # update transcript information with NMD data
         return(thisline)
-        #report_df[i,] = modifyList(report_df[i,], thisline)
       }
     }
   }
   
+  # run the above function on report_df
   report_df = report_df %>% 
     rowwise() %>% do(data.frame(internalfunc(.))) %>% 
     dplyr::mutate_all(funs(replace(., . == "NA", NA)))
   
-  #report_df = rbind(tempdf, do.call(rbind, report_df))
-  
-  #cat('\n')
   return(report_df)
 }
 
@@ -444,16 +437,16 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
 testNMDvsThisCDS <- function(knownCDS, queryTx, refsequence, PTC_dist = 50, nonClassicalNMD = FALSE) {
   
   # prep output list
-  output = list(ORF_considered = NA,
-             Alt_tx  = NA,
-             is_NMD = NA, 
-             dist_to_lastEJ = NA, 
-             annotatedStart = NA,
-             predictedStart = NA,
-             uORF = NA,
-             threeUTR = NA,
-             uATG = NA,
-             uATG_frame = NA
+  output = list(ORF_considered = as.character(NA),
+             Alt_tx  = as.logical(NA),
+             is_NMD = as.logical(NA), 
+             dist_to_lastEJ = as.numeric(NA), 
+             annotatedStart = as.logical(NA),
+             predictedStart = as.logical(NA),
+             uORF = as.character(NA),
+             threeUTR = as.numeric(NA),
+             uATG = as.character(NA),
+             uATG_frame = as.character(NA)
              )
   
   # precheck for annotated start codon on query transcript and update output
@@ -557,7 +550,7 @@ getASevents <- function(transcript1, transcript2, orf, is_NMD) {
   elementMetadata(combinedASoutput)$val = as.character(paste(ranges(combinedASoutput)))
 
   prepout = elementMetadata(combinedASoutput) %>% as.data.frame() %>%
-    dplyr::group_by(AS_class) %>% dplyr::summarise(vals = paste(val, collapse=";")) %>% as.data.frame()
+    dplyr::group_by(AS_class) %>% dplyr::summarise(vals = as.character(paste(val, collapse=";"))) %>% as.data.frame()
   ASlist = dplyr::select(prepout, vals) %>% unlist() %>% setNames(prepout[,1]) %>% as.list()
 
   out = c(ASlist, NMDcausing = NMDexon, Shared_coverage = ASoutput$Shared_coverage)
