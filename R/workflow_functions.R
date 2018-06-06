@@ -537,7 +537,7 @@ getASevents <- function(transcript1, transcript2, orf, is_NMD) {
           NMDexon = elementMetadata(altseg_NMD)$AS_class[1]
         } 
         # else, we need to test if each segment is in frame with orf
-        else if (altseg_NMD > 1) {
+        else if (length(altseg_NMD) > 1) {
           elementMetadata(altseg_NMD)$size = as.data.frame(width(altseg_NMD))
           
           # filter for in-frame segments
