@@ -350,20 +350,20 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
   
   ######
   # update transcript coordinates into report_df as a string of coordinates
-  tempdf = report_df  %>% dplyr::select(Transcript_ID) %>% unique()
-  tempdf$Tx_coordinates2 = sapply(tempdf$Transcript_ID, function(x) {
-    string = paste(ranges(inputExonsbyTx[[x]]))
-    string = sapply(string, function(y) {
-      newsstring = ifelse(!grepl('-', y), paste(c(y, '-', y), collapse = ''), y)
-      return(newsstring)
-    })
-    string = paste(string, collapse = ';')
-    return(string)
-  })
-  report_df <- report_df %>% dplyr::left_join(tempdf,report_df, by = 'Transcript_ID') %>%
-    dplyr::mutate_at(vars(Tx_coordinates), funs(paste(Tx_coordinates2))) %>%
-    dplyr::select(-Tx_coordinates2)
-  rm(tempdf)
+  #tempdf = report_df  %>% dplyr::select(Transcript_ID) %>% unique()
+  #tempdf$Tx_coordinates2 = sapply(tempdf$Transcript_ID, function(x) {
+  #  string = paste(ranges(inputExonsbyTx[[x]]))
+  #  string = sapply(string, function(y) {
+  #    newsstring = ifelse(!grepl('-', y), paste(c(y, '-', y), collapse = ''), y)
+  #    return(newsstring)
+  #  })
+  #  string = paste(string, collapse = ';')
+  #  return(string)
+  #})
+  #report_df <- report_df %>% dplyr::left_join(tempdf,report_df, by = 'Transcript_ID') %>%
+  #  dplyr::mutate_at(vars(Tx_coordinates), funs(paste(Tx_coordinates2))) %>%
+  #  dplyr::select(-Tx_coordinates2)
+  #tempdf = tempdf[0,]
   
   # generate a vector containing TRUE/FALSE boolean on whether or not the transcript should be analyzed
   #   this speeds up the code by immediately skipping transcripts
@@ -371,16 +371,25 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
   #  ifelse(x < 5, TRUE, FALSE)
   #})
   
-  report_df = apply(report_df, 1, function(x) {
-    if (x[['Match_level']] == 5) {
-      return(x)
+  superf = function(x) {
+    
+    thisline = as.list(x)
+    
+    string = paste(ranges(inputExonsbyTx[[thisline$Transcript_ID]]))
+    string = sapply(string, function(y) {
+      newsstring = ifelse(!grepl('-', y), paste(c(y, '-', y), collapse = ''), y)
+      return(newsstring)
+    })
+    thisline$Tx_coordinates = paste(string, collapse = ';')
+    
+    if (thisline$Match_level == 5) {
+      return(thisline)
     } else {
-      thisline = x %>% as.list()
-      
+    
       # check whether the ref transcript is a CDS, and skip if it is not
       thisbasicCDS = basicExonsbyCDS[[thisline$Ref_TX_ID]]
       if (is.null(thisbasicCDS[1])) {
-        next
+        return(thisline)
       } else {
         
         #infoLog(sprintf('Query : %s  Ref : %s', thisline$Transcript_ID, thisline$Ref_TX_ID), logf, quiet = TRUE)
@@ -414,14 +423,18 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, basicExo
         }
         
 
-        
+        thisline[11:41] = as.character(thisline[11:41])
         # update transcript information with NMD data
         return(thisline)
         #report_df[i,] = modifyList(report_df[i,], thisline)
       }
     }
-  })
-  report_df = do.call(rbind, report_df) %>% as.data.frame()
+  }
+  report_df = report_df %>% 
+    rowwise() %>% do(data.frame(superf(.))) %>% 
+    dplyr::mutate_all(funs(replace(., . == "NA", NA)))
+  
+  #report_df = rbind(tempdf, do.call(rbind, report_df))
   
   #cat('\n')
   return(report_df)
@@ -562,7 +575,7 @@ getASevents <- function(transcript1, transcript2, orf, is_NMD) {
   elementMetadata(combinedASoutput)$val = as.character(paste(ranges(combinedASoutput)))
 
   prepout = elementMetadata(combinedASoutput) %>% as.data.frame() %>%
-    group_by(AS_class) %>% summarise(vals = paste(val, collapse=";")) %>% as.data.frame()
+    dplyr::group_by(AS_class) %>% dplyr::summarise(vals = paste(val, collapse=";")) %>% as.data.frame()
   ASlist = dplyr::select(prepout, vals) %>% unlist() %>% setNames(prepout[,1]) %>% as.list()
 
   out = c(ASlist, NMDcausing = NMDexon, Shared_coverage = ASoutput$Shared_coverage)
@@ -643,8 +656,6 @@ generateGTF <- function(df, output_dir) {
 
   outfile = sprintf("%s/NMDer.gtf", output_dir)
   write ('#', file = outfile)
-  gtfdf = rbind(c('#chrom', 'source', 'type', 'start', 'end', 'score', 'strand', 'frame', 'comments'))
-
   gtfdf = apply(df, 1, function(y) {
     
     tempdf = c()
@@ -665,10 +676,7 @@ generateGTF <- function(df, output_dir) {
               score = 1000, strand = as.character(y[['Strand']]), frame = '.', meta = txmetainfo)
     tempdf= rbind(tempdf, tx)
 
-    
 
-    
-    
     # prepare exon info and add to tempdf
     
     out = apply(exon_coords, 1, function(x) {
@@ -734,13 +742,12 @@ generateGTF <- function(df, output_dir) {
       out = do.call(rbind, out)
       tempdf = rbind(tempdf, out)
       
-      
     }
     
     return(tempdf)
   })
   gtfdf = do.call(rbind, gtfdf)
-  write.table(gtfdf, file = outfile, row.names = FALSE, col.names = FALSE, sep = '\t', quote = FALSE)
+  write.table(gtfdf, file = outfile, row.names = FALSE, col.names = FALSE, sep = '\t', quote = FALSE, append = TRUE)
 }
 
 
