@@ -601,7 +601,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
     # return error if input and reference do not contain gene_id metadata
     if (is.null(elementMetadata(query)$gene_id)) {
       if (makefile == FALSE) {
-        stopLog('Gene_ID metadata error: Please ensure input assembled transcripts contain gene_id metadata\n', logf)
+        stopLog('Gene_ID metadata error: Please ensure input assembled transcripts contain gene_id metadata\n')
       } else {
         stop('Gene_ID metadata error: Please ensure input assembled transcripts contain gene_id metadata\n')
       }
@@ -611,7 +611,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
     # try to import query
     if (!file.exists(query)){
       if (makefile == FALSE) {
-        stopLog('Input transcript file do not exist', logf)
+        stopLog('Input transcript file do not exist')
       } else {
         stop('Input transcript file do not exist')
       }
@@ -624,7 +624,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
       fileformat = tail(unlist(strsplit(query, '\\.')), "1")
       if (!fileformat%in%c('gff3','gff','gtf','bed')) {
         if (makefile == FALSE) {
-          stopLog('Incorrect input file extension format', logf)
+          stopLog('Incorrect input file extension format')
         } else {
           stop('Incorrect input file extension format')
         }
@@ -637,7 +637,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
     # return error if input and reference do not contain gene_id metadata
     if (is.null(elementMetadata(ref)$gene_id)) {
       if (makefile == FALSE) {
-        stopLog('Gene_ID metadata error: Please ensure reference assembly contain gene_id metadata', logf)
+        stopLog('Gene_ID metadata error: Please ensure reference assembly contain gene_id metadata')
       } else {
         stop('Gene_ID metadata error: Please ensure reference assembly contain gene_id metadata')
       }
@@ -647,7 +647,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
     # try to import ref
     if (!file.exists(ref)){
       if (makefile == FALSE) {
-        stopLog('Reference transcript file do not exist', logf)
+        stopLog('Reference transcript file do not exist')
       } else {
         stop('Reference transcript file do not exist')
       }
@@ -660,7 +660,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
       fileformat = tail(unlist(strsplit(ref, '\\.')), "1")
       if (!fileformat%in%c('gff3','gff','gtf','bed')) {
         if (makefile == FALSE) {
-          stopLog('Incorrect reference file extension format', logf)
+          stopLog('Incorrect reference file extension format')
         } else {
           stop('Incorrect reference file extension format')
         }
@@ -672,7 +672,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
   
   # testing and matching gene_ids
   if (makefile == FALSE) {
-    infoLog('Checking and matching gene_ids...', logf, quiet)
+    infoLog('Checking and matching gene_ids...')
   } else {
     message('Checking and matching gene_ids...')
   }
@@ -719,8 +719,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
   # correction 1: replace primary_gene_id with secondary_gene_id, IF both args are provided
   if (!is.null(primary_gene_id) & !is.null(secondary_gene_id)) {
     if (makefile == FALSE) {
-      infoLog(sprintf('-> Attempting to replace %s with %s...', primary_gene_id, secondary_gene_id),
-              logf, quiet)
+      infoLog(sprintf('-> Attempting to replace %s with %s...', primary_gene_id, secondary_gene_id))
     } else {
       message(sprintf('-> Attempting to replace %s with %s...', primary_gene_id, secondary_gene_id))
     }
@@ -746,7 +745,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
     
     # report number of IDs corrected
     if (makefile == FALSE) {
-      infoLog(sprintf('-> %s gene IDs matched', (countsbefore - countsafter)), logf, quiet)
+      infoLog(sprintf('-> %s gene IDs matched', (countsbefore - countsafter)))
     } else {
       message(sprintf('-> %s gene IDs matched', (countsbefore - countsafter)))
     }
@@ -756,7 +755,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
   # at least primary_gene_id is provided and if it starts with 'ENS'
   if (!is.null(primary_gene_id)) {
     if (makefile == FALSE) {
-      infoLog('--> Attempting to match ensembl gene_ids...', logf, quiet)
+      infoLog('--> Attempting to match ensembl gene_ids...')
     } else {
       message('--> Attempting to match ensembl gene_ids...')
     }
@@ -806,7 +805,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
       
       # report number of IDs corrected
       if (makefile == FALSE) {
-        infoLog(sprintf('--> %s gene IDs matched', (countsbefore - countsafter)), logf, quiet)
+        infoLog(sprintf('--> %s gene IDs matched', (countsbefore - countsafter)))
       } else {
         message(sprintf('--> %s gene IDs matched', (countsbefore - countsafter)))
       }
@@ -819,13 +818,13 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
       
       if (nrow(ENSids) > 0) {
         if (makefile == FALSE) {
-          infoLog('--> All ensembl gene ids have been matched', logf, quiet)
+          infoLog('--> All ensembl gene ids have been matched')
         } else {
           message('--> All ensembl gene ids have been matched')
         }
       } else {
         if (makefile == FALSE) {
-          warnLog('--> No ensembl gene ids found in query', logf, quiet)
+          warnLog('--> No ensembl gene ids found in query')
         } else {
           message('--> No ensembl gene ids found in query')
         }
@@ -835,7 +834,7 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
   
   # correction 3: correct gene_ids by finding overlapping regions.
   if (makefile == FALSE) {
-    infoLog('---> Attempting to correct gene_ids by finding overlapping coordinates...', logf, quiet)
+    infoLog('---> Attempting to correct gene_ids by finding overlapping coordinates...')
   } else {
     message('---> Attempting to correct gene_ids by finding overlapping coordinates...')
   }
@@ -904,13 +903,13 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
     
     # report number of IDs corrected
     if (makefile == FALSE) {
-      infoLog(sprintf('---> %s gene IDs matched', (countsbefore - countsafter)), logf, quiet)
+      infoLog(sprintf('---> %s gene IDs matched', (countsbefore - countsafter)))
     } else {
       message(sprintf('---> %s gene IDs matched', (countsbefore - countsafter)))
     }
   } else {
     if (makefile == FALSE) {
-      infoLog(sprintf('---> Skipped, all gene IDs matched', (countsbefore - countsafter)), logf, quiet)
+      infoLog(sprintf('---> Skipped, all gene IDs matched', (countsbefore - countsafter)))
     } else {
       message(sprintf('---> Skipped, all gene IDs matched', (countsbefore - countsafter)))
     }
@@ -941,10 +940,10 @@ matchGeneIDs <- function(query, ref, query_format = NULL, ref_format=NULL, prima
 
   # report pre-testing analysis and return inputGRanges
   if (makefile == FALSE) {
-    infoLog(sprintf('Total gene_ids corrected: %s', corrected_ids), logf, quiet)
-    infoLog(sprintf('Remaining number of non-standard gene_ids: %s', nonstand_after), logf, quiet)
+    infoLog(sprintf('Total gene_ids corrected: %s', corrected_ids))
+    infoLog(sprintf('Remaining number of non-standard gene_ids: %s', nonstand_after))
     if (nonstand_after > 0) {
-      warnLog('Transcripts with non-standard gene_ids will be skipped', logf, quiet)
+      warnLog('Transcripts with non-standard gene_ids will be skipped')
     }
   } else {
     message(sprintf('Total gene_ids corrected: %s', corrected_ids))
