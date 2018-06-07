@@ -196,9 +196,9 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     # this part will test the presence of uORFs and uATGs in the 5UTR
     
       # prepare output variables
-    uORF = NA
-    uATG = NA
-    uATG_frame = NA
+    uORF = as.character(NA)
+    uATG = as.character(NA)
+    uATG_frame = as.character(NA)
     
     # cycle each frame to find 5UTR and uATGs
     for (i in 0:2) {
@@ -258,7 +258,10 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     uATG = ifelse(all(is.na(uATG)), FALSE, paste(uATG[!is.na(uATG)], collapse = '|'))
     uATG_frame = ifelse(all(is.na(uATG_frame)), FALSE, paste(uATG_frame[!is.na(uATG_frame)], collapse = '|'))
     
-    output = modifyList(output, list(uORF = uORF, threeUTR = threeUTR, uATG = uATG, uATG_frame = uATG_frame))
+    output = modifyList(output, list(uORF = as.character(uORF), 
+                                     threeUTR = as.character(threeUTR), 
+                                     uATG = as.character(uATG), 
+                                     uATG_frame = as.character(uATG_frame)))
   }
   # return output
   return(output)
