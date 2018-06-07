@@ -249,23 +249,12 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
                   Transcript_ID = transcript_id,
                   Chrom = seqnames,
                   Strand = strand) %>%
-    dplyr::mutate(NMDer_ID = NA,
-                  Tx_coordinates = NA,
-                  ORF_considered = NA,
-                  Alt_tx  = NA,
-                  annotatedStart = NA,
-                  predictedStart = NA,
-                  is_NMD = NA, 
-                  dist_to_lastEJ = NA, 
-                  uORF = NA,
-                  uATG = NA,
-                  uATG_frame = NA,
-                  threeUTR = NA) %>%
-    dplyr::mutate(Shared_coverage = 0, 
-                  CE = NA, MX = NA, A5 = NA, A3 = NA, AF = NA, 
-                  ATS = NA, AL = NA, APA = NA, IR = NA,
-                  ce = NA, mx = NA, a5 = NA, a3 = NA, af = NA, 
-                  ats = NA, al = NA, apa = NA, ir = NA, NMDcausing = NA)
+    dplyr::mutate(NMDer_ID = as.character(NA),
+                  Tx_coordinates = as.character(NA),
+                  ORF_considered = as.character(NA),
+                  Alt_tx = as.logical(NA),
+                  annotatedStart = as.logical(NA),
+                  predictedStart = as.logical(NA))
   
   # prepare df of gencode_basic transcripts
   basicTX_df = elementMetadata(basicGRanges) %>% as.data.frame() %>%
@@ -279,9 +268,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
     dplyr::select(NMDer_ID, Gene_ID, Original_Gene_ID, Match_level, 
                   Gene_Name, Transcript_ID, Ref_TX_ID, Chrom, Strand, 
                   Tx_coordinates, annotatedStart, predictedStart, Alt_tx,
-                  ORF_considered, is_NMD, dist_to_lastEJ, uORF, threeUTR, uATG, 
-                  uATG_frame, Shared_coverage, CE, MX, A5, A3, AF, AL, ATS, APA, IR, 
-                  ce, mx, a5, a3, af, al, ats, apa, ir, NMDcausing) %>% 
+                  ORF_considered) %>% 
     dplyr::mutate(rownum = rownames(.)) %>%
     rowwise() %>% dplyr::mutate_at(vars(NMDer_ID), 
                                    funs(paste("NMDer", formatC(as.integer(rownum), width=7, flag="0"), sep=""))) %>%
@@ -339,8 +326,10 @@ prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
 #'
 #' @examples
 testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS, 
-                            basicExonsbyTx, genome, PTC_dist = 50, 
-                            testNonClassicalNMD = FALSE) {
+                            basicExonsbyTx, genome, 
+                            testforNMD = TRUE, PTC_dist = 50, 
+                            testNonClassicalNMD = FALSE, 
+                            testforAS = FALSE) {
   
   # this is an internal function for testing NMD features on report_df rowwise
   internalfunc = function(x) {
@@ -371,34 +360,53 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
       } else {
         
         # run test and update output list
-        NMDreport = testNMDvsThisCDS(thisbasicCDS, 
-                                     inputExonsbyTx[[thisline$Transcript_ID]], 
-                                     genome, 
-                                     PTC_dist, 
-                                     testNonClassicalNMD)
-        thisline = modifyList(thisline, NMDreport)
+        ORFreport = getORF(thisbasicCDS, 
+                           inputExonsbyTx[[thisline$Transcript_ID]], 
+                           genome)
+        thisline = modifyList(thisline, ORFreport)
         
-        # classify alternative splicing events
-        altevents = getASevents(basicExonsbyTx[[thisline$Ref_TX_ID]], 
-                                inputExonsbyTx[[thisline$Transcript_ID]], 
-                                thisline$ORF_considered,
-                                thisline$is_NMD)
-        if (!is.null(altevents)) {
-          thisline = modifyList(thisline, altevents)
+
+        # test NMD only if requested
+        if (testforNMD == TRUE) {
+          NMDreport = testNMD(thisline$ORF_considered, 
+                              inputExonsbyTx[[thisline$Transcript_ID]], 
+                              PTC_dist, 
+                              testNonClassicalNMD,
+                              genome)
+          thisline = modifyList(thisline, NMDreport)
         }
+        
+        # classify alternative splicing events if requested
+        if (testforAS == TRUE) {
+          if (testforNMD == FALSE) {
+            ORF = NA
+            is_NMD = NA
+          } else {
+            ORF = thisline$ORF_considered
+            is_NMD = thisline$is_NMD
+          }
+          
+          altevents = getASevents(basicExonsbyTx[[thisline$Ref_TX_ID]], 
+                                  inputExonsbyTx[[thisline$Transcript_ID]], 
+                                  testforNMD, ORF, is_NMD)
+          
+          thisline = modifyList(thisline, altevents)
+          
+        }
+        
         
         # update analyzed ORF coordinates into output
         #  this part have to be done this way because some terminal exons have length of 1
         #  and doing the conventional way will output 'xxx' rather than 'xxx-xxx'
         if (!is.na(thisline$ORF_considered[1])) {
-          ORFstringlist = sapply(thisline$ORF_considered, function(x) {
-            string = paste(ranges(x))
-            ifelse(!grepl('-', string), paste(c(string, '-', string), collapse = ''), string)
+          ORFstringlist = paste(ranges(thisline$ORF_considered))
+          ORFstringlist = sapply(ORFstringlist, function(x){
+            return(ifelse(!grepl('-', x), paste(c(x, '-', x), collapse = ''), x))
           })
           thisline$ORF_considered = paste(ORFstringlist, collapse = ';')
         }
         
-        thisline[11:40] = as.character(thisline[11:40])
+        #thisline[11:length(thisline)] = as.character(thisline[11:length(thisline)])
         return(thisline)
       }
     }
@@ -406,8 +414,7 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
   
   # run the above function on report_df
   report_df = report_df %>% 
-    rowwise() %>% do(data.frame(internalfunc(.))) %>% 
-    dplyr::mutate_all(funs(replace(., . == "NA", NA)))
+    rowwise() %>% do(data.frame(internalfunc(.), stringsAsFactors = FALSE)) 
   
   return(report_df)
 }
@@ -431,21 +438,14 @@ testNMDfeatures <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
 #' @export
 #'
 #' @examples
-testNMDvsThisCDS <- function(knownCDS, queryTx, refsequence, PTC_dist = 50, nonClassicalNMD = FALSE) {
+getORF <- function(knownCDS, queryTx, refsequence) {
   
   # prep output list
   output = list(ORF_considered = as.character(NA),
-             Alt_tx  = as.logical(NA),
-             is_NMD = as.logical(NA), 
-             dist_to_lastEJ = as.numeric(NA), 
-             annotatedStart = as.logical(NA),
-             predictedStart = as.logical(NA),
-             uORF = as.character(NA),
-             threeUTR = as.numeric(NA),
-             uATG = as.character(NA),
-             uATG_frame = as.character(NA)
-             )
-  
+                Alt_tx  = as.logical(NA),
+                annotatedStart = as.logical(NA),
+                predictedStart = as.logical(NA))
+
   # precheck for annotated start codon on query transcript and update output
   pre_report = testTXforStart(queryTx, knownCDS, full.output=TRUE)
   output = modifyList(output, pre_report["annotatedStart"])
@@ -474,11 +474,6 @@ testNMDvsThisCDS <- function(knownCDS, queryTx, refsequence, PTC_dist = 50, nonC
   augmentedCDS = reconstructCDS(txrevise_out = pre_report$txrevise_out, fasta = refsequence)
   output = modifyList(output, augmentedCDS)
   
-  # test NMD only if there transcript contain an ORF
-  if (!is.na(augmentedCDS$ORF_considered)) {
-    NMDreport = testNMD(augmentedCDS$ORF_considered, queryTx, fasta = refsequence, distance_stop_EJ = PTC_dist, other_features = nonClassicalNMD)
-    output = modifyList(output, NMDreport)
-  }
   return(output)
 }
 
@@ -487,27 +482,33 @@ testNMDvsThisCDS <- function(knownCDS, queryTx, refsequence, PTC_dist = 50, nonC
 
 
 
-getASevents <- function(transcript1, transcript2, orf, is_NMD) {
+getASevents <- function(transcript1, transcript2, testedNMD, orf, is_NMD) {
   
   # prepare list to be returned
-  #ASlist = data.frame(CE = NA, MX = NA, A5 = NA, A3 = NA, AF = NA, ATS = NA, AL = NA, APA = NA, IR = NA,
-  #             ce = NA, mx = NA, a5 = NA, a3 = NA, af = NA, ats = NA, al = NA, apa = NA, ir = NA,
-  #              NMDcausing = NA)
+  ASlist = data_frame(CE = NA, MX = NA, A5 = NA, A3 = NA, AF = NA, ATS = NA, AL = NA, APA = NA, IR = NA,
+               ce = NA, mx = NA, a5 = NA, a3 = NA, af = NA, ats = NA, al = NA, apa = NA, ir = NA) %>%
+    dplyr::mutate_all(funs(as.character(.))) %>%
+    as.list()
+  if (testedNMD == TRUE) {
+    ASlist = modifyList(ASlist, list(NMDcausing = as.character(NA)))
+  }
   
   # get AS classifications. transcript 1 is reference and transcript 2 is query in this case
   ASoutput = classifyAltSegments(transcript1, transcript2)
   
   # return if there is no alternative segments between transcripts
   if (is.null(ASoutput)){
-    return(NULL)
+    out = c(Shared_coverage = as.numeric(NA), ASlist)
+    return(out)
   } else if (length(ASoutput[[1]]) == 0 & length(ASoutput[[2]]) == 0) {
-    return(NULL)
+    out = c(Shared_coverage = as.numeric(NA), ASlist)
+    return(out)
   }
   
   # combine alternative segments and update ASlist with segment coordinates by matching class annotations with the named ASlist
-  combinedASoutput = unlist(append(ASoutput[[1]], ASoutput[[2]]))
+  combinedASoutput = append(ASoutput[[1]], ASoutput[[2]])
   combinedASoutput$AS_class = as.character(combinedASoutput$AS_class)
-  
+
   NMDexon = NA
   if (!is.na(is_NMD)) {
     if (is_NMD == TRUE) {
@@ -539,18 +540,20 @@ getASevents <- function(transcript1, transcript2, orf, is_NMD) {
           } 
         }
       }
+      ASlist = modifyList(ASlist, list(NMDcausing = NMDexon))
     }
-    
   } 
+  
   
   #########todo
   elementMetadata(combinedASoutput)$val = as.character(paste(ranges(combinedASoutput)))
 
   prepout = elementMetadata(combinedASoutput) %>% as.data.frame() %>%
     dplyr::group_by(AS_class) %>% dplyr::summarise(vals = as.character(paste(val, collapse=";"))) %>% as.data.frame()
-  ASlist = dplyr::select(prepout, vals) %>% unlist() %>% setNames(prepout[,1]) %>% as.list()
+  prepout2 = dplyr::select(prepout, vals) %>% unlist() %>% setNames(prepout[,1]) %>% as.list()
+  ASlist = modifyList(ASlist, prepout2)
 
-  out = c(ASlist, NMDcausing = NMDexon, Shared_coverage = ASoutput$Shared_coverage)
+  out = c(Shared_coverage = as.numeric(ASoutput$Shared_coverage), ASlist)
   return(out)
 }
 
@@ -756,4 +759,17 @@ warnLog <- function(text) {
   
   Sys.sleep(0.3)
 }
+
+unpack <- structure(NA,class="result")
+"[<-.result" <- function(x,...,value) {
+  args <- as.list(match.call())
+  args <- args[-c(1:2,length(args))]
+  length(value) <- length(args)
+  for(i in seq(along=args)) {
+    a <- args[[i]]
+    if(!missing(a)) eval.parent(substitute(a <- v,list(a=a,v=value[[i]])))
+  }
+  x
+}
+
 
