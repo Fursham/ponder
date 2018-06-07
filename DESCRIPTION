@@ -3,14 +3,14 @@ Title: What the Package Does (one line, title case)
 Version: 0.0.0.9000
 Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
 Description: What the package does (one paragraph).
-Depends: R (>= 3.5.0)
+Depends: R (>= 3.4.4)
 Imports:
-    GenomicRanges (>= 1.32.3),
-    Biostrings (>= 2.48.0),
-    GenomicFeatures (>= 1.32.0),
-    dplyr (>= 0.7.5),
-    multidplyr (>= 0.0.0.9000),
-    rtracklayer (>= 1.40.3)
+    GenomicRanges,
+    Biostrings,
+    GenomicFeatures,
+    dplyr,
+    tidyr,
+    rtracklayer
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
