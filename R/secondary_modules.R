@@ -119,10 +119,10 @@ reconstructCDSstart <- function(queryTranscript, refCDS, fasta, txrevise_out = N
   # obtain strand information and anchor exon
   queryStrand = as.character(strand(diffSegments[[3]]))[1]
   
-  reconstructedTx = sort(reduce(unlist(append(
+  reconstructedTx = sort(append(
     diffSegments$shared_exons, c(
       reduce(diffSegments[[1]][diffSegments[[1]]$upstream != TRUE]),
-      reduce(diffSegments[[2]][diffSegments[[2]]$upstream == TRUE]))))),
+      reduce(diffSegments[[2]][diffSegments[[2]]$upstream == TRUE]))),
     decreasing = queryStrand == '-')
   
   # prepares sequence of query

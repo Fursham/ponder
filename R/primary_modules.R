@@ -68,9 +68,9 @@ reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL){
   } else {
     # if there are, construct a new exon structure with removal/addition of the alternative segments 
     Alternative_tx = TRUE
-    augmentedCDS = sort(reduce(unlist(append(
+    augmentedCDS = sort(append(
       diffSegments$shared_exons, 
-      reduce(diffSegments[[2]][diffSegments[[2]]$upstream != TRUE])))),
+      reduce(diffSegments[[2]][diffSegments[[2]]$upstream != TRUE])),
       decreasing = as.character(strand(diffSegments$shared_exons))[1] == '-')
     
     # this part will correct the open reading frame
@@ -143,7 +143,17 @@ reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL){
 testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_features = FALSE, fasta){
   
   # prepare output list
-  output = list()
+  output = list(is_NMD = as.logical(NA), dist_to_lastEJ = as.numeric(NA))
+  if (other_features == TRUE) {
+    output = modifyList(output, list(uORF = as.character(NA), 
+                                     threeUTR = as.numeric(NA), 
+                                     uATG = as.character(NA), 
+                                     uATG_frame = as.character(NA)))
+  }
+  
+  if (is.na(queryCDS[1])) {
+    return(output)
+  }
   
   # sort queryCDS, by exon order (just in case)
   strand = as.character(strand(queryCDS))[1]
@@ -155,9 +165,9 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
   noncodingSegments = indentifyAddedRemovedRegions("CDS", "Tx", combinedList[c("CDS", "Tx")])
   
   # obtain coordinates of CDS and its 3'UTR
-  cds3UTR = sort(reduce(unlist(append(
+  cds3UTR = sort(append(
     noncodingSegments$shared_exons, 
-    reduce(noncodingSegments$Tx[noncodingSegments$Tx$downstream == TRUE])))),
+    reduce(noncodingSegments$Tx[noncodingSegments$Tx$downstream == TRUE])),
     decreasing = (strand == '-'))
   
   # obtain distance of stop codon to last exon-exon junction and modify output list
