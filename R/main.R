@@ -1,4 +1,21 @@
-prep <- function(query,
+#' Title
+#'
+#' @param query 
+#' @param reference 
+#' @param fasta 
+#' @param query_format 
+#' @param reference_format 
+#' @param match_chrom 
+#' @param match_geneIDs 
+#' @param primary_gene_id 
+#' @param secondary_gene_id 
+#' @param clusters 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+prepNMDer <- function(query,
                  reference, 
                  fasta,
                  query_format = NULL,
@@ -9,19 +26,20 @@ prep <- function(query,
                  secondary_gene_id = NULL,
                  clusters = 4) {
 
+  options(warn=-1)
   # check for mandataory arguments
   if (any(missing(query), missing(reference), missing(fasta))) {
     stopLog('Missing mandatory arguments')
   } 
   
   # import and/or load query file(s)
-  packedInput = prepareInputs(query, reference, fasta,
-                              query_format, reference_format)
+  unpack[inputGRanges, basicGRanges, genome] = 
+    prepareInputs(query, reference, fasta,query_format, reference_format)
   
   # unpacking objects
-  inputGRanges = packedInput$inputGRanges
-  basicGRanges = packedInput$basicGRanges
-  genome = packedInput$genome
+  #inputGRanges = packedInput$inputGRanges
+  #basicGRanges = packedInput$basicGRanges
+  #genome = packedInput$genome
   
   # matching chromosome names and gene IDs
   inputGRanges = preTesting(inputGRanges, basicGRanges, genome, 
@@ -30,23 +48,43 @@ prep <- function(query,
                             clusters)
   
   # prepare dataframes and transcript GRanges objects
-  packedObjects = prepareAnalysis(inputGRanges, basicGRanges, output_dir)
+  unpack[report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx] = 
+    prepareAnalysis(inputGRanges, basicGRanges, output_dir)
   
-  # unpacking objects
-  report_df = packedObjects[[1]]
-  inputExonsbyTx = packedObjects[[2]]
-  basicExonsbyCDS = packedObjects[[3]]
-  basicExonsbyTx =  packedObjects[[4]]
-  
-  return(list(report_df, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS))
+  options(warn=0)
+  return(list(report_df, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS, genome))
 }
 
 
-run2 <- function() {
+#' Title
+#'
+#' @param prepObject 
+#' @param testNMD 
+#' @param other_features 
+#' @param PTC_dist 
+#' @param testAS 
+#' @param clusters 
+#'
+#' @return
+#' @import multidplyr
+#' @export
+#'
+#' @examples
+runNMDer <- function(prepObject,
+                 testNMD = TRUE,
+                 testOtherFeatures = FALSE,
+                 PTC_dist = 50,
+                 testAS = FALSE,
+                 clusters = 4) {
+  
+  options(warn=-1)
+  
+  # unpack object
+  unpack[report_df, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS, genome] = 
+    prepObject
+
   
   # run NMD analysis in parallel
-  infoLog('Detecting NMD features...', logf, quiet)
-  
   group <- rep(1:clusters, length.out = nrow(report_df))
   report_df <- bind_cols(tibble(group), report_df)
   cluster <- create_cluster(cores = clusters, quiet = TRUE)
@@ -62,19 +100,21 @@ run2 <- function() {
     cluster_assign_value("inputExonsbyTx", inputExonsbyTx) %>%
     cluster_assign_value("basicExonsbyTx", basicExonsbyTx) %>% 
     cluster_assign_value("genome", genome) %>%
+    cluster_assign_value("testNMD", testNMD) %>%
     cluster_assign_value("PTC_dist", PTC_dist) %>%
-    cluster_assign_value("other_features", other_features) %>%
-    cluster_assign_value("logf", logf) %>%
-    cluster_assign_value("quiet", quiet)
+    cluster_assign_value("testOtherFeatures", testOtherFeatures) %>%
+    cluster_assign_value("testAS", testAS)
   
   report_df <- parallel_df %>% # Use by_group party_df
     do(testNMDfeatures(., inputExonsbyTx, basicExonsbyCDS,
-                       basicExonsbyTx,genome, PTC_dist,other_features)) %>%
+                       basicExonsbyTx, genome, testNMD, 
+                       PTC_dist,testOtherFeatures, testAS)) %>%
     collect() %>% # Special collect() function to recombine partitions
     as.data.frame() %>%
-    dplyr::arrange(NMDer_ID)
-  rm(list = c('parallel_df','basicExonsbyCDS', 'basicExonsbyTx', 'inputExonsbyTx'))
+    dplyr::arrange(NMDer_ID) %>% dplyr::select(-group)
   
+  options(warn=0)
+
   return(report_df)
 }
 
@@ -96,7 +136,6 @@ run2 <- function() {
 #'
 #' @return
 #' @export
-#' @import zeallot
 #' @import multidplyr
 #' 
 #' @examples
