@@ -266,7 +266,7 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
 #' 
 #' 
 #' 
-matchGeneIDs <- function(query, ref, primary_gene_id=NULL, secondary_gene_id=NULL, outputfile = 'matched_geneIDs.gtf', clusters = 4) {
+matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secondary_gene_id=NULL, clusters = 4) {
   
   # testing and matching gene_ids
   infoLog('Checking and matching gene_ids...')
