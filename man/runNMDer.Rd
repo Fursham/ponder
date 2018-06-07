@@ -4,7 +4,7 @@
 \alias{runNMDer}
 \title{Title}
 \usage{
-runNMDer(prepObject, testNMD = TRUE, other_features = FALSE,
+runNMDer(prepObject, testNMD = TRUE, testOtherFeatures = FALSE,
   PTC_dist = 50, testAS = FALSE, clusters = 4)
 }
 \arguments{
@@ -12,13 +12,13 @@ runNMDer(prepObject, testNMD = TRUE, other_features = FALSE,
 
 \item{testNMD}{}
 
-\item{other_features}{}
-
 \item{PTC_dist}{}
 
 \item{testAS}{}
 
 \item{clusters}{}
+
+\item{other_features}{}
 }
 \description{
 Title
