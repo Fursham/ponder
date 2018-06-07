@@ -259,7 +259,7 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     uATG_frame = ifelse(all(is.na(uATG_frame)), FALSE, paste(uATG_frame[!is.na(uATG_frame)], collapse = '|'))
     
     output = modifyList(output, list(uORF = as.character(uORF), 
-                                     threeUTR = as.character(threeUTR), 
+                                     threeUTR = as.numeric(threeUTR), 
                                      uATG = as.character(uATG), 
                                      uATG_frame = as.character(uATG_frame)))
   }
