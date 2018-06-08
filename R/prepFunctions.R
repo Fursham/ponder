@@ -541,7 +541,7 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
 #' @import GenomicFeatures
 #'
 #' @examples
-prepareAnalysis <- function(inputGRanges, basicGRanges, outdir) {
+prepareAnalysis <- function(inputGRanges, basicGRanges) {
   
   infoLog('Preparing databases, transcripts and output files...', logf, quiet)
   
