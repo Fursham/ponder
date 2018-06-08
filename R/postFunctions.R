@@ -9,7 +9,7 @@
 #' @export
 #'
 #' @examples
-generateGTF <- function(df, output_dir) {
+makeGTF <- function(df, output_dir = getwd()) {
   
   infoLog('Writing GTF file...', logf, quiet)
   
