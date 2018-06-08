@@ -29,8 +29,8 @@ generateGTF <- function(df, output_dir) {
     txstop = ifelse(y[['Strand']]== '-',exon_coords[1,2], exon_coords[nrow(exon_coords),2])
     
     
-    txmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s; is_nmd %s;', 
-                         dQuote(y[['Gene_ID']]), dQuote(y[['NMDer_ID']]), dQuote(y[['Gene_Name']]), y[['is_NMD']])
+    txmetainfo = sprintf('gene_id = %s; transcript_id %s; gene_name %s;', 
+                         dQuote(y[['Gene_ID']]), dQuote(y[['NMDer_ID']]), dQuote(y[['Gene_Name']]))
     tx = list(chrom = as.character(y[['Chrom']]), source = 'NMDer', type = 'transcript', start = as.integer(txstart), end = as.integer(txstop),
               score = 1000, strand = as.character(y[['Strand']]), frame = '.', meta = txmetainfo)
     tempdf= rbind(tempdf, tx)
