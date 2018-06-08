@@ -82,8 +82,9 @@ runNMDer <- function(prepObject,
   # unpack object
   unpack[report_df, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS, genome] = 
     prepObject
-
   
+  infoLog('Running NMDer')
+
   # run NMD analysis in parallel
   group <- rep(1:clusters, length.out = nrow(report_df))
   report_df <- bind_cols(tibble(group), report_df)
@@ -113,6 +114,7 @@ runNMDer <- function(prepObject,
     as.data.frame() %>%
     dplyr::arrange(NMDer_ID) %>% dplyr::select(-group)
   
+  infoLog('Done!')
   options(warn=0)
 
   return(report_df)
