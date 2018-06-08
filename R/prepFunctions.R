@@ -29,7 +29,7 @@
 #' 
 #' 
 
-prepareInputs <- function(queryfile, ref, fasta, in_format, ref_format) {
+prepareInputs <- function(queryfile, ref, fasta = NULL, in_format, ref_format) {
   
   # import assembled transcripts
   infoLog('Importing assembled transcripts...', logf, quiet)
@@ -79,7 +79,9 @@ prepareInputs <- function(queryfile, ref, fasta, in_format, ref_format) {
     } else {
       genome = Biostrings::readDNAStringSet(fasta, format="fasta")
     }
-  } 
+  } else {
+    genome = NULL
+  }
   return(list('inputGRanges' = inputGRanges, 
               'basicGRanges' = basicGRanges, 
               'genome' = genome))
