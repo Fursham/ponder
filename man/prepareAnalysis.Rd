@@ -4,7 +4,7 @@
 \alias{prepareAnalysis}
 \title{_ workflow: Preparing for analysis}
 \usage{
-prepareAnalysis(inputGRanges, basicGRanges, outdir)
+prepareAnalysis(inputGRanges, basicGRanges)
 }
 \arguments{
 \item{inputGRanges}{GRanges object containing transcript and exon features. It is recommended to create this object
