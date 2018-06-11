@@ -4,10 +4,14 @@
 \alias{matchGeneIDs}
 \title{Match Gene IDs from query GTF/GFF3 file}
 \usage{
-matchGeneIDs(query, ref, primary_gene_id = NULL, secondary_gene_id = NULL,
-  outputfile = "matched_geneIDs.gtf", clusters = 4)
+matchGeneIDs(inputGRanges, basicGRanges, primary_gene_id = NULL,
+  secondary_gene_id = NULL, clusters = 4)
 }
 \arguments{
+\item{primary_gene_id}{Name of the primary gene id in query file. Input to this argument is typically 'gene_id'}
+
+\item{secondary_gene_id}{Name of the secondary gene id in query file. Example of input to this arguement is 'ref_gene_id'}
+
 \item{query}{Assembled transcripts in query. Argument can be provided as name of GTF/GFF3 file in current working directory,
 or path_to_file. Argument can also be provided as a GenomicRanges object containing transcript and/or exon ranges.}
 
@@ -15,17 +19,13 @@ or path_to_file. Argument can also be provided as a GenomicRanges object contain
 that will be loaded using 'gencode_basics[['mm10']] or gencode_basics[['hg38']] as input to argument. Argument can also be provided as name of 
 GTF/GFF3 file in current working directory, or path_to_file.}
 
-\item{primary_gene_id}{Name of the primary gene id in query file. Input to this argument is typically 'gene_id'}
-
-\item{secondary_gene_id}{Name of the secondary gene id in query file. Example of input to this arguement is 'ref_gene_id'}
-
-\item{outputfile}{Name of output file (Default: 'matched_geneIDs.gtf'). File will be saved in current working directory}
-
 \item{query_format}{Format of query file (GTF/GFF3). If this argument is not provided and input to query argument
 is a filename, program will attempt to read file extension.}
 
 \item{ref_format}{Format of reference file (GTF/GFF3). If this argument is not provided and input to query argument
 is a filename, program will attempt to read file extension.}
+
+\item{outputfile}{Name of output file (Default: 'matched_geneIDs.gtf'). File will be saved in current working directory}
 }
 \value{
 GTF file with matched Gene IDs if makefile == TRUE. 
