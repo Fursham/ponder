@@ -34,7 +34,7 @@ prepNMDer <- function(query,
   
   # import and/or load query file(s)
   unpack[inputGRanges, basicGRanges, genome] = 
-    prepareInputs(query, reference, fasta,query_format, reference_format)
+    prepareInputs(query, reference, fasta, query_format, reference_format)
   
   # unpacking objects
   #inputGRanges = packedInput$inputGRanges
@@ -49,7 +49,7 @@ prepNMDer <- function(query,
   
   # prepare dataframes and transcript GRanges objects
   unpack[report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx] = 
-    prepareAnalysis(inputGRanges, basicGRanges, output_dir)
+    prepareAnalysis(inputGRanges, basicGRanges)
   
   options(warn=0)
   
@@ -137,13 +137,15 @@ matchIDs <- function(query,
   
   options(warn=-1)
   # check for mandataory arguments
-  if (any(missing(query), missing(reference), missing(fasta))) {
+  if (any(missing(query), missing(reference))) {
     stopLog('Missing mandatory arguments')
   } 
   
   # import and/or load query file(s)
-  unpack[inputGRanges, basicGRanges] = 
-    prepareInputs(query, reference, query_format, reference_format)
+  unpack[inputGRanges, basicGRanges, genome] = 
+    prepareInputs(query, reference, 
+                  in_format = query_format, 
+                  ref_format = reference_format)
 
   # matching chromosome names and gene IDs
   inputGRanges = matchGeneIDs(inputGRanges, basicGRanges, primary_gene_id, 
