@@ -290,13 +290,13 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
   #     5 -> id could not be matched and will be skipped from analysis
   if (!is.null(primary_gene_id) & !is.null(secondary_gene_id)) {
     unique_ids = elementMetadata(inputGRanges) %>% as.data.frame() %>%
-      dplyr::select(gene_id = primary_gene_id, secondary = secondary_gene_id)
+      dplyr::select(gene_id = primary_gene_id, secondary = secondary_gene_id, name = gene_name)
   } else if (!is.null(primary_gene_id)) {
     unique_ids = elementMetadata(inputGRanges) %>% as.data.frame() %>%
-      dplyr::select(gene_id = primary_gene_id)
+      dplyr::select(gene_id = primary_gene_id, name = gene_name)
   } else {
     unique_ids = elementMetadata(inputGRanges) %>% as.data.frame() %>%
-      dplyr::select(gene_id = gene_id)
+      dplyr::select(gene_id = gene_id, name = gene_name)
   }
   unique_ids = unique_ids %>% 
     dplyr::mutate(new_id = gene_id, match_level = 0)
@@ -327,7 +327,7 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
       dplyr::mutate_at(vars(secondary), funs(ifelse(new_id%in%unique(mcols(basicGRanges)$gene_id) == FALSE, ., NA))) %>%
       dplyr::mutate_at(vars(match_level), funs(ifelse(!is.na(secondary), 1, .))) %>%
       dplyr::mutate_at(vars(new_id), funs(ifelse(!is.na(secondary), as.character(secondary), .))) %>%
-      dplyr::select(gene_id, new_id, match_level)
+      dplyr::select(gene_id, new_id, name, match_level)
     
     # count number of non-standard ids after matching
     countsafter = nrow(unique_ids %>%
@@ -363,7 +363,7 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
     if (nrow(gene_id_df) > 0) {
       # make dataframe of annotated gene_id starting with "ENS"
       basic_gene_id_df = elementMetadata(basicGRanges) %>% as.data.frame() %>%
-        dplyr::select(ens_id = gene_id) %>%
+        dplyr::select(ens_id = gene_id, ens_name = gene_name) %>%
         dplyr::distinct() %>%
         dplyr::filter(startsWith(ens_id, "ENS") == TRUE)
       
@@ -380,7 +380,8 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
       unique_ids = unique_ids %>% left_join(gene_id_df, by=c('new_id'='gene_id')) %>%
         dplyr::mutate_at(vars(match_level), funs(ifelse(!is.na(ens_id), as.integer(.)+1, .))) %>%
         dplyr::mutate_at(vars(new_id), funs(ifelse(!is.na(ens_id), as.character(ens_id), .))) %>%
-        dplyr::select(gene_id, new_id, match_level)
+        dplyr::mutate_at(vars(name), funs(ifelse(!is.na(ens_id), as.character(ens_name), .))) %>%
+        dplyr::select(gene_id, new_id, name, match_level)
       
       # count number of non-standard ids after matching
       countsafter = nrow(unique_ids %>%
@@ -458,13 +459,18 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
       as.data.frame() %>%
       dplyr::filter(!is.na(ref_gene_id))
     
-    
+    # get gene names of matched gene_ids
+    gene_names_df = elementMetadata(basicGRanges) %>% as.data.frame() %>%
+      dplyr::select(id = gene_id, new_name = gene_name) %>%
+      dplyr::distinct()
+    gene_id_df = gene_id_df %>% dplyr::left_join(gene_names_df, by = c('ref_gene_id'='id'))
     
     # replace gene_id on assembled transcript with predicted gene_id from overlap
     unique_ids = unique_ids %>% left_join(gene_id_df, by=c('new_id'='gene_id')) %>%
       dplyr::mutate_at(vars(match_level), funs(ifelse(!is.na(ref_gene_id), 4, .))) %>%
       dplyr::mutate_at(vars(new_id), funs(ifelse(!is.na(ref_gene_id), as.character(ref_gene_id), .))) %>%
-      dplyr::select(gene_id, new_id, match_level)
+      dplyr::mutate_at(vars(name), funs(ifelse(!is.na(ref_gene_id), as.character(new_name), .))) %>%
+      dplyr::select(gene_id, new_id, name, match_level)
     
     # count number of unmatched ids after matching
     countsafter = nrow(unique_ids %>%
@@ -500,6 +506,7 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
   
   # update gene_id and add match_level to inputGRanges
   mcols(inputGRanges)$gene_id = unique_ids$new_id
+  mcols(inputGRanges)$gene_name = unique_ids$name
   mcols(inputGRanges)$match_level = unique_ids$match_level
   
   # report pre-testing analysis and return inputGRanges
