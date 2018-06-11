@@ -52,7 +52,11 @@ prepNMDer <- function(query,
     prepareAnalysis(inputGRanges, basicGRanges, output_dir)
   
   options(warn=0)
-  return(list(report_df, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS, genome))
+  
+  preppedOutput = packNMDer(df = report_df, inputTranscripts = inputExonsbyTx, basicTranscripts = basicExonsbyTx, basicCDS = basicExonsbyCDS, fasta = genome)
+  
+  #return(list(report_df, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS, genome))
+  return(preppedOutput)
 }
 
 
@@ -79,9 +83,9 @@ runNMDer <- function(prepObject,
   
   options(warn=-1)
   
-  # unpack object
+  # unpack custom S4 object
   unpack[report_df, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS, genome] = 
-    prepObject
+    unPack(prepObject)
   
   infoLog('Running NMDer')
 
