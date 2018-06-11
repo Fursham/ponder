@@ -40,3 +40,38 @@ unpack <- structure(NA,class="result")
   }
   x
 }
+
+packNMDer <- setClass('packNMDer', 
+                      slots = c(df = "ANY", 
+                                inputTranscripts = "ANY", 
+                                basicTranscripts = "ANY", 
+                                basicCDS = "ANY", 
+                                fasta = "ANY"))
+
+packNMDerMethod <- setMethod('show', 
+                           signature = 'packNMDer',
+                           definition = function(object) {
+                             cat('Custom NMDer Object\n')
+                           })
+
+setGeneric("showTable", function(object,...) standardGeneric("showTable"))
+setMethod("showTable", "packNMDer",function(object) as.data.frame(object@df))
+
+unPack <- function(object) {
+  headers = slotNames(object)
+  output = lapply(headers, function(x) {
+    return(slot(object,x))
+  })
+  return(output)
+}
+
+setGeneric("test", function(object,...) standardGeneric("test"))
+setMethod("test", "packNMDer", definition = function(object) {
+  
+  headers = slotNames(object)
+  output = lapply(headers, function(x) {
+    return(slot(object,x))
+  })
+})
+
+
