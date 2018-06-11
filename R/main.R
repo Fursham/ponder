@@ -126,7 +126,7 @@ runNMDer <- function(prepObject,
 
 
 
-matchIDs <- function(query,
+matchGTFgeneIDs <- function(query,
                      reference,
                      query_format = NULL,
                      reference_format = NULL,
