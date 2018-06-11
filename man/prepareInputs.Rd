@@ -4,7 +4,7 @@
 \alias{prepareInputs}
 \title{_ workflow: Load and/or import input files}
 \usage{
-prepareInputs(queryfile, ref, fasta, in_format, ref_format)
+prepareInputs(queryfile, ref, fasta = NULL, in_format, ref_format)
 }
 \arguments{
 \item{fasta}{genome sequence in fasta format. This program contain in-built fasta files for 
