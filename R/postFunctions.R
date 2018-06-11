@@ -6,6 +6,7 @@
 #'
 #' @return
 #' @import tidyr
+#' @import IRanges
 #' @export
 #'
 #' @examples
