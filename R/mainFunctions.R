@@ -211,8 +211,10 @@ getASevents <- function(transcript1, transcript2, testedNMD, orf, is_NMD) {
   }
   
   # combine alternative segments and update ASlist with segment coordinates by matching class annotations with the named ASlist
+  strand = as.character(strand(transcript1)[1])
   combinedASoutput = append(ASoutput[[1]], ASoutput[[2]])
   combinedASoutput$AS_class = as.character(combinedASoutput$AS_class)
+  combinedASoutput = sort(combinedASoutput, decreasing = strand == '-')
   
   NMDexon = NA
   if (!is.na(is_NMD)) {
@@ -234,15 +236,15 @@ getASevents <- function(transcript1, transcript2, testedNMD, orf, is_NMD) {
         } 
         # else, we need to test if each segment is in frame with orf
         else if (length(altseg_NMD) > 1) {
-          elementMetadata(altseg_NMD)$size = as.data.frame(width(altseg_NMD))
           
-          # filter for in-frame segments
-          altseg_NMD[elementMetadata(altseg_NMD)$size %% 3 == 0]
-          
-          # take the upstream most segment as the NMD-causing segment
-          if (length(altseg_NMD) > 0) {
+          # remove segments which are divisible by 3
+          altseg_NMD = altseg_NMD[elementMetadata(altseg_NMD)$size %% 3 != 0]
+          if (length(altseg_NMD) == 1) {
             NMDexon = elementMetadata(altseg_NMD)$AS_class[1]
           } 
+          else {
+            NMDexon = paste(sort(elementMetadata(altseg_NMD)$AS_class), collapse = '|')
+          }
         }
       }
       ASlist = modifyList(ASlist, list(NMDcausing = NMDexon))
