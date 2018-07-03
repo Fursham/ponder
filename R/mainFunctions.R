@@ -230,20 +230,29 @@ getASevents <- function(transcript1, transcript2, testedNMD, orf, is_NMD) {
       else {
         altseg_NMD = combinedASoutput[overlapsAny(combinedASoutput, range(orf))]
         
+        # remove segments which are divisible by 3
+        altseg_NMD = altseg_NMD[elementMetadata(altseg_NMD)$size %% 3 != 0]
+        
         # if only 1 segment overlaps, that should be the NMD-causing exon
         if (length(altseg_NMD) == 1) {
           NMDexon = elementMetadata(altseg_NMD)$AS_class[1]
         } 
         # else, we need to test if each segment is in frame with orf
         else if (length(altseg_NMD) > 1) {
+          NMDexon = paste(sort(elementMetadata(altseg_NMD)$AS_class), collapse = '|')
+        
+        }
+        else if (length(altseg_NMD) == 0) {
           
-          # remove segments which are divisible by 3
-          altseg_NMD = altseg_NMD[elementMetadata(altseg_NMD)$size %% 3 != 0]
-          if (length(altseg_NMD) == 1) {
-            NMDexon = elementMetadata(altseg_NMD)$AS_class[1]
-          } 
-          else {
-            NMDexon = paste(sort(elementMetadata(altseg_NMD)$AS_class), collapse = '|')
+          # if there is no internal out-of-frame exon causing the NMD, 
+          # it could be due to spliced exons in 3'UTR that generate an exon-junction
+          threeUTRseg = combinedASoutput[!overlapsAny(combinedASoutput, 
+                                                      range(append(append(transcript1[1], transcript2[1]), 
+                                                                   orf[length(orf)])))]
+          
+          if (length(threeUTRseg) > 0) {
+            NMDexon = elementMetadata(threeUTRseg)$AS_class[1]
+            NMDexon = paste(c('3UTR', NMDexon), collapse = '_')
           }
         }
       }
