@@ -42,7 +42,8 @@ unpack <- structure(NA,class="result")
 }
 
 packNMDer <- setClass('packNMDer', 
-                      slots = c(df = "ANY", 
+                      slots = c(df = "ANY",
+                                inputGRanges = "ANY", 
                                 inputTranscripts = "ANY", 
                                 basicTranscripts = "ANY", 
                                 basicCDS = "ANY", 

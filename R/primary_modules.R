@@ -34,7 +34,7 @@
 #' reconstructCDS(ptbp2Data$transcripts$ENSMUST00000197833, ptbp2Data$refCDS, fasta = BSgenome.Mmusculus.UCSC.mm10)
 #' 
 #' 
-reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL){
+reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL, gene_id, transcript_id){
   
   # check if txrevise_out input is provided, and build one if not.
   if (is.null(txrevise_out)) {
@@ -90,7 +90,13 @@ reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL){
       # append 3' end of transcript to the first stop codon if found
     if (length(inframe_stopcodons) > 0) {
       downUTRsize = length(thisqueryseq) - end(inframe_stopcodons[1])
-      augmentedCDS = resizeTranscripts(augmentedCDS, end = downUTRsize) 
+      augmentedCDS = resizeTranscripts(augmentedCDS, end = downUTRsize)
+      augmentedCDS = augmentedCDS %>% as.data.frame() %>%
+        dplyr::mutate(type = 'CDS', gene_id = gene_id, transcript_id = transcript_id) %>%
+        dplyr::mutate(phase = cumsum(width%%3)%%3)
+      augmentedCDS$phase = c(0, head(augmentedCDS$phase, - 1))
+      augmentedCDS = makeGRangesFromDataFrame(augmentedCDS, keep.extra.columns = TRUE)
+
     } else {
       # if a stop codon is not found, return NA
       augmentedCDS = NA

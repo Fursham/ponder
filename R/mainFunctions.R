@@ -45,78 +45,78 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     # can be referenced as thisline$_
     thisline = as.list(x)
     
+    
+    #############################################################################
+    # deprecated
+    
     # Add in coordinates of query transcripts
     #  this part have to be done this way because some exons are 1 nt in length
     #  and doing the conventional way will output 'xxx' rather than 'xxx-xxx'
-    string = paste(ranges(inputExonsbyTx[[thisline$Transcript_ID]]))
-    string = sapply(string, function(y) {
-      newsstring = ifelse(!grepl('-', y), paste(c(y, '-', y), collapse = ''), y)
-      return(newsstring)
-    })
-    thisline$Tx_coordinates = paste(string, collapse = ';')
+    #string = paste(ranges(inputExonsbyTx[[thisline$Transcript_ID]]))
+    #string = sapply(string, function(y) {
+    #  newsstring = ifelse(!grepl('-', y), paste(c(y, '-', y), collapse = ''), y)
+    #  return(newsstring)
+    #})
+    #thisline$Tx_coordinates = paste(string, collapse = ';')
+    #############################################################################
     
-    # return if query do not correspond to an annotated gene
-    if (thisline$Match_level == 5) {
-      return(thisline)
-    } else {
-      
-      # return if reference transcript is not a CDS
-      thisbasicCDS = basicExonsbyCDS[[thisline$Ref_TX_ID]]
-      if (is.null(thisbasicCDS[1])) {
-        return(thisline)
-      } else {
-        
-        # run test and update output list
-        ORFreport = getORF(thisbasicCDS, 
-                           inputExonsbyTx[[thisline$Transcript_ID]], 
-                           genome)
-        thisline = modifyList(thisline, ORFreport)
-        
-        
-        # test NMD only if requested
-        if (testforNMD == TRUE) {
-          NMDreport = testNMD(thisline$ORF_considered, 
-                              inputExonsbyTx[[thisline$Transcript_ID]], 
-                              PTC_dist, 
-                              testNonClassicalNMD,
-                              genome)
-          thisline = modifyList(thisline, NMDreport)
-        }
-        
-        # classify alternative splicing events if requested
-        if (testforAS == TRUE) {
-          if (testforNMD == FALSE) {
-            ORF = NA
-            is_NMD = NA
-          } else {
-            ORF = thisline$ORF_considered
-            is_NMD = thisline$is_NMD
-          }
-          
-          altevents = getASevents(basicExonsbyTx[[thisline$Ref_TX_ID]], 
-                                  inputExonsbyTx[[thisline$Transcript_ID]], 
-                                  testforNMD, ORF, is_NMD)
-          
-          thisline = modifyList(thisline, altevents)
-          
-        }
-        
-        
-        # update analyzed ORF coordinates into output
-        #  this part have to be done this way because some terminal exons have length of 1
-        #  and doing the conventional way will output 'xxx' rather than 'xxx-xxx'
-        if (!is.na(thisline$ORF_considered[1])) {
-          ORFstringlist = paste(ranges(thisline$ORF_considered))
-          ORFstringlist = sapply(ORFstringlist, function(x){
-            return(ifelse(!grepl('-', x), paste(c(x, '-', x), collapse = ''), x))
-          })
-          thisline$ORF_considered = paste(ORFstringlist, collapse = ';')
-        }
-        
-        #thisline[11:length(thisline)] = as.character(thisline[11:length(thisline)])
-        return(thisline)
-      }
+    # attempt to get open reading frame of transcript and update line entry
+    ORFreport = getORF(basicExonsbyCDS[[thisline$Ref_TX_ID]], 
+                       inputExonsbyTx[[thisline$Transcript_ID]], 
+                       genome, thisline$Gene_ID,
+                       thisline$NMDer_ID)
+    thisline = modifyList(thisline, ORFreport)
+    
+    
+    # if requested, test for NMD features and update line entry
+    if (testforNMD == TRUE) {
+      NMDreport = testNMD(thisline$ORF_considered, 
+                          inputExonsbyTx[[thisline$Transcript_ID]], 
+                          PTC_dist, 
+                          testNonClassicalNMD,
+                          genome)
+      thisline = modifyList(thisline, NMDreport)
     }
+    
+    # if requested, classify alternative splicing events and update line entry
+    if (testforAS == TRUE) {
+      if (testforNMD == FALSE) {
+        ORF = NA
+        is_NMD = NA
+      } else {
+        ORF = thisline$ORF_considered
+        is_NMD = thisline$is_NMD
+      }
+      
+      altevents = getASevents(basicExonsbyTx[[thisline$Ref_TX_ID]], 
+                              inputExonsbyTx[[thisline$Transcript_ID]], 
+                              testforNMD, ORF, is_NMD)
+      
+      thisline = modifyList(thisline, altevents)
+      
+    }
+    
+    
+    # update analyzed ORF coordinates into output
+    #  this part have to be done this way because some terminal exons have length of 1
+    #  and doing the conventional way will output 'xxx' rather than 'xxx-xxx'
+    if (!is.na(thisline$ORF_considered[1])) {
+      
+      #### deprecated
+      #ORFstringlist = paste(ranges(thisline$ORF_considered))
+      #ORFstringlist = sapply(ORFstringlist, function(x){
+      #  return(ifelse(!grepl('-', x), paste(c(x, '-', x), collapse = ''), x))
+      #})
+      #thisline$ORF_considered = paste(ORFstringlist, collapse = ';')
+      ###################
+      
+      thisline$ORF_considered = thisline$ORF_considered %>% as.data.frame()
+    }
+    
+    #thisline[11:length(thisline)] = as.character(thisline[11:length(thisline)])
+    return(thisline)
+    
+    
   }
   
   # run the above function on report_df
@@ -146,7 +146,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
 #' @export
 #'
 #' @examples
-getORF <- function(knownCDS, queryTx, refsequence) {
+getORF <- function(knownCDS, queryTx, refsequence, gene_id, transcript_id) {
   
   # prep output list
   output = list(ORF_considered = as.character(NA),
@@ -179,7 +179,10 @@ getORF <- function(knownCDS, queryTx, refsequence) {
   } 
   
   # reconstruct CDS with insertion of alternative segments
-  augmentedCDS = reconstructCDS(txrevise_out = pre_report$txrevise_out, fasta = refsequence)
+  augmentedCDS = reconstructCDS(txrevise_out = pre_report$txrevise_out, 
+                                fasta = refsequence, 
+                                gene_id = gene_id, 
+                                transcript_id = transcript_id)
   output = modifyList(output, augmentedCDS)
   
   return(output)
@@ -195,7 +198,7 @@ getASevents <- function(transcript1, transcript2, testedNMD, orf, is_NMD) {
     dplyr::mutate_all(funs(as.character(.))) %>%
     as.list()
   if (testedNMD == TRUE) {
-    ASlist = modifyList(ASlist, list(NMDcausing = as.character(NA)))
+    ASlist = modifyList(ASlist, list(NMDcausing = as.character(NA), NMDcausing.coord = as.character(NA)))
   }
   
   # get AS classifications. transcript 1 is reference and transcript 2 is query in this case
@@ -215,8 +218,10 @@ getASevents <- function(transcript1, transcript2, testedNMD, orf, is_NMD) {
   combinedASoutput = append(ASoutput[[1]], ASoutput[[2]])
   combinedASoutput$AS_class = as.character(combinedASoutput$AS_class)
   combinedASoutput = sort(combinedASoutput, decreasing = strand == '-')
+  combinedASoutput$size = width(combinedASoutput)
   
   NMDexon = NA
+  NMDexon.coord = NA
   if (!is.na(is_NMD)) {
     if (is_NMD == TRUE) {
       
@@ -225,6 +230,7 @@ getASevents <- function(transcript1, transcript2, testedNMD, orf, is_NMD) {
       if (length(altseg_NMD) == 1) {
         
         NMDexon = elementMetadata(altseg_NMD)$AS_class[1]
+        NMDexon.coord = altseg_NMD[1] %>% range() %>% as.character() %>% substr(start = 1, stop = nchar(.)-2)
       } 
       # else, check if any of the alt segment overlaps with orf
       else {
@@ -236,14 +242,16 @@ getASevents <- function(transcript1, transcript2, testedNMD, orf, is_NMD) {
         # if only 1 segment overlaps, that should be the NMD-causing exon
         if (length(altseg_NMD) == 1) {
           NMDexon = elementMetadata(altseg_NMD)$AS_class[1]
+          NMDexon.coord = altseg_NMD[1] %>% range() %>% as.character() %>% substr(start = 1, stop = nchar(.)-2)
         } 
         # else, we need to test if each segment is in frame with orf
         else if (length(altseg_NMD) > 1) {
           NMDexon = paste(sort(elementMetadata(altseg_NMD)$AS_class), collapse = '|')
+          NMDexon.coord = sort(altseg_NMD)[1] %>% range() %>% as.character() %>% substr(start = 1, stop = nchar(.)-2)
         
         }
         else if (length(altseg_NMD) == 0) {
-          
+          R
           # if there is no internal out-of-frame exon causing the NMD, 
           # it could be due to spliced exons in 3'UTR that generate an exon-junction
           threeUTRseg = combinedASoutput[!overlapsAny(combinedASoutput, 
@@ -252,11 +260,12 @@ getASevents <- function(transcript1, transcript2, testedNMD, orf, is_NMD) {
           
           if (length(threeUTRseg) > 0) {
             NMDexon = elementMetadata(threeUTRseg)$AS_class[1]
+            NMDexon.coord = threeUTRseg[1] %>% range() %>% as.character() %>% substr(start = 1, stop = nchar(.)-2)
             NMDexon = paste(c('3UTR', NMDexon), collapse = '_')
           }
         }
       }
-      ASlist = modifyList(ASlist, list(NMDcausing = NMDexon))
+      ASlist = modifyList(ASlist, list(NMDcausing = NMDexon, NMDcausing.coord = NMDexon.coord))
     }
   } 
   

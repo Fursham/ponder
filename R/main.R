@@ -9,7 +9,6 @@
 #' @param match_geneIDs 
 #' @param primary_gene_id 
 #' @param secondary_gene_id 
-#' @param clusters 
 #'
 #' @return
 #' @export
@@ -23,8 +22,7 @@ prepNMDer <- function(query,
                  match_chrom = FALSE,
                  match_geneIDs = FALSE,
                  primary_gene_id = NULL,
-                 secondary_gene_id = NULL,
-                 clusters = 4) {
+                 secondary_gene_id = NULL) {
 
   options(warn=-1)
   # check for mandataory arguments
@@ -44,8 +42,7 @@ prepNMDer <- function(query,
   # matching chromosome names and gene IDs
   inputGRanges = preTesting(inputGRanges, basicGRanges, genome, 
                             match_chrom, match_geneIDs, 
-                            primary_gene_id, secondary_gene_id,
-                            clusters)
+                            primary_gene_id, secondary_gene_id)
   
   # prepare dataframes and transcript GRanges objects
   unpack[report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx] = 
@@ -53,7 +50,12 @@ prepNMDer <- function(query,
   
   options(warn=0)
   
-  preppedOutput = packNMDer(df = report_df, inputTranscripts = inputExonsbyTx, basicTranscripts = basicExonsbyTx, basicCDS = basicExonsbyCDS, fasta = genome)
+  preppedOutput = packNMDer(df = report_df, 
+                            inputGRanges = inputGRanges, 
+                            inputTranscripts = inputExonsbyTx, 
+                            basicTranscripts = basicExonsbyTx, 
+                            basicCDS = basicExonsbyCDS, 
+                            fasta = genome)
   
   #return(list(report_df, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS, genome))
   return(preppedOutput)
@@ -79,15 +81,23 @@ runNMDer <- function(prepObject,
                  testOtherFeatures = FALSE,
                  PTC_dist = 50,
                  testAS = FALSE,
+                 makeGTF = FALSE,
                  clusters = 4) {
   
   options(warn=-1)
   
   # unpack custom S4 object
-  unpack[report_df, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS, genome] = 
+  unpack[report_df, inputGRanges, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS, genome] = 
     unPack(prepObject)
   
   infoLog('Running NMDer')
+  
+  # separate
+  report_df_unmatched = report_df %>%
+    dplyr::filter(Match_level == 5)
+  
+  report_df = report_df %>% 
+    dplyr::filter(Match_level != 5)
 
   # run NMD analysis in parallel
   group <- rep(1:clusters, length.out = nrow(report_df))
@@ -116,12 +126,43 @@ runNMDer <- function(prepObject,
                        PTC_dist,testOtherFeatures, testAS)) %>%
     collect() %>% # Special collect() function to recombine partitions
     as.data.frame() %>%
-    dplyr::arrange(NMDer_ID) %>% dplyr::select(-group)
+    dplyr::arrange(NMDer_ID) %>% dplyr::select(-group, -ORF_considered)
+  
+  output_df = report_df %>% 
+    dplyr::select(-starts_with('ORF_considered')) %>%
+    dplyr::bind_rows(report_df_unmatched) %>%
+    dplyr::distinct(NMDer_ID, .keep_all = TRUE) %>%
+    dplyr::arrange(NMDer_ID)
+  
+  if (makeGTF != FALSE){
+    if (makeGTF == TRUE){
+      out.dir = getwd()
+    } else{
+      out.dir = makeGTF
+    }
+    
+    report_CDS = report_df %>% 
+      dplyr::select(starts_with('ORF_considered')) %>%
+      dplyr::filter(!is.na(ORF_considered.type))
+    names(report_CDS) = substr(names(report_CDS), start = 16, stop = nchar(report_CDS))
+    report_CDS$source = 'NMDer'
+
+    input_transcripts = report_df %>% 
+      dplyr::select(NMDer_ID, Transcript_ID) %>%
+      dplyr::left_join(as.data.frame(inputGRanges), by = c('Transcript_ID' = 'transcript_id')) %>%
+      dplyr::mutate(source = 'NMDer', transcript_id = NMDer_ID) %>%
+      dplyr::select(seqnames:type,phase:gene_id,transcript_id)
+    
+    output_gtf = bind_rows(input_transcripts, report_CDS)
+    rtracklayer::export(output_gtf, paste0(out.dir, '/NMDer.gtf'), format = 'gtf')
+  }
+  
+  
   
   infoLog('Done!')
   options(warn=0)
 
-  return(report_df)
+  return(output_df)
 }
 
 
@@ -149,7 +190,7 @@ matchGTFgeneIDs <- function(query,
 
   # matching chromosome names and gene IDs
   inputGRanges = matchGeneIDs(inputGRanges, basicGRanges, primary_gene_id, 
-                              secondary_gene_id, clusters = 4)
+                              secondary_gene_id)
   
   # export
   rtracklayer::export(inputGRanges, outputfile)
