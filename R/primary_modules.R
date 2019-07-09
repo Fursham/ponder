@@ -311,11 +311,7 @@ classifyAltSegments <- function(transcript1, transcript2, txrevise_out = NULL) {
   if (is.null(diffSegments)) {
     return(NULL) # warning too maybe?
   }
-  
-  # get coverage length of overlaps
-  coverage = sum(width(diffSegments[[3]])) / sum(width(c(ranges(diffSegments[[1]]), ranges(diffSegments[[3]]))))
-  diffSegments = c(diffSegments, Shared_coverage = coverage)
-  
+
   # test for alternate segments in each transcripts, one at a time
   strand = as.character(strand(transcript1)[1])
   totest = sapply(list(diffSegments[[1]], diffSegments[[2]]), function(x) {
