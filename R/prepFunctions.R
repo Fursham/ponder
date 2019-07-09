@@ -618,7 +618,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
     dplyr::mutate(Shared_coverage = common / querywidth) %>%
     dplyr::select(-querywidth, -common) %>%
     group_by(Transcript_ID) %>% 
-    dplyr::arrange(desc(coverage)) %>%
+    dplyr::arrange(desc(Shared_coverage)) %>%
     dplyr::distinct(Transcript_ID, .keep_all = TRUE) %>%
     ungroup() %>%
     dplyr::arrange(NMDer_ID)
