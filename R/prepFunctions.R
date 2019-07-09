@@ -608,7 +608,21 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
     dplyr::filter((!is.na(CDS) & !is.na(Ref_TX_ID)) | Match_level == 5) %>%
     dplyr::select(-CDS))
   
-
+  # filter the comparisons list
+  # this is done by calculating the shared sequence coverage between query and reference
+  # and for each query transcript, select the comparison with the highest coverage
+  combined_report_df = combined_report_df %>%
+    rowwise() %>%
+    dplyr::mutate(querywidth = sum(width(reduce(inputExonsbyTx[[Transcript_ID]])))) %>%
+    dplyr::mutate(common = sum(width(reduce(intersect(inputExonsbyTx[[Transcript_ID]], basicExonsbyTx[[Ref_TX_ID]]))))) %>%
+    dplyr::mutate(Shared_coverage = common / querywidth) %>%
+    dplyr::select(-querywidth, -common) %>%
+    group_by(Transcript_ID) %>% 
+    dplyr::arrange(desc(coverage)) %>%
+    dplyr::distinct(Transcript_ID, .keep_all = TRUE) %>%
+    ungroup() %>%
+    dplyr::arrange(NMDer_ID)
+  
   # cleanup unused variables
   rm(list = c('inputDB','basicDB'))
   return(list(combined_report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx))
