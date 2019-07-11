@@ -612,6 +612,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
     group_by(Transcript_ID) %>%
     mutate(Ref_TX_ID = list(as.character(Ref_TX_ID))) %>%
     ungroup() %>%
+    distinct(.keep_all = TRUE) %>%
     dplyr::mutate(NMDer_ID = paste0('NMDer', formatC(as.integer(row_number()), width=7, flag='0')))
 
   
