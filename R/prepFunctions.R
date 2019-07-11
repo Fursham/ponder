@@ -582,20 +582,19 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
   # join report_df and basicTX_df and generate a full list of query transcripts to be compared with every reference transcript
   # and add in NMDerIDs
   combined_report_df = suppressMessages(report_df %>%
-    dplyr::left_join(basicTX_df) %>%
-    dplyr::select(NMDer_ID, Gene_ID, Original_Gene_ID, Match_level, 
+      dplyr::left_join(basicTX_df) %>%
+      dplyr::select(NMDer_ID, Gene_ID, Original_Gene_ID, Match_level, 
                   Gene_Name, Transcript_ID, Ref_TX_ID, Tx_coord, 
-                  Strand, annotatedStart, predictedStart, Alt_tx) %>% 
-    dplyr::mutate(NMDer_ID = paste0('NMDer', formatC(as.integer(row_number()), width=7, flag='0'))))
+                  Strand, annotatedStart, predictedStart, Alt_tx)) 
 
   # prepare databases
   inputDB = makeTxDbFromGRanges(inputGRanges)
   basicDB = makeTxDbFromGRanges(basicGRanges)
   
   # prepare exon structures by transcripts/CDSs
-  inputExonsbyTx = exonsBy(inputDB, by="tx", use.names=TRUE)
-  basicExonsbyCDS = cdsBy(basicDB, by="tx", use.names=TRUE)
-  basicExonsbyTx = exonsBy(basicDB, by="tx", use.names=TRUE)
+  inputExonsbyTx = exonsBy(inputDB, by="tx", use.names=TRUE) %>% as.data.frame()
+  basicExonsbyCDS = cdsBy(basicDB, by="tx", use.names=TRUE) %>% as.data.frame()
+  basicExonsbyTx = exonsBy(basicDB, by="tx", use.names=TRUE) %>% as.data.frame()
   
   # remove comparisons in which the reference transcript do not have a CDS
   basicCDS = basicExonsbyCDS %>% as.data.frame() %>%
@@ -607,6 +606,14 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
     dplyr::left_join(basicCDS) %>%
     dplyr::filter((!is.na(CDS) & !is.na(Ref_TX_ID)) | Match_level == 5) %>%
     dplyr::select(-CDS))
+  
+  # combine query transcripts with multiple comparisons to reference
+  combined_report_df = combined_report_df %>% 
+    group_by(Transcript_ID) %>%
+    mutate(Ref_TX_ID = list(as.character(Ref_TX_ID))) %>%
+    ungroup() %>%
+    dplyr::mutate(NMDer_ID = paste0('NMDer', formatC(as.integer(row_number()), width=7, flag='0')))
+
   
   # cleanup unused variables
   rm(list = c('inputDB','basicDB'))
