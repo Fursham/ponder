@@ -89,8 +89,7 @@ runNMDer <- function(prepObject,
   # unpack custom S4 object
   unpack[report_df, inputGRanges, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS, genome] = 
     unPack(prepObject)
-  
-  infoLog('Running NMDer')
+
   
   # separate
   report_df_unmatched = report_df %>%
@@ -101,6 +100,7 @@ runNMDer <- function(prepObject,
     dplyr::filter(Match_level != 5)
 
   # run NMD analysis in parallel
+  infoLog('Preparing clusters for analysis')
   group <- rep(1:clusters, length.out = nrow(report_df))
   report_df <- bind_cols(tibble(group), report_df)
   cluster <- create_cluster(cores = clusters, quiet = TRUE)
@@ -121,7 +121,7 @@ runNMDer <- function(prepObject,
     cluster_assign_value("testOtherFeatures", testOtherFeatures) %>%
     cluster_assign_value("testAS", testAS)
   
-  infoLog('Testing transcript for NMD features')
+  infoLog('Predicting NMD features')
   report_df <- parallel_df %>% # Use by_group party_df
     do(runMain(., inputExonsbyTx, basicExonsbyCDS,
                        basicExonsbyTx, genome, testNMD, 
