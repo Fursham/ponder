@@ -59,10 +59,8 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     #})
     #thisline$Tx_coordinates = paste(string, collapse = ';')
     #############################################################################
-    
-    ######### testing to select the best reference for comparison #############
-    
-    # 
+
+    # build GRanges object for query and GRangeslist object for reference
     queryGRanges = inputExonsbyTx %>% 
       filter(group_name == thisline$Transcript_ID) %>%
       makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
@@ -71,6 +69,8 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
       filter(group_name %in% thisline$Ref_TX_ID[[1]]) %>%
       makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
     
+    # calculate the coverage of query and reference transcripts as a percentage
+    # of the mean width of query and reference
     overlapHits = mergeByOverlaps(queryGRanges, basicCDSGRanges)
     overlapHitsMeta = mapply(function(x,y){
         widthQuery = sum(width(x))
@@ -80,18 +80,16 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
         Shared_coverage = commonCoverage/aveWidth
         return(Shared_coverage)
       }, overlapHits$queryGRanges, overlapHits$basicCDSGRanges) %>%
-      as.data.frame()
+      as.data.frame() # output list as a dataframe
     
+    # append reference tx IDs, sort dataframe and select best reference
     overlapHitsMeta$Ref_TX_ID = names(overlapHits$basicCDSGRanges)
     overlapHitsMeta = overlapHitsMeta %>% 
       filter(. < 1) %>%
       arrange(desc(.))
-    
-    
+
     thisline$Ref_TX_ID = overlapHitsMeta[1,2]
 
-    
-    
     
     # attempt to get open reading frame of transcript and update line entry
     queryGRanges = inputExonsbyTx %>% 
