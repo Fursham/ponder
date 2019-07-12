@@ -98,9 +98,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     }
     
     
-
-    
-    # attempt to get open reading frame of transcript and update line entry
+    # prepare GRanges for analysis
     queryGRanges = inputExonsbyTx %>% 
       filter(group_name == thisline$Transcript_ID) %>%
       makeGRangesFromDataFrame(keep.extra.columns = TRUE)
@@ -113,6 +111,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
       filter(group_name == thisline$Ref_TX_ID) %>%
       makeGRangesFromDataFrame(keep.extra.columns = TRUE)
     
+    # attempt to build Open Reading Frame for query
     ORFreport = getORF(basicCDSGRanges, queryGRanges,
                        genome, thisline$Gene_ID,
                        thisline$NMDer_ID)
