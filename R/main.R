@@ -94,7 +94,8 @@ runNMDer <- function(prepObject,
   
   # separate
   report_df_unmatched = report_df %>%
-    dplyr::filter(Match_level == 5)
+    dplyr::filter(Match_level == 5) %>%
+    dplyr::mutate(Ref_TX_ID = as.character(Ref_TX_ID))
   
   report_df = report_df %>% 
     dplyr::filter(Match_level != 5)
@@ -120,6 +121,7 @@ runNMDer <- function(prepObject,
     cluster_assign_value("testOtherFeatures", testOtherFeatures) %>%
     cluster_assign_value("testAS", testAS)
   
+  infoLog('Testing transcript for NMD features')
   report_df <- parallel_df %>% # Use by_group party_df
     do(runMain(., inputExonsbyTx, basicExonsbyCDS,
                        basicExonsbyTx, genome, testNMD, 
@@ -135,6 +137,7 @@ runNMDer <- function(prepObject,
     dplyr::arrange(NMDer_ID)
   
   if (makeGTF != FALSE){
+    infoLog('Creating GTF file')
     if (makeGTF == TRUE){
       out.dir = getwd()
     } else{

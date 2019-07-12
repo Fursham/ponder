@@ -60,9 +60,53 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     #thisline$Tx_coordinates = paste(string, collapse = ';')
     #############################################################################
     
+    ######### testing to select the best reference for comparison #############
+    
+    # 
+    queryGRanges = inputExonsbyTx %>% 
+      filter(group_name == thisline$Transcript_ID) %>%
+      makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
+    
+    basicCDSGRanges = basicExonsbyCDS %>% 
+      filter(group_name %in% thisline$Ref_TX_ID[[1]]) %>%
+      makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
+    
+    overlapHits = mergeByOverlaps(queryGRanges, basicCDSGRanges)
+    overlapHitsMeta = mapply(function(x,y){
+        widthQuery = sum(width(x))
+        widthRef = sum(width(y))
+        aveWidth = (widthQuery + widthRef) / 2
+        commonCoverage = sum(width(reduce(intersect(x, y))))
+        Shared_coverage = commonCoverage/aveWidth
+        return(Shared_coverage)
+      }, overlapHits$queryGRanges, overlapHits$basicCDSGRanges) %>%
+      as.data.frame()
+    
+    overlapHitsMeta$Ref_TX_ID = names(overlapHits$basicCDSGRanges)
+    overlapHitsMeta = overlapHitsMeta %>% 
+      filter(. < 1) %>%
+      arrange(desc(.))
+    
+    
+    thisline$Ref_TX_ID = overlapHitsMeta[1,2]
+
+    
+    
+    
     # attempt to get open reading frame of transcript and update line entry
-    ORFreport = getORF(basicExonsbyCDS[[thisline$Ref_TX_ID]], 
-                       inputExonsbyTx[[thisline$Transcript_ID]], 
+    queryGRanges = inputExonsbyTx %>% 
+      filter(group_name == thisline$Transcript_ID) %>%
+      makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+    
+    basicCDSGRanges = basicExonsbyCDS %>% 
+      filter(group_name == thisline$Ref_TX_ID) %>%
+      makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+    
+    basicTxGRanges = basicExonsbyTx %>% 
+      filter(group_name == thisline$Ref_TX_ID) %>%
+      makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+    
+    ORFreport = getORF(basicCDSGRanges, queryGRanges,
                        genome, thisline$Gene_ID,
                        thisline$NMDer_ID)
     thisline = modifyList(thisline, ORFreport)
@@ -71,7 +115,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     # if requested, test for NMD features and update line entry
     if (testforNMD == TRUE) {
       NMDreport = testNMD(thisline$ORF_considered, 
-                          inputExonsbyTx[[thisline$Transcript_ID]], 
+                          queryGRanges, 
                           PTC_dist, 
                           testNonClassicalNMD,
                           genome)
@@ -88,8 +132,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
         is_NMD = thisline$is_NMD
       }
       
-      altevents = getASevents(basicExonsbyTx[[thisline$Ref_TX_ID]], 
-                              inputExonsbyTx[[thisline$Transcript_ID]], 
+      altevents = getASevents(basicTxGRanges, queryGRanges, 
                               testforNMD, ORF, is_NMD)
       
       thisline = modifyList(thisline, altevents)
@@ -112,7 +155,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
       
       thisline$ORF_considered = thisline$ORF_considered %>% as.data.frame()
     }
-    
+    rm(list = c('queryGRanges','basicCDSGRanges', 'basicTxGRanges'))
     #thisline[11:length(thisline)] = as.character(thisline[11:length(thisline)])
     return(thisline)
     
@@ -251,7 +294,6 @@ getASevents <- function(transcript1, transcript2, testedNMD, orf, is_NMD) {
         
         }
         else if (length(altseg_NMD) == 0) {
-          R
           # if there is no internal out-of-frame exon causing the NMD, 
           # it could be due to spliced exons in 3'UTR that generate an exon-junction
           threeUTRseg = combinedASoutput[!overlapsAny(combinedASoutput, 
