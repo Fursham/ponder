@@ -17,8 +17,6 @@
 prepNMDer <- function(query,
                  reference, 
                  fasta,
-                 query_format = NULL,
-                 reference_format = NULL,
                  match_chrom = FALSE,
                  match_geneIDs = FALSE,
                  primary_gene_id = NULL,
@@ -32,7 +30,7 @@ prepNMDer <- function(query,
   
   # import and/or load query file(s)
   unpack[inputGRanges, basicGRanges, genome] = 
-    prepareInputs(query, reference, fasta, query_format, reference_format)
+    prepareInputs(query, reference, fasta)
   
   # unpacking objects
   #inputGRanges = packedInput$inputGRanges

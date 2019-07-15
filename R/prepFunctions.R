@@ -29,18 +29,13 @@
 #' 
 #' 
 
-prepareInputs <- function(queryfile, ref, fasta = NULL, in_format, ref_format) {
+prepareInputs <- function(queryfile, ref, fasta = NULL) {
   
   # import assembled transcripts
   infoLog('Importing assembled transcripts...', logf, quiet)
   
   if (!file.exists(queryfile)){
     stopLog('Input transcript file do not exist')
-  }
-  
-  # use file extension format if provided by user
-  if (!is.null(in_format)) {
-    fileformat = in_format
   }
   
   inputGRanges = rtracklayer::import(queryfile)
@@ -64,10 +59,6 @@ prepareInputs <- function(queryfile, ref, fasta = NULL, in_format, ref_format) {
       stopLog('Reference annotation file do not exist')
     }
     
-    # use file extension format if provided by user and import file
-    if (!is.null(ref_format)) {
-      fileformat = ref_format
-    } 
     basicGRanges = rtracklayer::import(ref)
   }
   if ('*'%in%strand(basicGRanges)) {
