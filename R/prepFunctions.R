@@ -30,7 +30,7 @@
 #' 
 #' 
 
-prepareInputs <- function(queryfile, ref, fasta = NULL, query_format, ref_format) {
+prepareInputs <- function(queryfile, ref, fasta = NULL, user_query_format, user_ref_format) {
   
   # import assembled transcripts
   infoLog('Importing assembled transcripts...', logf, quiet)
@@ -39,19 +39,26 @@ prepareInputs <- function(queryfile, ref, fasta = NULL, query_format, ref_format
     stopLog('Input transcript file do not exist')
   }
   
-  # check file extension and...
-  input_format = tools::file_ext(queryfile)
+  # check file extension 
+  query_format = tools::file_ext(queryfile)
 
-  # 1) return if infile contains a 
-  if (input_format == 'txt' & is.null(query_format)) {
+  # return if infile is a txt file with no user_query_format input
+  if (query_format == 'txt' & is.null(user_query_format)) {
     stopLog('Input transcript file contain .txt extension. Please provide transcript annotation format using argument query_format')
-  } else if (input_format == 'txt' & !is.null(query_format)) {
-    input_format = query_format
+  } else if (query_format == 'txt' & !is.null(user_query_format)) {
+    query_format = user_query_format
   }
   
-  if (input_format == 'gff3') {
+  # process a gff3 query file to be compatible for analysis
+  # basically, gff3 annotation contain different headers as compared to gtf2
+  # so this function attempts to extract the 1) transcript_id, 2) gene_id, 
+  # 3)gene_name and 4)exon_number of each transcript, which are important information
+  # for downstream functions
+  if (query_format == 'gff3') {
     inputGRanges = rtracklayer::import(queryfile, format = 'gff3')
     
+    # removes line of type 'gene', extract transcript_id from ID (for mRNA/transcript types)
+    # or from Parent header (the other types), add gene_id and gene_name to every entry
     inputGRanges = inputGRanges %>% as.data.frame() %>%
       dplyr::filter(type != 'gene') %>%
       dplyr::mutate(Parent = as.character(Parent)) %>%
@@ -62,6 +69,7 @@ prepareInputs <- function(queryfile, ref, fasta = NULL, query_format, ref_format
       dplyr::mutate(gene_name = Name[1]) %>%
       ungroup()
     
+    # duplicate dataframe and filter out 'exon' type entries, sort and add exon_number
     inputGRanges.exons = inputGRanges %>%
       dplyr::filter(type == 'exon') %>%
       dplyr::group_by(transcript_id) %>% 
@@ -69,13 +77,14 @@ prepareInputs <- function(queryfile, ref, fasta = NULL, query_format, ref_format
       dplyr::mutate(exon_number = row_number()) %>% 
       ungroup()
     
+    # combine both dataframes and sort by transcript_id
     inputGRanges = suppressMessages(inputGRanges %>%
       left_join(inputGRanges.exons) %>% 
       arrange(transcript_id))
-    
+  
     inputGRanges = makeGRangesFromDataFrame(inputGRanges, keep.extra.columns = TRUE)
     
-  } else if (input_format == 'gtf') {
+  } else if (query_format == 'gtf') {
     inputGRanges = rtracklayer::import(queryfile, format = 'gtf')
   } else {
     stopLog('Input file format not supported')
@@ -100,6 +109,9 @@ prepareInputs <- function(queryfile, ref, fasta = NULL, query_format, ref_format
     if (!file.exists(ref)){
       stopLog('Reference annotation file do not exist')
     }
+    
+    
+    
     
     basicGRanges = rtracklayer::import(ref)
   }
