@@ -240,7 +240,7 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
   # testing and correcting chromosome names on query and annotated transcripts
   infoLog('Checking and correcting chromosome names...', logf, quiet)
   
-  if (correct_chrom == TRUE) {
+  if (correct_chrom == TRUE & length(slotNames(genome)) != 5) {
     if (seqlevelsStyle(inputGRanges) != seqlevelsStyle(genome)) {
       newStyle <- mapSeqlevels(seqlevels(inputGRanges), seqlevelsStyle(genome))
       newStyle = newStyle[!is.na(newStyle)]
@@ -265,6 +265,10 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
   # if user opts out of this correction service, program will test if there are non-standard IDs and return a warning
   # program will continue
   else {
+    if (length(slotNames(genome)) == 5) {
+      warnLog('Please ensure that user-provided fasta file contain common seqlevels as query and reference')
+    }
+    
     if (any(!seqlevels(inputGRanges)%in%seqlevels(genome))) {
       warnLog('Non-standard chromosome IDs in query were found')
     }
