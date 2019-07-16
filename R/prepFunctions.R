@@ -1,36 +1,30 @@
-#' _ workflow: Load and/or import input files
+#' NMDer workflow: Import files
 #' 
 #' @description 
-#' THIS FUNCTION IS PART OF THE _ PROGRAM WORKFLOW. 
-#' This function will import and/or load input data for the workflow and
-#' will return a list containing GRanges objects for assembled transcript and 
-#' reference annotation, and fasta file for genome sequence
+#' Imports mandatory files for NMDer analysis
 #' 
-#' @param file filename or /path/to/file of transcript assemblies. File can be of
-#' gtf, gff3 or bed format, and its filename should contain the corresponding extension
-#' @param gencode reference annotation of coding transcripts for each gene family. This program
-#' contain in-built gencode_basic annotation for GRCh38_hg38 and GRCm38_mm10 assemblies. These
-#' assemblies can be loaded by parsing "hg38" or "mm10" into this argument. If users wish to 
-#' import other assemblies, please provide filename or /path/to/file of reference CDS assemblies.
-#' File can be of gtf, gff3 or bed format, and its filename should contain the corresponding extension
-#' @param fasta genome sequence in fasta format. This program contain in-built fasta files for 
-#' GRCh38_hg38 and GRCm38_mm10 genome. These sequences can be loaded by parsing "hg38" or "mm10" 
-#' into this argument. If users wish to import other genomes, please provide filename or 
-#' /path/to/file of fasta files.
-#'
+#' @param queryfile Name of the query GTF/GFF3 transcript annotation file
+#' @param ref Name of the reference GTF/GFF3 transcript annotation file. 
+#' Alternatively, user may choose to use mm10 or hg38 gencode basic annotation that 
+#' comes pre-loaded with NMDer
+#' @param fasta Genome sequence in the form of Biostrings object (preferred) 
+#' or name of fasta genome sequence file for import
+#' @param user_query_format optional argument to specify the query annotation format ('gtf','gff3')
+#' @param user_ref_format optional argument to specify the reference annotation format ('gtf','gff3')
+#' 
 #' @return
 #' A list containing (1) GRanges object for assembled transcripts, (2) GRanges object for 
 #' reference CDS assembly, and (3) DNAstring containing genome sequence
-#' @export
+#' 
 #' @import rtracklayer
 #' @import Biostrings
 #' @import tools
 #' 
 #' 
-#' 
-#' 
 
-prepareInputs <- function(queryfile, ref, fasta = NULL, user_query_format, user_ref_format) {
+
+prepareInputs <- function(queryfile, ref, fasta = NULL, 
+                          user_query_format, user_ref_format) {
   
   # import assembled transcripts
   infoLog('Importing query transcript file', logf, quiet)
