@@ -33,10 +33,10 @@
 prepareInputs <- function(queryfile, ref, fasta = NULL, user_query_format, user_ref_format) {
   
   # import assembled transcripts
-  infoLog('Importing assembled transcripts...', logf, quiet)
+  infoLog('Importing query transcript file', logf, quiet)
   
   if (!file.exists(queryfile)){
-    stopLog('Input transcript file do not exist')
+    stopLog('Query transcript file do not exist')
   }
   
   # check file extension 
@@ -99,11 +99,11 @@ prepareInputs <- function(queryfile, ref, fasta = NULL, user_query_format, user_
   
   # load provided genome_basic assembly, or import user reference annotation
   if (is(ref, 'GenomicRanges')) {
-    infoLog(sprintf('Loading gencode_basic transcripts...'), logf, quiet)
+    infoLog(sprintf('Loading gencode_basic transcripts'), logf, quiet)
     
     basicGRanges = ref
   } else if (is.character(ref)){
-    infoLog('Importing user-provided reference annotations...', logf, quiet)
+    infoLog('Importing user-provided reference transcript annotations', logf, quiet)
     
     # return if file does not exist
     if (!file.exists(ref)){
