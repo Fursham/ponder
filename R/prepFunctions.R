@@ -44,7 +44,7 @@ prepareInputs <- function(queryfile, ref, fasta = NULL, user_query_format, user_
 
   # return if infile is a txt file with no user_query_format input
   if (query_format == 'txt' & is.null(user_query_format)) {
-    stopLog('Input transcript file contain .txt extension. Please provide transcript annotation format using argument query_format')
+    stopLog('Query file contain .txt extension but query_format argument not provided')
   } else if (query_format == 'txt' & !is.null(user_query_format)) {
     query_format = user_query_format
   }
@@ -87,11 +87,11 @@ prepareInputs <- function(queryfile, ref, fasta = NULL, user_query_format, user_
   } else if (query_format == 'gtf') {
     inputGRanges = rtracklayer::import(queryfile, format = 'gtf')
   } else {
-    stopLog('Input file format not supported')
+    stopLog('Query file format not supported')
   }
   
   if ('*'%in%strand(inputGRanges)) {
-    warnLog('Query GTF file contain transcripts with no strand information. These will be removed')
+    warnLog('Query file contain transcripts with no strand information. These will be removed')
     inputGRanges = inputGRanges[strand(inputGRanges) != '*']
   }
   
@@ -115,7 +115,7 @@ prepareInputs <- function(queryfile, ref, fasta = NULL, user_query_format, user_
     
     # return if infile is a txt file with no user_query_format input
     if (ref_format == 'txt' & is.null(user_ref_format)) {
-      stopLog('Reference annotation file contain .txt extension. Please provide transcript annotation format using argument reference_format')
+      stopLog('Reference file contain .txt extension but reference_format argument not provided')
     } else if (ref_format == 'txt' & !is.null(user_ref_format)) {
       ref_format = user_ref_format
     }
