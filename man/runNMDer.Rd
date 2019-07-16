@@ -5,7 +5,7 @@
 \title{Title}
 \usage{
 runNMDer(prepObject, testNMD = TRUE, testOtherFeatures = FALSE,
-  PTC_dist = 50, testAS = FALSE, clusters = 4)
+  PTC_dist = 50, testAS = FALSE, makeGTF = FALSE, clusters = 4)
 }
 \arguments{
 \item{prepObject}{}

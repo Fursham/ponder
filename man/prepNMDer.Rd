@@ -5,8 +5,9 @@
 \title{Title}
 \usage{
 prepNMDer(query, reference, fasta, query_format = NULL,
-  reference_format = NULL, match_chrom = FALSE, match_geneIDs = FALSE,
-  primary_gene_id = NULL, secondary_gene_id = NULL, clusters = 4)
+  reference_format = NULL, match_chrom = FALSE,
+  match_geneIDs = FALSE, primary_gene_id = NULL,
+  secondary_gene_id = NULL)
 }
 \arguments{
 \item{query}{}
@@ -26,8 +27,6 @@ prepNMDer(query, reference, fasta, query_format = NULL,
 \item{primary_gene_id}{}
 
 \item{secondary_gene_id}{}
-
-\item{clusters}{}
 }
 \description{
 Title

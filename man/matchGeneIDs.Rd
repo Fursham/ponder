@@ -5,7 +5,7 @@
 \title{Match Gene IDs from query GTF/GFF3 file}
 \usage{
 matchGeneIDs(inputGRanges, basicGRanges, primary_gene_id = NULL,
-  secondary_gene_id = NULL, clusters = 4)
+  secondary_gene_id = NULL)
 }
 \arguments{
 \item{primary_gene_id}{Name of the primary gene id in query file. Input to this argument is typically 'gene_id'}

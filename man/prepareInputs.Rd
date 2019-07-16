@@ -2,9 +2,10 @@
 % Please edit documentation in R/prepFunctions.R
 \name{prepareInputs}
 \alias{prepareInputs}
-\title{_ workflow: Load and/or import input files}
+\title{NMDer workflow: Import files}
 \usage{
-prepareInputs(queryfile, ref, fasta = NULL, in_format, ref_format)
+prepareInputs(queryfile, ref, fasta = NULL, user_query_format,
+  user_ref_format)
 }
 \arguments{
 \item{fasta}{genome sequence in fasta format. This program contain in-built fasta files for 
@@ -26,8 +27,5 @@ A list containing (1) GRanges object for assembled transcripts, (2) GRanges obje
 reference CDS assembly, and (3) DNAstring containing genome sequence
 }
 \description{
-THIS FUNCTION IS PART OF THE _ PROGRAM WORKFLOW. 
-This function will import and/or load input data for the workflow and
-will return a list containing GRanges objects for assembled transcript and 
-reference annotation, and fasta file for genome sequence
+Imports mandatory files for NMDer analysis
 }

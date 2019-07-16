@@ -4,7 +4,8 @@
 \alias{reconstructCDS}
 \title{Reconstruct CDS with alternative internal and downstream segments}
 \usage{
-reconstructCDS(queryTranscript, refCDS, fasta, txrevise_out = NULL)
+reconstructCDS(queryTranscript, refCDS, fasta, txrevise_out = NULL,
+  gene_id, transcript_id)
 }
 \arguments{
 \item{queryTranscript}{A GRanges object containing exon structure of a query transcript from

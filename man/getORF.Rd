@@ -4,7 +4,7 @@
 \alias{getORF}
 \title{_ workflow: Test transcript for NMD feature against a reference CDS}
 \usage{
-getORF(knownCDS, queryTx, refsequence)
+getORF(knownCDS, queryTx, refsequence, gene_id, transcript_id)
 }
 \arguments{
 \item{knownCDS}{}
