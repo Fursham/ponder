@@ -304,7 +304,8 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
       dplyr::select(-matched))
     
     count_nonstand_ids = inputGRanges %>% 
-      dplyr::filter(type %in% c('transcript', 'mRNA'), match_level == 5) %>%
+      dplyr::distinct(transcript_id, .keep_all = TRUE) %>%
+      dplyr::filter(match_level == 5) %>%
       nrow()
 
     if (count_nonstand_ids > 0) {
