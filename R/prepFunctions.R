@@ -24,12 +24,13 @@
 #' @export
 #' @import rtracklayer
 #' @import Biostrings
+#' @import tools
 #' 
 #' 
 #' 
 #' 
 
-prepareInputs <- function(queryfile, ref, fasta = NULL) {
+prepareInputs <- function(queryfile, ref, fasta = NULL, query_format, ref_format) {
   
   # import assembled transcripts
   infoLog('Importing assembled transcripts...', logf, quiet)
@@ -38,7 +39,48 @@ prepareInputs <- function(queryfile, ref, fasta = NULL) {
     stopLog('Input transcript file do not exist')
   }
   
-  inputGRanges = rtracklayer::import(queryfile)
+  # check file extension and...
+  input_format = tools::file_ext(queryfile)
+
+  # 1) return if infile contains a 
+  if (input_format == 'txt' & is.null(query_format)) {
+    stopLog('Input transcript file contain .txt extension. Please provide transcript annotation format using argument query_format')
+  } else if (input_format == 'txt' & !is.null(query_format)) {
+    input_format = query_format
+  }
+  
+  if (input_format == 'gff3') {
+    inputGRanges = rtracklayer::import(queryfile, format = 'gff3')
+    
+    inputGRanges = inputGRanges %>% as.data.frame() %>%
+      dplyr::filter(type != 'gene') %>%
+      dplyr::mutate(Parent = as.character(Parent)) %>%
+      dplyr::mutate(transcript_id = ifelse(type %in% c('mRNA', 'transcript'), ID, Parent))%>%
+      dplyr::group_by(transcript_id) %>%
+      dplyr::arrange(desc(width)) %>% 
+      dplyr::mutate(gene_id = Parent[1]) %>%
+      dplyr::mutate(gene_name = Name[1]) %>%
+      ungroup()
+    
+    inputGRanges.exons = inputGRanges %>%
+      dplyr::filter(type == 'exon') %>%
+      dplyr::group_by(transcript_id) %>% 
+      dplyr::arrange(ifelse(strand == '-', desc(start), start)) %>%
+      dplyr::mutate(exon_number = row_number()) %>% 
+      ungroup()
+    
+    inputGRanges = suppressMessages(inputGRanges %>%
+      left_join(inputGRanges.exons) %>% 
+      arrange(transcript_id))
+    
+    inputGRanges = makeGRangesFromDataFrame(inputGRanges, keep.extra.columns = TRUE)
+    
+  } else if (input_format == 'gtf') {
+    inputGRanges = rtracklayer::import(queryfile, format = 'gtf')
+  } else {
+    stopLog('Input file format not supported')
+  }
+  
   if ('*'%in%strand(inputGRanges)) {
     warnLog('Query GTF file contain transcripts with no strand information. These will be removed')
     inputGRanges = inputGRanges[strand(inputGRanges) != '*']
