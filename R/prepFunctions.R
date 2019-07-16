@@ -110,10 +110,58 @@ prepareInputs <- function(queryfile, ref, fasta = NULL, user_query_format, user_
       stopLog('Reference annotation file do not exist')
     }
     
+    # check file extension 
+    ref_format = tools::file_ext(ref)
+    
+    # return if infile is a txt file with no user_query_format input
+    if (ref_format == 'txt' & is.null(user_ref_format)) {
+      stopLog('Reference annotation file contain .txt extension. Please provide transcript annotation format using argument reference_format')
+    } else if (ref_format == 'txt' & !is.null(user_ref_format)) {
+      ref_format = user_ref_format
+    }
     
     
+    # process a gff3 query file to be compatible for analysis
+    # basically, gff3 annotation contain different headers as compared to gtf2
+    # so this function attempts to extract the 1) transcript_id, 2) gene_id, 
+    # 3)gene_name and 4)exon_number of each transcript, which are important information
+    # for downstream functions
+    if (ref_format == 'gff3') {
+      basicGRanges = rtracklayer::import(ref, format = 'gff3')
+      
+      # removes line of type 'gene', extract transcript_id from ID (for mRNA/transcript types)
+      # or from Parent header (the other types), add gene_id and gene_name to every entry
+      basicGRanges = basicGRanges %>% as.data.frame() %>%
+        dplyr::filter(type != 'gene') %>%
+        dplyr::mutate(Parent = as.character(Parent)) %>%
+        dplyr::mutate(transcript_id = ifelse(type %in% c('mRNA', 'transcript'), ID, Parent))%>%
+        dplyr::group_by(transcript_id) %>%
+        dplyr::arrange(desc(width)) %>% 
+        dplyr::mutate(gene_id = Parent[1]) %>%
+        dplyr::mutate(gene_name = Name[1]) %>%
+        ungroup()
+      
+      # duplicate dataframe and filter out 'exon' type entries, sort and add exon_number
+      basicGRanges.exons = basicGRanges %>%
+        dplyr::filter(type == 'exon') %>%
+        dplyr::group_by(transcript_id) %>% 
+        dplyr::arrange(ifelse(strand == '-', desc(start), start)) %>%
+        dplyr::mutate(exon_number = row_number()) %>% 
+        ungroup()
+      
+      # combine both dataframes and sort by transcript_id
+      basicGRanges = suppressMessages(basicGRanges %>%
+                                        left_join(basicGRanges.exons) %>% 
+                                        arrange(transcript_id))
+      
+      basicGRanges = makeGRangesFromDataFrame(basicGRanges, keep.extra.columns = TRUE)
+      
+    } else if (ref_format == 'gtf') {
+      basicGRanges = rtracklayer::import(ref, format = 'gtf')
+    } else {
+      stopLog('Reference file format not supported')
+    }
     
-    basicGRanges = rtracklayer::import(ref)
   }
   if ('*'%in%strand(basicGRanges)) {
     warnLog('Reference annotation contain transcripts with no strand information. These will be removed')
