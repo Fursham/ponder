@@ -13,8 +13,8 @@
 #' @param user_ref_format optional argument to specify the reference annotation format ('gtf','gff3')
 #' 
 #' @return
-#' A list containing (1) GRanges object for assembled transcripts, (2) GRanges object for 
-#' reference CDS assembly, and (3) DNAstring containing genome sequence
+#' A list containing (1) GRanges object for query, (2) GRanges object for 
+#' reference annotation, and (3) DNAstring containing genome sequence
 #' 
 #' @import rtracklayer
 #' @import Biostrings
