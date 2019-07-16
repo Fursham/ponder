@@ -185,48 +185,19 @@ prepareInputs <- function(queryfile, ref, fasta = NULL,
 }
 
 
-#' _ workflow: Testing and correcting transcript assembly
-#' 
-#' @description 
-#' THIS FUNCTION IS PART OF THE _ PROGRAM WORKFLOW. 
-#' This function will test and correct the input transcript assembly for consistent chromosome names 
-#' and gene ids with CDS assembly and genome sequence.
-#' 
-#' Non-consistent Gene IDs are corrected by replacing it with Gene IDs from reference CDS assembly
-#' that contain overlapping exons. However, this strategy may be inaccurate and may return 
-#' false-postive gene ids. To improve the correction, we provide two upper layers of correction
-#' that can be initiated by providing the mandatory 'primary_gene_id' and 'secondary_gene_id'
-#' arguments
-#' 
-#' Primary_gene_id refer to the name of the metadata column containing gene ids for each assemnbled transcript. 
-#' This is typically 'gene_id'
-#' Secondary_gene_id refer to the name of the metadata column that may contain a reference gene id
-#' For example: 
-#' NEED TO DESCRIBE
-#'  
-#' But if both args are provided, 
-#' function will try to replace 
-#' 
-#' How to check for metadata columns
+
+#' NMDer workflow: Test and match input annotations
 #'
 #' @param inputGRanges 
-#' GRanges object containing transcript and exon features. It is recommended to create this object
-#' by importing gtf/gff3 files using rtracklayer::import
 #' @param basicGRanges 
-#' #' GRanges object containing reference transcript,exon and CDS features. 
-#' It is recommended to create this object by importing gtf/gff3 files using rtracklayer::import
-#' @param genome
-#' DNAstring object containing genome sequence
+#' @param genome 
+#' @param correct_chrom 
+#' @param correct_gene_id 
 #' @param primary_gene_id 
-#' Optional argument. Typically, this is 'gene_id'. Refer to description for details
 #' @param secondary_gene_id 
-#' Optional argument. Refer to description for details
 #'
 #' @return
-#' Function will return a modified inputGRanges object
-#' 
 #' @export
-#' @import GenomeInfoDb
 #'
 #' @examples
 preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correct_gene_id, primary_gene_id, secondary_gene_id) {
