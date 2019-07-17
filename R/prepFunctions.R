@@ -4,7 +4,7 @@
 #' Imports mandatory files for NMDer analysis
 #' 
 #' @param queryfile Name of the query GTF/GFF3 transcript annotation file
-#' @param ref Name of the reference GTF/GFF3 transcript annotation file. 
+#' @param ref Name of the reference GTF/GFF3 transcript annotation file.
 #' Alternatively, user may choose to use mm10 or hg38 gencode basic annotation that 
 #' comes pre-loaded with NMDer
 #' @param fasta Genome sequence in the form of Biostrings object (preferred) 
@@ -186,20 +186,21 @@ prepareInputs <- function(queryfile, ref, fasta = NULL,
 
 
 
-#' NMDer workflow: Test and match input annotations
+#' NMDer workflow: Check and match input annotations
 #'
-#' @param inputGRanges 
-#' @param basicGRanges 
-#' @param genome 
-#' @param correct_chrom 
-#' @param correct_gene_id 
-#' @param primary_gene_id 
-#' @param secondary_gene_id 
+#' @description Check the chromosome ID and gene ID of query, 
+#' reference and genome objects and if requested, attempts to match these metadata 
 #'
-#' @return
-#' @export
+#' @param inputGRanges Query GRanges object
+#' @param basicGRanges Reference GRanges object
+#' @param genome Genome sequence as a Biostring object
+#' @param correct_chrom If TRUE, attempt to match chromosome ID
+#' @param correct_gene_id If TRUE, attempt to match gene ID. This is crudely done by intersecting query transcript coordinates with reference. To increase chance of true matching, user may provide 
+#' @param primary_gene_id See 'correct_gene_id' for details
+#' @param secondary_gene_id See 'correct_gene_id' for details
 #'
-#' @examples
+#' @return Query GRanges object that have been matched
+
 preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correct_gene_id, primary_gene_id, secondary_gene_id) {
   
   # testing and correcting chromosome names on query and annotated transcripts
