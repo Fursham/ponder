@@ -22,7 +22,9 @@
 #' @export
 #'
 #' @examples 
-#' 
+#' library("BSgenome.Mmusculus.UCSC.mm10")
+#' prepNMDer(testData, mm10, Mmusculus, match_geneIDs = TRUE)
+#' prepNMDer(testData, mm10, Mmusculus, match_geneIDs = TRUE, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
 #' 
 prepNMDer <- function(query,
                  reference, 
