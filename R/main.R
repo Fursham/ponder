@@ -3,11 +3,11 @@
 #' @description Import transcript annotation file, 
 #' match chromosome levels and gene IDs and prepare for NMD prediction analysis
 #'
-#' @param query Name of the query GTF/GFF3 transcript annotation file
-#' @param reference Name of the reference GTF/GFF3 transcript annotation file. 
+#' @param query Mandatory. Name of the query GTF/GFF3 transcript annotation file
+#' @param reference Mandatory. Name of the reference GTF/GFF3 transcript annotation file. 
 #' Alternatively, user may choose to use mm10 or hg38 gencode basic annotation that 
 #' comes pre-loaded with NMDer
-#' @param fasta Genome sequence in the form of Biostrings object (preferred) 
+#' @param fasta Mandatory. Genome sequence in the form of Biostrings object (preferred) 
 #' or name of fasta genome sequence file for import
 #' @param query_format Optional argument to specify the query annotation format ('gtf','gff3'). 
 #' Mandatory if query contains '.txt' extension filename
