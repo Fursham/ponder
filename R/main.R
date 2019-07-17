@@ -46,11 +46,6 @@ prepNMDer <- function(query,
   unpack[inputGRanges, basicGRanges, genome] = 
     prepareInputs(query, reference, fasta, query_format, reference_format)
   
-  # unpacking objects
-  #inputGRanges = packedInput$inputGRanges
-  #basicGRanges = packedInput$basicGRanges
-  #genome = packedInput$genome
-  
   # matching chromosome names and gene IDs
   inputGRanges = preTesting(inputGRanges, basicGRanges, genome, 
                             match_chrom, match_geneIDs, 
@@ -62,6 +57,7 @@ prepNMDer <- function(query,
   
   options(warn=0)
   
+  # pack dataframes and biostring objects into an S4 object for return
   preppedOutput = packNMDer(df = report_df, 
                             inputGRanges = inputGRanges, 
                             inputTranscripts = inputExonsbyTx, 
@@ -69,7 +65,6 @@ prepNMDer <- function(query,
                             basicCDS = basicExonsbyCDS, 
                             fasta = genome)
   
-  #return(list(report_df, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS, genome))
   return(preppedOutput)
 }
 
