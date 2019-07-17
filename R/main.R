@@ -1,19 +1,29 @@
-#' Title
+#' NMDer workflow: Prepare NMDer analysis
 #'
-#' @param query 
-#' @param reference 
-#' @param fasta 
-#' @param query_format 
-#' @param reference_format 
-#' @param match_chrom 
-#' @param match_geneIDs 
-#' @param primary_gene_id 
-#' @param secondary_gene_id 
+#' @description Import transcript annotation file, 
+#' match chromosome levels and gene IDs and prepare for NMD prediction analysis
 #'
-#' @return
+#' @param query Name of the query GTF/GFF3 transcript annotation file
+#' @param reference Name of the reference GTF/GFF3 transcript annotation file. 
+#' Alternatively, user may choose to use mm10 or hg38 gencode basic annotation that 
+#' comes pre-loaded with NMDer
+#' @param fasta Genome sequence in the form of Biostrings object (preferred) 
+#' or name of fasta genome sequence file for import
+#' @param query_format Optional argument to specify the query annotation format ('gtf','gff3'). 
+#' Mandatory if query contains '.txt' extension filename
+#' @param reference_format Optional argument to specify the reference annotation format ('gtf','gff3'). 
+#' Mandatory if reference contains '.txt' extension filename
+#' @param match_chrom If TRUE, attempt to match chromosome ID
+#' @param match_geneIDs If TRUE, attempt to match gene ID. This is crudely done by intersecting query transcript coordinates with reference. To increase chance of true matching, user may provide 
+#' @param primary_gene_id See match_geneIDs argument
+#' @param secondary_gene_id See match_geneIDs argument
+#'
+#' @return S4 object containing dataframes and objects for NMD prediction analysis
 #' @export
 #'
-#' @examples
+#' @examples 
+#' 
+#' 
 prepNMDer <- function(query,
                  reference, 
                  fasta,
