@@ -137,12 +137,15 @@ runNMDer <- function(prepObject,
     as.data.frame() %>%
     dplyr::arrange(NMDer_ID) %>% dplyr::select(-group, -ORF_considered)
   
+  
+  # prepare output data frame
   output_df = report_df %>% 
     dplyr::select(-starts_with('ORF_considered')) %>%
     dplyr::bind_rows(report_df_unmatched) %>%
     dplyr::distinct(NMDer_ID, .keep_all = TRUE) %>%
     dplyr::arrange(NMDer_ID)
   
+  # prepare GTF transcript anntotation output
   if (makeGTF != FALSE){
     infoLog('Creating GTF file')
     if (makeGTF == TRUE){
@@ -151,18 +154,21 @@ runNMDer <- function(prepObject,
       out.dir = makeGTF
     }
     
+    # collect CDS information from reported dataframe
     report_CDS = report_df %>% 
       dplyr::select(starts_with('ORF_considered')) %>%
       dplyr::filter(!is.na(ORF_considered.type))
     names(report_CDS) = substr(names(report_CDS), start = 16, stop = nchar(report_CDS))
     report_CDS$source = 'NMDer'
 
+    # collect transcript information from input GRanges
     input_transcripts = report_df %>% 
       dplyr::select(NMDer_ID, Transcript_ID) %>%
       dplyr::left_join(as.data.frame(inputGRanges), by = c('Transcript_ID' = 'transcript_id')) %>%
       dplyr::mutate(source = 'NMDer', transcript_id = NMDer_ID) %>%
       dplyr::select(seqnames:type,phase:gene_id,transcript_id)
     
+    # combine transcript annotation and CDS information
     output_gtf = bind_rows(input_transcripts, report_CDS)
     rtracklayer::export(output_gtf, paste0(out.dir, '/NMDer.gtf'), format = 'gtf')
   }
