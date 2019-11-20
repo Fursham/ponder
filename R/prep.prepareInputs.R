@@ -42,32 +42,8 @@ prepareInputs <- function(queryFile, refFile, fasta,
   if (query_format == 'gff3') {
     inputGRanges = rtracklayer::import(queryFile, format = 'gff3')
     
-    # removes line of type 'gene', extract transcript_id from ID (for mRNA/transcript types)
-    # or from Parent header (the other types), add gene_id and gene_name to every entry
-    inputGRanges = inputGRanges %>% as.data.frame() %>%
-      dplyr::filter(type != 'gene') %>%
-      dplyr::mutate(Parent = as.character(Parent)) %>%
-      dplyr::mutate(transcript_id = ifelse(type %in% c('mRNA', 'transcript'), ID, Parent))%>%
-      dplyr::group_by(transcript_id) %>%
-      dplyr::arrange(desc(width)) %>% 
-      dplyr::mutate(gene_id = Parent[1]) %>%
-      dplyr::mutate(gene_name = Name[1]) %>%
-      dplyr::ungroup()
-    
-    # duplicate dataframe and filter out 'exon' type entries, sort and add exon_number
-    inputGRanges.exons = inputGRanges %>%
-      dplyr::filter(type == 'exon') %>%
-      dplyr::group_by(transcript_id) %>% 
-      dplyr::arrange(ifelse(strand == '+', start, desc(start))) %>%
-      dplyr::mutate(exon_number = row_number()) %>% 
-      dplyr::ungroup()
-    
-    # combine both dataframes and sort by transcript_id
-    inputGRanges = suppressMessages(inputGRanges %>%
-                                      left_join(inputGRanges.exons) %>% 
-                                      arrange(transcript_id))
-    
-    inputGRanges = makeGRangesFromDataFrame(inputGRanges, keep.extra.columns = TRUE)
+    # convert gff3 to gtf
+    inputGRanges = gff3togtfconvert(inputGRanges)
     
   } else if (query_format == 'gtf') {
     inputGRanges = rtracklayer::import(queryFile, format = 'gtf')
