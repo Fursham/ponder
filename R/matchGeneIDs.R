@@ -61,9 +61,9 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
     dplyr::mutate(matched = TRUE)   # this column functions to annotate matched genes later on using join
   
   # convert input GRanges object to dataframe for parsing and adding meta information
-  inputGRanges = suppressMessages(inputGRanges %>% as.data.frame() %>%
-                                    dplyr::mutate(old_gene_id = gene_id, match_level = 0) %>% 
-                                    dplyr::left_join(basicGRanges.genelist))
+  inputGRanges = inputGRanges %>% as.data.frame() %>%
+    dplyr::mutate(old_gene_id = gene_id, match_level = 0) %>% 
+    dplyr::left_join(basicGRanges.genelist, by = 'gene_id')
   
   
   # count number of non standard ID before correction
