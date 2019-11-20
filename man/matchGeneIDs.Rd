@@ -12,24 +12,12 @@ matchGeneIDs(inputGRanges, basicGRanges, primary_gene_id = NULL,
 
 \item{secondary_gene_id}{Name of the secondary gene id in query file. Example of input to this arguement is 'ref_gene_id'}
 
-\item{query}{Assembled transcripts in query. Argument can be provided as name of GTF/GFF3 file in current working directory,
-or path_to_file. Argument can also be provided as a GenomicRanges object containing transcript and/or exon ranges.}
+\item{query}{Mandatory. Path to query GTF/GFF3 transcript annotation file}
 
-\item{ref}{Annotated reference transcripts. This program contain gencode basic annotations from mm10 and hg38 assemblies
-that will be loaded using 'gencode_basics[['mm10']] or gencode_basics[['hg38']] as input to argument. Argument can also be provided as name of 
-GTF/GFF3 file in current working directory, or path_to_file.}
-
-\item{query_format}{Format of query file (GTF/GFF3). If this argument is not provided and input to query argument
-is a filename, program will attempt to read file extension.}
-
-\item{ref_format}{Format of reference file (GTF/GFF3). If this argument is not provided and input to query argument
-is a filename, program will attempt to read file extension.}
-
-\item{outputfile}{Name of output file (Default: 'matched_geneIDs.gtf'). File will be saved in current working directory}
+\item{ref}{Mandatory. Path to reference GTF/GFF3 transcript annotation file.}
 }
 \value{
-GTF file with matched Gene IDs if makefile == TRUE. 
-GRanges object if makefile == FALSE.
+Gene_id-matched query GRanges
 }
 \description{
 This function will match and correct Gene IDs from a query assembled transcript file, using a 
@@ -50,8 +38,6 @@ possible secondary Gene IDs, try importing query GTF file using rtracklayer pack
 columns
 }
 \examples{
-
-matchGeneIDs(testData, gencode_basics[['mm10']], primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id', clusters = 4)
 
 
 
