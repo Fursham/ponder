@@ -14,9 +14,22 @@ preTesting(inputGRanges, basicGRanges, genome, correct_chrom,
 
 \item{genome}{Genome sequence as a Biostring object}
 
-\item{correct_chrom}{If TRUE, attempt to match chromosome ID}
+\item{correct_chrom}{Supplementary feature. If TRUE, program will attempt to match chromosome names of 
+query and reference to fasta genome to ensure consistent naming across input files.}
 
-\item{correct_gene_id}{If TRUE, attempt to match gene ID. This is crudely done by intersecting query transcript coordinates with reference. To increase chance of true matching, user may provide}
+\item{correct_gene_id}{Supplementary feature to attempt to match gene IDs in query file
+to reference file. This is key in grouping query transcripts to reference gene families for comparison.
+
+
+Matching is done at three levels with increasing accuracy:
+
+1. Crudely intersecting query coordinates with reference. Invoked by setting match_geneIDs to TRUE
+
+2. Trim ensembl-style gene IDs and attempt matching. Invoked by providing name of 
+gene ID header (typically 'gene_id') from gtf file to primary_gene_id argument
+
+3. Replace query gene ID with a secondary gene ID and attempt matching. Invoked by providing name of 
+secondary gene ID header (for example 'ref_gene_id') from gtf file to secondary_gene_id argument}
 
 \item{primary_gene_id}{See 'correct_gene_id' for details}
 
@@ -26,6 +39,6 @@ preTesting(inputGRanges, basicGRanges, genome, correct_chrom,
 Query GRanges object that have been matched
 }
 \description{
-Check the chromosome ID and gene ID of query, 
-reference and genome objects and if requested, attempts to match these metadata
+This program checks the chromosome ID and gene ID of query, 
+reference and genome objects and if requested, attempts to match these entries
 }
