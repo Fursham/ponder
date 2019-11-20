@@ -3,28 +3,19 @@
 #' @description 
 #' Imports mandatory files for NMDer analysis
 #' 
-#' @param queryFile Name of the query GTF/GFF3 transcript annotation file
-#' @param refFile Name of the refFileerence GTF/GFF3 transcript annotation file.
-#' Alternatively, user may choose to use mm10 or hg38 gencode basic annotation that 
-#' comes pre-loaded with NMDer
-#' @param fasta Genome sequence in the form of Biostrings object (prefFileerred) 
-#' or name of fasta genome sequence file for import
+#' @param queryFile Path to query GTF/GFF3 transcript annotation file
+#' @param refFile Path to ref GTF/GFF3 transcript annotation file
+#' @param fasta BSGenome object (preferred) or path to fasta file
 #' @param user_query_format optional argument to specify the query annotation format ('gtf','gff3')
-#' @param user_refFile_format optional argument to specify the refFileerence annotation format ('gtf','gff3')
+#' @param user_ref_format optional argument to specify the refFileerence annotation format ('gtf','gff3')
 #' 
 #' @return
 #' A list containing (1) GRanges object for query, (2) GRanges object for 
-#' refFileerence annotation, and (3) DNAstring containing genome sequence
+#' ref annotation, and (3) DNAstring containing genome sequence
 #' 
-#' @import rtracklayer
-#' @import Biostrings
-#' @import tools
-#' 
-#' 
-
 
 prepareInputs <- function(queryFile, refFile, fasta, 
-                          user_query_format, user_refFile_format) {
+                          user_query_format, user_ref_format) {
   
   # import assembled transcripts
   infoLog('Importing query transcript file', logf, quiet)
@@ -61,15 +52,15 @@ prepareInputs <- function(queryFile, refFile, fasta,
       dplyr::arrange(desc(width)) %>% 
       dplyr::mutate(gene_id = Parent[1]) %>%
       dplyr::mutate(gene_name = Name[1]) %>%
-      ungroup()
+      dplyr::ungroup()
     
     # duplicate dataframe and filter out 'exon' type entries, sort and add exon_number
     inputGRanges.exons = inputGRanges %>%
       dplyr::filter(type == 'exon') %>%
       dplyr::group_by(transcript_id) %>% 
-      dplyr::arrange(ifelse(strand == '-', desc(start), start)) %>%
+      dplyr::arrange(ifelse(strand == '+', start, desc(start))) %>%
       dplyr::mutate(exon_number = row_number()) %>% 
-      ungroup()
+      dplyr::ungroup()
     
     # combine both dataframes and sort by transcript_id
     inputGRanges = suppressMessages(inputGRanges %>%
@@ -105,13 +96,13 @@ prepareInputs <- function(queryFile, refFile, fasta,
     }
     
     # check file extension 
-    refFile_format = tools::file_ext(refFile)
+    ref_format = tools::file_ext(refFile)
     
     # return if infile is a txt file with no user_query_format input
-    if (refFile_format == 'txt' & is.null(user_refFile_format)) {
+    if (ref_format == 'txt' & is.null(user_ref_format)) {
       stopLog('refFileerence file contain .txt extension but refFileerence_format argument not provided')
-    } else if (refFile_format == 'txt' & !is.null(user_refFile_format)) {
-      refFile_format = user_refFile_format
+    } else if (ref_format == 'txt' & !is.null(user_ref_format)) {
+      ref_format = user_ref_format
     }
     
     
@@ -120,7 +111,7 @@ prepareInputs <- function(queryFile, refFile, fasta,
     # so this function attempts to extract the 1) transcript_id, 2) gene_id, 
     # 3)gene_name and 4)exon_number of each transcript, which are important information
     # for downstream functions
-    if (refFile_format == 'gff3') {
+    if (ref_format == 'gff3') {
       basicGRanges = rtracklayer::import(refFile, format = 'gff3')
       
       # removes line of type 'gene', extract transcript_id from ID (for mRNA/transcript types)
@@ -150,7 +141,7 @@ prepareInputs <- function(queryFile, refFile, fasta,
       
       basicGRanges = makeGRangesFromDataFrame(basicGRanges, keep.extra.columns = TRUE)
       
-    } else if (refFile_format == 'gtf') {
+    } else if (ref_format == 'gtf') {
       basicGRanges = rtracklayer::import(refFile, format = 'gtf')
     } else {
       stopLog('refFileerence file format not supported')
