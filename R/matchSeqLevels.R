@@ -1,3 +1,11 @@
+#' Match seqnames of input GRanges to reference GRanges
+#'
+#' @param inGRanges GRanges object with seqnames to change
+#' @param refGRanges GRanges object from which seqnames is referenced
+#'
+#' @return Corrected input GRanges
+#' @export
+#'
 matchSeqLevels <- function(inGRanges, refGRanges){
   
   if (GenomeInfoDb::seqlevelsStyle(inGRanges) != GenomeInfoDb::seqlevelsStyle(refGRanges)) {
