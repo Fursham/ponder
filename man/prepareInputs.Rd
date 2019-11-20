@@ -4,26 +4,23 @@
 \alias{prepareInputs}
 \title{NMDer workflow: Import files}
 \usage{
-prepareInputs(queryfile, ref, fasta = NULL, user_query_format,
+prepareInputs(queryFile, refFile, fasta, user_query_format,
   user_ref_format)
 }
 \arguments{
-\item{queryfile}{Name of the query GTF/GFF3 transcript annotation file}
+\item{queryFile}{Path to query GTF/GFF3 transcript annotation file}
 
-\item{ref}{Name of the reference GTF/GFF3 transcript annotation file.
-Alternatively, user may choose to use mm10 or hg38 gencode basic annotation that 
-comes pre-loaded with NMDer}
+\item{refFile}{Path to ref GTF/GFF3 transcript annotation file}
 
-\item{fasta}{Genome sequence in the form of Biostrings object (preferred) 
-or name of fasta genome sequence file for import}
+\item{fasta}{BSGenome object (preferred) or path to fasta file}
 
 \item{user_query_format}{optional argument to specify the query annotation format ('gtf','gff3')}
 
-\item{user_ref_format}{optional argument to specify the reference annotation format ('gtf','gff3')}
+\item{user_ref_format}{optional argument to specify the refFileerence annotation format ('gtf','gff3')}
 }
 \value{
 A list containing (1) GRanges object for query, (2) GRanges object for 
-reference annotation, and (3) DNAstring containing genome sequence
+ref annotation, and (3) DNAstring containing genome sequence
 }
 \description{
 Imports mandatory files for NMDer analysis
