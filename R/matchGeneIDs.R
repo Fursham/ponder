@@ -125,9 +125,7 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
   # Matching function 2: replace primary_gene_id with basic gene ID IF:
   # at least primary_gene_id is provided and if it starts with 'ENS'
   if (!is.null(primary_gene_id)) {
-    
-    
-    
+
     # count number of non-standard ids before matching
     countsbefore = inputGRanges %>% 
       dplyr::distinct(transcript_id, .keep_all = TRUE) %>%
@@ -220,7 +218,7 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
       dplyr::select(seqnames, start, end, strand, transcript_id)
     unmatched_granges = makeGRangesFromDataFrame(unmatched_df, keep.extra.columns = TRUE)
     
-    matched_df = mergeByOverlaps(unmatched_granges, basicGRanges) %>% 
+    matched_df = IRanges::mergeByOverlaps(unmatched_granges, basicGRanges) %>% 
       as.data.frame() %>%
       dplyr::select(transcript_id, basic_gene_id = gene_id, basic_gene_name = gene_name) %>%
       dplyr::distinct(transcript_id, .keep_all = TRUE)
@@ -276,7 +274,7 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
     
   } 
   
-  inputGRanges = makeGRangesFromDataFrame(inputGRanges, keep.extra.columns = TRUE)
+  inputGRanges = GenomicRanges::makeGRangesFromDataFrame(inputGRanges, keep.extra.columns = TRUE)
   return(inputGRanges)
 }
 
