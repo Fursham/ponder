@@ -20,6 +20,7 @@ gff3togtfconvert <- function(gffGRanges) {
     tidyr::fill() %>%
     dplyr::ungroup() %>%
     dplyr::arrange(start) %>%
+    dplyr::select(-Parent) %>%
     GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = T)
   
   return(gtfGRanges)
