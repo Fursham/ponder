@@ -1,28 +1,22 @@
-#' _ workflow: Preparing for analysis
+#' NMDer workflow: Preparing for analysis
 #' 
 #' @description 
-#' THIS FUNCTION IS PART OF THE _ PROGRAM WORKFLOW.
-#' This function will prepare output dataframes and GRanges objects for the _Program 
+#' THIS FUNCTION IS PART OF THE NMDer PROGRAM WORKFLOW.
+#' This function will prepare output dataframes and GRanges objects for downstream workflow
 #'
 #' @param inputGRanges 
-#' GRanges object containing transcript and exon features. It is recommended to create this object
-#' by importing gtf/gff3 files using rtracklayer::import
+#' Query GRanges object
 #' @param basicGRanges 
-#' #' GRanges object containing reference transcript,exon and CDS features. 
-#' It is recommended to create this object by importing gtf/gff3 files using rtracklayer::import
+#' Reference GRanges object. 
 #'
 #' @return
 #' Function will return a list containing:
-#' (1) dataframe of a list of assembled transcripts and its information for output
-#' (2) dataframe of a list of reference CDS transcripts
-#' (3) GRangesList of exon coordinates of assembled transcripts grouped by transcript name
-#' (4) GRangesList of exon coordinates of reference CDS grouped by transcript name
+#' (1) dataframe of a list of query transcripts for downstream workflow
+#' (2) GRangesList of exon coordinates from query as dataframe
+#' (3) GRangesList of exon coordinates from reference as dataframe
+#' (4) GRangesList of exon coordinates of reference CDS as dataframe
 #' 
-#' @export
-#' @import dplyr
-#' @import GenomicFeatures
-#'
-#' @examples
+
 prepareAnalysis <- function(inputGRanges, basicGRanges) {
   
   infoLog('Preparing databases, transcripts and output files...', logf, quiet)
