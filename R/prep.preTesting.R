@@ -32,26 +32,10 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
   infoLog('Checking and correcting chromosome names...', logf, quiet)
   
   if (correct_chrom == TRUE & length(slotNames(genome)) != 5) {
-    if (seqlevelsStyle(inputGRanges) != seqlevelsStyle(genome)) {
-      newStyle <- mapSeqlevels(seqlevels(inputGRanges), seqlevelsStyle(genome))
-      newStyle = newStyle[!is.na(newStyle)]
-      inputGRanges <- renameSeqlevels(inputGRanges, newStyle)
-      
-      if (any(!seqlevels(inputGRanges)%in%seqlevels(genome))) {
-        seqlevels(inputGRanges, pruning.mode = 'tidy') <- as.vector(newStyle)
-        warnLog('Non-standard chromosome IDs in query were removed')
-      }
-    }
-    if (seqlevelsStyle(basicGRanges) != seqlevelsStyle(genome)) {
-      newStyle <- mapSeqlevels(seqlevels(basicGRanges), seqlevelsStyle(genome))
-      newStyle = newStyle[!is.na(newStyle)]
-      basicGRanges <- renameSeqlevels(basicGRanges, newStyle)
-      
-      if (any(!seqlevels(basicGRanges)%in%seqlevels(genome))) {
-        seqlevels(basicGRanges, pruning.mode = 'tidy') <- as.vector(newStyle)
-        warnLog('Non-standard chromosome IDs in reference were removed')
-      }
-    }
+    
+    # attempt to match input and reference GRanges to genome
+    inputGRanges = matchSeqLevels(inputGRanges, genome)
+    basicGRanges = matchSeqLevels(basicGRanges, genome)
   } 
   # if user opts out of this correction service, program will test if there are non-standard IDs and return a warning
   # program will continue
