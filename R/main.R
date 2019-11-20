@@ -47,7 +47,7 @@ prepNMDer <- function(query,
     prepareInputs(query, reference, fasta, query_format, reference_format)
   
   # matching chromosome names and gene IDs
-  inputGRanges = preTesting(inputGRanges, basicGRanges, genome, 
+  unpack[inputGRanges, basicGRanges] = preTesting(inputGRanges, basicGRanges, genome, 
                             match_chrom, match_geneIDs, 
                             primary_gene_id, secondary_gene_id)
   
@@ -136,6 +136,7 @@ runNMDer <- function(prepObject,
     collect() %>% # Special collect() function to recombine partitions
     as.data.frame() %>%
     dplyr::arrange(NMDer_ID) %>% dplyr::select(-group, -ORF_considered)
+  
   
   output_df = report_df %>% 
     dplyr::select(-starts_with('ORF_considered')) %>%

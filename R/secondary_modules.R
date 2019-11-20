@@ -57,7 +57,7 @@ testTXforStart <- function(queryTranscript, refCDS, full.output = FALSE) {
                              annotatedStart = TRUE, 
                              firstexlen = lenfirstsharedexon))
   } else {
-    # transcripts that overlap with CDS but do not contain an annotated start codon 
+    # transcripts that overlap with CDS but do not contain an annotated start codon
     output = modifyList(output, 
                         list(txrevise_out = diffSegments, 
                              annotatedStart = FALSE))
@@ -119,6 +119,8 @@ reconstructCDSstart <- function(queryTranscript, refCDS, fasta, txrevise_out = N
   # obtain strand information and anchor exon
   queryStrand = as.character(strand(diffSegments[[3]]))[1]
   
+  # construct anew transcript with 5' exons coming from query and
+  # 3' exons from CDS
   reconstructedTx = sort(append(
     diffSegments$shared_exons, c(
       reduce(diffSegments[[1]][diffSegments[[1]]$upstream != TRUE]),

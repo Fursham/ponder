@@ -283,7 +283,8 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
     # convert inputGRanges back to GRanges object
     inputGRanges = makeGRangesFromDataFrame(inputGRanges, keep.extra.columns = TRUE)
   }
-  return(inputGRanges)
+  return(list('inputGRanges' = inputGRanges, 
+              'basicGRanges' = basicGRanges))
 }
 
 
@@ -674,7 +675,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
   # combine query transcripts with multiple comparisons to reference
   combined_report_df = combined_report_df %>% 
     group_by(Transcript_ID) %>%
-    mutate(Ref_TX_ID = list(as.character(Ref_TX_ID))) %>%
+    mutate(Ref_TX_ID = paste(as.character(Ref_TX_ID), collapse = '_')) %>%
     ungroup() %>%
     distinct(.keep_all = TRUE) %>%
     dplyr::mutate(NMDer_ID = paste0('NMDer', formatC(as.integer(row_number()), width=7, flag='0')))

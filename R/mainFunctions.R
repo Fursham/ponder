@@ -45,6 +45,9 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     # can be referenced as thisline$_
     thisline = as.list(x)
     
+    thisline$Ref_TX_ID = strsplit(thisline$Ref_TX_ID, split = '_')
+
+    
     
     #############################################################################
     # deprecated
@@ -68,13 +71,13 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
         filter(group_name == thisline$Transcript_ID) %>%
         makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
       
-      basicCDSGRanges = basicExonsbyCDS %>% 
+      basicTxGRanges = basicExonsbyTx %>% 
         filter(group_name %in% thisline$Ref_TX_ID[[1]]) %>%
         makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
       
       # calculate the coverage of query and reference transcripts as a percentage
       # of the mean width of query and reference
-      overlapHits = mergeByOverlaps(queryGRanges, basicCDSGRanges)
+      overlapHits = mergeByOverlaps(queryGRanges, basicTxGRanges)
       overlapHitsMeta = mapply(function(x,y){
         widthQuery = sum(width(x))
         widthRef = sum(width(y))
@@ -82,21 +85,23 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
         commonCoverage = sum(width(reduce(intersect(x, y))))
         Shared_coverage = commonCoverage/aveWidth
         return(Shared_coverage)
-      }, overlapHits$queryGRanges, overlapHits$basicCDSGRanges) %>%
+      }, overlapHits$queryGRanges, overlapHits$basicTxGRanges) %>%
         as.data.frame() # output list as a dataframe
       
       # append reference tx IDs, sort dataframe and select best reference
-      overlapHitsMeta$Ref_TX_ID = names(overlapHits$basicCDSGRanges)
+      overlapHitsMeta$Ref_TX_ID = names(overlapHits$basicTxGRanges)
       overlapHitsMeta = overlapHitsMeta %>% 
         filter(. < 1) %>%
         arrange(desc(.))
-      
       thisline$Ref_TX_ID = overlapHitsMeta[1,2]
+      if(nrow(overlapHitsMeta) == 0){
+        return(thisline)
+      } 
+      
     } else {
       # convert list into character for comparisons with one reference transcript only
       thisline$Ref_TX_ID = as.character(thisline$Ref_TX_ID[[1]])
     }
-    
     
     # prepare GRanges for analysis
     queryGRanges = inputExonsbyTx %>% 
@@ -111,11 +116,14 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
       filter(group_name == thisline$Ref_TX_ID) %>%
       makeGRangesFromDataFrame(keep.extra.columns = TRUE)
     
+    
+    
     # attempt to build Open Reading Frame for query
     ORFreport = getORF(basicCDSGRanges, queryGRanges,
                        genome, thisline$Gene_ID,
                        thisline$NMDer_ID)
     thisline = modifyList(thisline, ORFreport)
+    
     
     
     # if requested, test for NMD features and update line entry
@@ -215,10 +223,23 @@ getORF <- function(knownCDS, queryTx, refsequence, gene_id, transcript_id) {
   # attempt to reconstruct CDS for transcripts with unannotated start
   if ((pre_report$annotatedStart == FALSE) |
       (pre_report$annotatedStart == TRUE & pre_report$firstexlen < 3)) {
-    pre_report = reconstructCDSstart(queryTx, knownCDS,
-                                     refsequence,
-                                     pre_report$txrevise_out,
-                                     full.output = TRUE)
+    
+    diffSegments = pre_report$txrevise_out
+    queryStrand = as.character(strand(knownCDS))[1]
+    pre_report$ORF = sort(append(
+      diffSegments$shared_exons, c(
+        reduce(diffSegments[[1]][diffSegments[[1]]$upstream != TRUE]),
+        reduce(diffSegments[[2]][diffSegments[[2]]$upstream == TRUE]))),
+      decreasing = queryStrand == '-')
+    combinedList = list(refTx = pre_report$ORF, testTx = queryTx)
+    pre_report$txrevise_out =  indentifyAddedRemovedRegions("refTx", "testTx", combinedList[c("refTx", "testTx")])
+    
+    pre_report$predictedStart = 'reconstructed'
+    
+    #pre_report = reconstructCDSstart(queryTx, knownCDS,
+    #                                 refsequence,
+    #                                 pre_report$txrevise_out,
+    #                                 full.output = TRUE)
     output = modifyList(output, list(predictedStart = pre_report$predictedStart))
     
     # return if CDS with new 5' do not contain a start codon
