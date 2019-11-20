@@ -82,6 +82,11 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
       dplyr::filter(match_level == 5) %>%
       nrow()
     
+    if(!'gene_name' %in% names(inputGRanges)){
+      inputGRanges = inputGRanges %>%
+        dplyr::mutate(gene_name = NA)
+    }
+    
     if (count_nonstand_ids > 0) {
       
       # return warning

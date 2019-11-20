@@ -26,7 +26,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
     dplyr::filter(type == 'transcript') %>%
     dplyr::select(Gene_ID = gene_id, 
                   Original_Gene_ID = old_gene_id,
-                  Gene_Name = gene_name,
+                  Gene_name = gene_name,
                   Match_level = match_level,
                   Transcript_ID = transcript_id,
                   seqnames,
