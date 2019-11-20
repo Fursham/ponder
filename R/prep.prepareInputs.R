@@ -3,18 +3,18 @@
 #' @description 
 #' Imports mandatory files for NMDer analysis
 #' 
-#' @param queryfile Name of the query GTF/GFF3 transcript annotation file
-#' @param ref Name of the reference GTF/GFF3 transcript annotation file.
+#' @param queryFile Name of the query GTF/GFF3 transcript annotation file
+#' @param refFile Name of the refFileerence GTF/GFF3 transcript annotation file.
 #' Alternatively, user may choose to use mm10 or hg38 gencode basic annotation that 
 #' comes pre-loaded with NMDer
-#' @param fasta Genome sequence in the form of Biostrings object (preferred) 
+#' @param fasta Genome sequence in the form of Biostrings object (prefFileerred) 
 #' or name of fasta genome sequence file for import
 #' @param user_query_format optional argument to specify the query annotation format ('gtf','gff3')
-#' @param user_ref_format optional argument to specify the reference annotation format ('gtf','gff3')
+#' @param user_refFile_format optional argument to specify the refFileerence annotation format ('gtf','gff3')
 #' 
 #' @return
 #' A list containing (1) GRanges object for query, (2) GRanges object for 
-#' reference annotation, and (3) DNAstring containing genome sequence
+#' refFileerence annotation, and (3) DNAstring containing genome sequence
 #' 
 #' @import rtracklayer
 #' @import Biostrings
@@ -23,18 +23,18 @@
 #' 
 
 
-prepareInputs <- function(queryfile, ref, fasta = NULL, 
-                          user_query_format, user_ref_format) {
+prepareInputs <- function(queryFile, refFile, fasta, 
+                          user_query_format, user_refFile_format) {
   
   # import assembled transcripts
   infoLog('Importing query transcript file', logf, quiet)
   
-  if (!file.exists(queryfile)){
+  if (!file.exists(queryFile)){
     stopLog('Query transcript file do not exist')
   }
   
   # check file extension 
-  query_format = tools::file_ext(queryfile)
+  query_format = tools::file_ext(queryFile)
   
   # return if infile is a txt file with no user_query_format input
   if (query_format == 'txt' & is.null(user_query_format)) {
@@ -49,7 +49,7 @@ prepareInputs <- function(queryfile, ref, fasta = NULL,
   # 3)gene_name and 4)exon_number of each transcript, which are important information
   # for downstream functions
   if (query_format == 'gff3') {
-    inputGRanges = rtracklayer::import(queryfile, format = 'gff3')
+    inputGRanges = rtracklayer::import(queryFile, format = 'gff3')
     
     # removes line of type 'gene', extract transcript_id from ID (for mRNA/transcript types)
     # or from Parent header (the other types), add gene_id and gene_name to every entry
@@ -79,7 +79,7 @@ prepareInputs <- function(queryfile, ref, fasta = NULL,
     inputGRanges = makeGRangesFromDataFrame(inputGRanges, keep.extra.columns = TRUE)
     
   } else if (query_format == 'gtf') {
-    inputGRanges = rtracklayer::import(queryfile, format = 'gtf')
+    inputGRanges = rtracklayer::import(queryFile, format = 'gtf')
   } else {
     stopLog('Query file format not supported')
   }
@@ -91,27 +91,27 @@ prepareInputs <- function(queryfile, ref, fasta = NULL,
   
   
   
-  # load provided genome_basic assembly, or import user reference annotation
-  if (is(ref, 'GenomicRanges')) {
+  # load provided genome_basic assembly, or import user refFileerence annotation
+  if (is(refFile, 'GenomicRanges')) {
     infoLog(sprintf('Loading gencode_basic transcripts'), logf, quiet)
     
-    basicGRanges = ref
-  } else if (is.character(ref)){
-    infoLog('Importing user-provided reference transcript annotations', logf, quiet)
+    basicGRanges = refFile
+  } else if (is.character(refFile)){
+    infoLog('Importing user-provided refFileerence transcript annotations', logf, quiet)
     
     # return if file does not exist
-    if (!file.exists(ref)){
-      stopLog('Reference annotation file do not exist')
+    if (!file.exists(refFile)){
+      stopLog('refFileerence annotation file do not exist')
     }
     
     # check file extension 
-    ref_format = tools::file_ext(ref)
+    refFile_format = tools::file_ext(refFile)
     
     # return if infile is a txt file with no user_query_format input
-    if (ref_format == 'txt' & is.null(user_ref_format)) {
-      stopLog('Reference file contain .txt extension but reference_format argument not provided')
-    } else if (ref_format == 'txt' & !is.null(user_ref_format)) {
-      ref_format = user_ref_format
+    if (refFile_format == 'txt' & is.null(user_refFile_format)) {
+      stopLog('refFileerence file contain .txt extension but refFileerence_format argument not provided')
+    } else if (refFile_format == 'txt' & !is.null(user_refFile_format)) {
+      refFile_format = user_refFile_format
     }
     
     
@@ -120,8 +120,8 @@ prepareInputs <- function(queryfile, ref, fasta = NULL,
     # so this function attempts to extract the 1) transcript_id, 2) gene_id, 
     # 3)gene_name and 4)exon_number of each transcript, which are important information
     # for downstream functions
-    if (ref_format == 'gff3') {
-      basicGRanges = rtracklayer::import(ref, format = 'gff3')
+    if (refFile_format == 'gff3') {
+      basicGRanges = rtracklayer::import(refFile, format = 'gff3')
       
       # removes line of type 'gene', extract transcript_id from ID (for mRNA/transcript types)
       # or from Parent header (the other types), add gene_id and gene_name to every entry
@@ -150,15 +150,15 @@ prepareInputs <- function(queryfile, ref, fasta = NULL,
       
       basicGRanges = makeGRangesFromDataFrame(basicGRanges, keep.extra.columns = TRUE)
       
-    } else if (ref_format == 'gtf') {
-      basicGRanges = rtracklayer::import(ref, format = 'gtf')
+    } else if (refFile_format == 'gtf') {
+      basicGRanges = rtracklayer::import(refFile, format = 'gtf')
     } else {
-      stopLog('Reference file format not supported')
+      stopLog('refFileerence file format not supported')
     }
     
   }
   if ('*'%in%strand(basicGRanges)) {
-    warnLog('Reference annotation contain transcripts with no strand information. These will be removed')
+    warnLog('refFileerence annotation contain transcripts with no strand information. These will be removed')
     basicGRanges = basicGRanges[strand(basicGRanges) != '*']
   }
   
