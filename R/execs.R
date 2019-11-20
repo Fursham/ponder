@@ -17,10 +17,14 @@
 #' @param match_geneIDs Supplementary feature to attempt to match gene IDs in query file
 #' to reference file. This is key in grouping query transcripts to reference gene families for comparison.
 #' 
+#' 
 #' Matching is done at three levels with increasing accuracy:
+#' 
 #' 1. Crudely intersecting query coordinates with reference. Invoked by setting match_geneIDs to TRUE
+#' 
 #' 2. Trim ensembl-style gene IDs and attempt matching. Invoked by providing name of 
 #' gene ID header (typically 'gene_id') from gtf file to primary_gene_id argument
+#' 
 #' 3. Replace query gene ID with a secondary gene ID and attempt matching. Invoked by providing name of 
 #' secondary gene ID header (for example 'ref_gene_id') from gtf file to secondary_gene_id argument 
 #' 
