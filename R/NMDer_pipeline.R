@@ -175,38 +175,3 @@ runNMDer <- function(prepObject,
 
   return(output_df)
 }
-
-
-
-matchGTFgeneIDs <- function(query,
-                     reference,
-                     query_format = NULL,
-                     reference_format = NULL,
-                     primary_gene_id = NULL,
-                     secondary_gene_id = NULL,
-                     outputfile = 'matched_geneIDs.gtf',
-                     clusters = 4) {
-  
-  options(warn=-1)
-  # check for mandataory arguments
-  if (any(missing(query), missing(reference))) {
-    stopLog('Missing mandatory arguments')
-  } 
-  
-  # import and/or load query file(s)
-  unpack[inputGRanges, basicGRanges, genome] = 
-    prepareInputs(query, reference, 
-                  in_format = query_format, 
-                  ref_format = reference_format)
-
-  # matching chromosome names and gene IDs
-  inputGRanges = matchGeneIDs(inputGRanges, basicGRanges, primary_gene_id, 
-                              secondary_gene_id)
-  
-  # export
-  rtracklayer::export(inputGRanges, outputfile)
-  infoLog(sprintf('Done. GTF saved as %s in current working directory', outputfile))
-  
-  options(warn=0)
-  return(list(report_df, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS, genome))
-}
