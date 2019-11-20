@@ -6,6 +6,11 @@
 #' @export
 #'
 gff3togtfconvert <- function(gffGRanges) {
+  
+  if(!'Parent' %in% names(mcols(gffGRanges))){
+    stopLog('Please check that GFF3 file contain Parent information')
+  }
+  
   gffGRanges = gffGRanges %>% as.data.frame() %>%
     dplyr::mutate(gene_id = ifelse(type == 'gene', ID, NA)) %>% 
     dplyr::mutate(transcript_id = ifelse(type == 'transcript', ID, NA)) %>%
