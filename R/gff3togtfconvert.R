@@ -1,0 +1,19 @@
+gff3togtfconvert <- function(gffGRanges) {
+  gffGRanges = gffGRanges %>% as.data.frame() %>%
+    dplyr::mutate(gene_id = ifelse(type == 'gene', ID, NA)) %>% 
+    dplyr::mutate(transcript_id = ifelse(type == 'transcript', ID, NA)) %>%
+    dplyr::mutate(Parent = as.character(Parent))
+    
+    
+  gtfGRanges = gffGRanges %>% as.data.frame() %>%
+    dplyr::mutate(gene_id = ifelse(Parent %in% gffGRanges$gene_id, Parent, gene_id)) %>% 
+    dplyr::mutate(transcript_id = ifelse(Parent %in% gffGRanges$transcript_id, Parent, transcript_id)) %>% 
+    dplyr::group_by(transcript_id) %>%
+    dplyr::arrange(desc(width)) %>%
+    tidyr::fill() %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(start) %>%
+    GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = T)
+  
+  return(gtfGRanges)
+}
