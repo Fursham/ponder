@@ -211,16 +211,15 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
     #   this function will gather all unmatched transcripts
     #   and attempt to find its overlap with the reference
     #   and match those gene_ids to the reference gene_ids
-    #   and match those gene_names to the reference gene_names
     #   and change the match_level of matched transcripts
     unmatched_df = inputGRanges %>%
       dplyr::filter(is.na(matched), exon_number == 1) %>%
       dplyr::select(seqnames, start, end, strand, transcript_id)
-    unmatched_granges = makeGRangesFromDataFrame(unmatched_df, keep.extra.columns = TRUE)
+    unmatched_granges = GenomicRanges::makeGRangesFromDataFrame(unmatched_df, keep.extra.columns = TRUE)
     
     matched_df = IRanges::mergeByOverlaps(unmatched_granges, basicGRanges) %>% 
       as.data.frame() %>%
-      dplyr::select(transcript_id, basic_gene_id = gene_id, basic_gene_name = gene_name) %>%
+      dplyr::select(transcript_id, basic_gene_id = gene_id) %>%
       dplyr::distinct(transcript_id, .keep_all = TRUE)
     
     inputGRanges = suppressMessages(inputGRanges %>%
@@ -229,9 +228,6 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
                                       dplyr::mutate(gene_id = ifelse(!is.na(basic_gene_id),
                                                                      basic_gene_id, 
                                                                      gene_id)) %>%
-                                      dplyr::mutate(gene_name = ifelse(!is.na(basic_gene_name),
-                                                                       basic_gene_name, 
-                                                                       gene_name)) %>%
                                       dplyr::mutate(match_level = ifelse(!is.na(basic_gene_id),
                                                                          4, 
                                                                          match_level)) %>%
