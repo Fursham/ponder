@@ -70,7 +70,6 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
       dplyr::distinct() %>%
       dplyr::mutate(matched = TRUE)   # this column functions to annotate matched genes later on using join
     
-    
     # get a list of unmatched gene_ids
     inputGRanges = suppressMessages(inputGRanges %>% as.data.frame() %>%
                                       dplyr::left_join(basicGRanges.genelist) %>%
@@ -90,7 +89,7 @@ preTesting <- function(inputGRanges, basicGRanges, genome, correct_chrom, correc
     }
     
     # convert inputGRanges back to GRanges object
-    inputGRanges = makeGRangesFromDataFrame(inputGRanges, keep.extra.columns = TRUE)
+    inputGRanges = GenomicRanges::makeGRangesFromDataFrame(inputGRanges, keep.extra.columns = TRUE)
   }
   return(list('inputGRanges' = inputGRanges, 
               'basicGRanges' = basicGRanges))
