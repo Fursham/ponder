@@ -35,10 +35,6 @@ prepareInputs <- function(queryFile, refFile, fasta,
   }
   
   # process a gff3 query file to be compatible for analysis
-  # basically, gff3 annotation contain different headers as compared to gtf2
-  # so this function attempts to extract the 1) transcript_id, 2) gene_id, 
-  # 3)gene_name and 4)exon_number of each transcript, which are important information
-  # for downstream functions
   if (query_format == 'gff3') {
     inputGRanges = rtracklayer::import(queryFile, format = 'gff3')
     
@@ -51,7 +47,7 @@ prepareInputs <- function(queryFile, refFile, fasta,
     stopLog('Query file format not supported')
   }
   
-  if ('*'%in%strand(inputGRanges)) {
+  if ('*' %in% strand(inputGRanges)) {
     warnLog('Query file contain transcripts with no strand information. These will be removed')
     inputGRanges = inputGRanges[strand(inputGRanges) != '*']
   }
@@ -64,11 +60,11 @@ prepareInputs <- function(queryFile, refFile, fasta,
     
     basicGRanges = refFile
   } else if (is.character(refFile)){
-    infoLog('Importing user-provided refFileerence transcript annotations', logf, quiet)
+    infoLog('Importing user-provided reference transcript annotations', logf, quiet)
     
     # return if file does not exist
     if (!file.exists(refFile)){
-      stopLog('refFileerence annotation file do not exist')
+      stopLog('Reference annotation file do not exist')
     }
     
     # check file extension 
@@ -76,56 +72,26 @@ prepareInputs <- function(queryFile, refFile, fasta,
     
     # return if infile is a txt file with no user_query_format input
     if (ref_format == 'txt' & is.null(user_ref_format)) {
-      stopLog('refFileerence file contain .txt extension but refFileerence_format argument not provided')
+      stopLog('Reference file contain .txt extension but reference_format argument not provided')
     } else if (ref_format == 'txt' & !is.null(user_ref_format)) {
       ref_format = user_ref_format
     }
     
     
     # process a gff3 query file to be compatible for analysis
-    # basically, gff3 annotation contain different headers as compared to gtf2
-    # so this function attempts to extract the 1) transcript_id, 2) gene_id, 
-    # 3)gene_name and 4)exon_number of each transcript, which are important information
-    # for downstream functions
     if (ref_format == 'gff3') {
       basicGRanges = rtracklayer::import(refFile, format = 'gff3')
-      
-      # removes line of type 'gene', extract transcript_id from ID (for mRNA/transcript types)
-      # or from Parent header (the other types), add gene_id and gene_name to every entry
-      basicGRanges = basicGRanges %>% as.data.frame() %>%
-        dplyr::filter(type != 'gene') %>%
-        dplyr::mutate(Parent = as.character(Parent)) %>%
-        dplyr::mutate(transcript_id = ifelse(type %in% c('mRNA', 'transcript'), ID, Parent))%>%
-        dplyr::group_by(transcript_id) %>%
-        dplyr::arrange(desc(width)) %>% 
-        dplyr::mutate(gene_id = Parent[1]) %>%
-        dplyr::mutate(gene_name = Name[1]) %>%
-        ungroup()
-      
-      # duplicate dataframe and filter out 'exon' type entries, sort and add exon_number
-      basicGRanges.exons = basicGRanges %>%
-        dplyr::filter(type == 'exon') %>%
-        dplyr::group_by(transcript_id) %>% 
-        dplyr::arrange(ifelse(strand == '-', desc(start), start)) %>%
-        dplyr::mutate(exon_number = row_number()) %>% 
-        ungroup()
-      
-      # combine both dataframes and sort by transcript_id
-      basicGRanges = suppressMessages(basicGRanges %>%
-                                        left_join(basicGRanges.exons) %>% 
-                                        arrange(transcript_id))
-      
-      basicGRanges = makeGRangesFromDataFrame(basicGRanges, keep.extra.columns = TRUE)
+      basicGRanges = inputGRanges = gff3togtfconvert(inputGRanges)
       
     } else if (ref_format == 'gtf') {
       basicGRanges = rtracklayer::import(refFile, format = 'gtf')
     } else {
-      stopLog('refFileerence file format not supported')
+      stopLog('Reference file format not supported')
     }
     
   }
-  if ('*'%in%strand(basicGRanges)) {
-    warnLog('refFileerence annotation contain transcripts with no strand information. These will be removed')
+  if ('*' %in% strand(basicGRanges)) {
+    warnLog('Reference annotation contain transcripts with no strand information. These will be removed')
     basicGRanges = basicGRanges[strand(basicGRanges) != '*']
   }
   
