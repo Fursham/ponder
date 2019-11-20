@@ -1,3 +1,10 @@
+#' GFF3 to GTF converter
+#'
+#' @param gffGRanges Input GFF3 GRanges object
+#'
+#' @return Outputs GTF GRanges object with mandatory gene_id and transcript_id headers
+#' @export
+#'
 gff3togtfconvert <- function(gffGRanges) {
   gffGRanges = gffGRanges %>% as.data.frame() %>%
     dplyr::mutate(gene_id = ifelse(type == 'gene', ID, NA)) %>% 
