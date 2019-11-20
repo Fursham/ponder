@@ -32,8 +32,8 @@
 #'
 #' @examples 
 #' library("BSgenome.Mmusculus.UCSC.mm10")
-#' preppedObject = prepNMDer(testData, mm10, Mmusculus, match_geneIDs = TRUE)
-#' preppedObject = prepNMDer(testData, mm10, Mmusculus, match_geneIDs = TRUE, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
+#' preppedObject = prepNMDer(testQuery, testRef, Mmusculus, match_geneIDs = TRUE)
+#' preppedObject = prepNMDer(testQuery, testRef, Mmusculus, match_geneIDs = TRUE, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
 #' 
 prepNMDer <- function(query,
                  reference, 
