@@ -3,28 +3,37 @@
 #' @description Import transcript annotation file, 
 #' match chromosome levels and gene IDs and prepare for NMD prediction analysis
 #'
-#' @param query Mandatory. Name of the query GTF/GFF3 transcript annotation file
-#' @param reference Mandatory. Name of the reference GTF/GFF3 transcript annotation file. 
-#' Alternatively, user may choose to use mm10 or hg38 gencode basic annotation that 
-#' comes pre-loaded with NMDer
-#' @param fasta Mandatory. Genome sequence in the form of Biostrings object (preferred) 
-#' or name of fasta genome sequence file for import
+#' @param query Mandatory. Path to query GTF/GFF3 transcript annotation file
+#' @param reference Mandatory. Path to reference GTF/GFF3 transcript annotation file. 
+#' @param fasta Mandatory. BSGenome object (preferred) or path to fasta file
+#' 
 #' @param query_format Optional argument to specify the query annotation format ('gtf','gff3'). 
 #' Mandatory if query contains '.txt' extension filename
 #' @param reference_format Optional argument to specify the reference annotation format ('gtf','gff3'). 
 #' Mandatory if reference contains '.txt' extension filename
-#' @param match_chrom If TRUE, attempt to match chromosome ID
-#' @param match_geneIDs If TRUE, attempt to match gene ID. This is crudely done by intersecting query transcript coordinates with reference. To increase chance of true matching, user may provide 
+#' 
+#' @param match_chrom Supplementary feature. If TRUE, program will attempt to match chromosome names of 
+#' query and reference to fasta genome to ensure consistent naming across input files.
+#' @param match_geneIDs Supplementary feature to attempt to match gene IDs in query file
+#' to reference file. This is key in grouping query transcripts to reference gene families for comparison.
+#' 
+#' Matching is done at three levels with increasing accuracy:
+#' 1. Crudely intersecting query coordinates with reference. Invoked by setting match_geneIDs to TRUE
+#' 2. Trim ensembl-style gene IDs and attempt matching. Invoked by providing name of 
+#' gene ID header (typically 'gene_id') from gtf file to primary_gene_id argument
+#' 3. Replace query gene ID with a secondary gene ID and attempt matching. Invoked by providing name of 
+#' secondary gene ID header (for example 'ref_gene_id') from gtf file to secondary_gene_id argument 
+#' 
 #' @param primary_gene_id See match_geneIDs argument
 #' @param secondary_gene_id See match_geneIDs argument
 #'
-#' @return S4 object containing dataframes and objects for NMD prediction analysis
+#' @return S4 object containing dataframes and objects for downstream NMD prediction analysis
 #' @export
 #'
 #' @examples 
 #' library("BSgenome.Mmusculus.UCSC.mm10")
-#' prepNMDer(testData, mm10, Mmusculus, match_geneIDs = TRUE)
-#' prepNMDer(testData, mm10, Mmusculus, match_geneIDs = TRUE, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
+#' preppedObject = prepNMDer(testData, mm10, Mmusculus, match_geneIDs = TRUE)
+#' preppedObject = prepNMDer(testData, mm10, Mmusculus, match_geneIDs = TRUE, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
 #' 
 prepNMDer <- function(query,
                  reference, 
