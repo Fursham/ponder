@@ -24,21 +24,15 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
   # prepare output dataframe by getting transcript information from inputGRanges
   report_df = inputGRanges %>% as.data.frame() %>%
     dplyr::filter(type == 'transcript') %>%
+    dplyr::mutate(Transcript_coord = paste0(seqnames, ':', start, '-', end)) %>%
     dplyr::select(Gene_ID = gene_id, 
                   Original_Gene_ID = old_gene_id,
                   Gene_name = gene_name,
                   Match_level = match_level,
                   Transcript_ID = transcript_id,
-                  seqnames,
-                  start,
-                  end,
-                  Strand = strand) %>%
-    dplyr::mutate(NMDer_ID = as.character(NA),
-                  Alt_tx = as.logical(NA),
-                  annotatedStart = as.logical(NA),
-                  predictedStart = as.logical(NA),
-                  Transcript_coord = paste0(seqnames, ':', start, '-', end))
-  
+                  Strand = strand, 
+                  Transcript_coord)
+    
   # prepare df of gencode_basic transcripts
   basicTX_df = basicGRanges %>% as.data.frame() %>%
     dplyr::filter(type == 'transcript') %>%
@@ -51,7 +45,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
     dplyr::left_join(basicTX_df, by = 'Gene_ID') %>%
     dplyr::select(NMDer_ID, Gene_ID, Original_Gene_ID, Match_level, 
                   Gene_Name, Transcript_ID, Ref_transcript_ID, Transcript_coord, 
-                  Strand, annotatedStart, predictedStart, Alt_tx) 
+                  Strand) 
   
   # prepare databases
   inputDB = makeTxDbFromGRanges(inputGRanges)
