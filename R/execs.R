@@ -92,7 +92,6 @@ prepNMDer <- function(query,
 #' @param clusters 
 #'
 #' @return
-#' @import multidplyr
 #' @export
 #'
 #' @examples
