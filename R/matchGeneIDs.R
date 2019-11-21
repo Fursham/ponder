@@ -251,10 +251,26 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
   ## post matching function
   # annotate the match_level on unmatched gene_ids
   # and cleanup the dataframe
+  
   inputGRanges = inputGRanges %>%
     dplyr::mutate(match_level = ifelse(is.na(matched),
                                        5,match_level)) %>%
     dplyr::select(-matched)
+    
+  if('gene_name' %in% names(inputGRanges) & 'gene_name' %in% names(mcols(basicGRanges))){
+    basicGRanges.genelist.1 = basicGRanges %>% as.data.frame() %>%
+      dplyr::select(gene_id, ref_gene_name = gene_name) %>%
+      dplyr::distinct() 
+    
+    inputGRanges = inputGRanges %>%
+      dplyr::left_join(basicGRanges.genelist.1, by = 'gene_id') %>%
+      dplyr::mutate(gene_name = ifelse(match_level != 5 & is.na(gene_name),
+                                         ref_gene_name,gene_name)) %>%
+      dplyr::select(-ref_gene_name)
+  } else {
+    inputGRanges = inputGRanges %>%
+      dplyr::mutate(gene_name = NA)
+  } 
   
   # report pre-testing analysis and return inputGRanges
   nonstand_after = inputGRanges %>% 
