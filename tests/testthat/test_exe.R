@@ -1,7 +1,8 @@
 context("Test prepNMDer workflow")
 
 # perform workflow
-out = prepNMDer(testQuery, testRef, Mmusculus, match_chrom = T, match_geneIDs = T, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
+testQuerynew = paste0('../../', testQuery)
+out = prepNMDer(testQuerynew, testRef, Mmusculus, match_chrom = T, match_geneIDs = T, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
 test_that("Test the structure of output file", {
   
   expect_equal(isS4(out), TRUE) 
