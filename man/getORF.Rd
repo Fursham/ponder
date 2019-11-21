@@ -17,6 +17,9 @@ getORF(knownCDS, queryTx, refsequence, gene_id, transcript_id)
 
 \item{nonClassicalNMD}{}
 }
+\value{
+
+}
 \description{
 THIS FUNCTION IS PART OF THE _ PROGRAM WORKFLOW.
 This function will compare the query transcript with a reference CDS and tests
