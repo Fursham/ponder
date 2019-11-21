@@ -15,7 +15,7 @@
 #' Matching is done at three levels with increasing accuracy:
 #' 
 #' 1. Crudely intersecting query coordinates with reference. Invoked by setting match_geneIDs to TRUE
-#' 
+#' sprintf('Remaining number of non-standard gene_ids: %s', nonstand_after)
 #' 2. Trim ensembl-style gene IDs and attempt matching. Invoked by providing name of 
 #' gene ID header (typically 'gene_id') from gtf file to primary_gene_id argument
 #' 
