@@ -44,7 +44,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
   combined_report_df = report_df %>%
     dplyr::left_join(basicTX_df, by = 'Gene_ID') %>%
     dplyr::select(Gene_ID, Original_Gene_ID, Match_level, 
-                  Gene_Name, Transcript_ID, Ref_transcript_ID, Transcript_coord, 
+                  Gene_name, Transcript_ID, Ref_transcript_ID, Transcript_coord, 
                   Strand) 
   
   # prepare databases
