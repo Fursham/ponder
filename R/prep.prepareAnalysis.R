@@ -24,7 +24,8 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
   # prepare output dataframe by getting transcript information from inputGRanges
   report_df = inputGRanges %>% as.data.frame() %>%
     dplyr::filter(type == 'transcript') %>%
-    dplyr::mutate(Transcript_coord = paste0(seqnames, ':', start, '-', end)) %>%
+    dplyr::mutate(Transcript_coord = paste0(seqnames, ':', start, '-', end),
+                  NMDer_ID = as.character(NA)) %>%
     dplyr::select(Gene_ID = gene_id, 
                   Original_Gene_ID = old_gene_id,
                   Gene_name = gene_name,
