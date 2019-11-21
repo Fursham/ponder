@@ -39,7 +39,7 @@ prepareInputs <- function(queryFile, refFile, fasta,
     inputGRanges = rtracklayer::import(queryFile, format = 'gff3')
     
     # convert gff3 to gtf
-    inputGRanges = gff3togtfconvert(inputGRanges)
+    inputGRanges = gff3togtfconvert(inputGRanges, comment = 'query')
     
   } else if (query_format == 'gtf') {
     inputGRanges = rtracklayer::import(queryFile, format = 'gtf')
@@ -81,7 +81,11 @@ prepareInputs <- function(queryFile, refFile, fasta,
     # process a gff3 query file to be compatible for analysis
     if (ref_format == 'gff3') {
       basicGRanges = rtracklayer::import(refFile, format = 'gff3')
-      basicGRanges = inputGRanges = gff3togtfconvert(inputGRanges)
+      
+      if (!'gene' %in% basicGRanges$type) {
+        stopLog('Please ensure that reference GFF3 file contain gene entries')
+      }
+      basicGRanges = gff3togtfconvert(basicGRanges, comment = 'reference')
       
     } else if (ref_format == 'gtf') {
       basicGRanges = rtracklayer::import(refFile, format = 'gtf')
