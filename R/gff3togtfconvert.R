@@ -5,10 +5,10 @@
 #' @return Outputs GTF GRanges object with mandatory gene_id and transcript_id headers
 #' @export
 #'
-gff3togtfconvert <- function(gffGRanges) {
+gff3togtfconvert <- function(gffGRanges, comment = '') {
   
   if(!'Parent' %in% names(mcols(gffGRanges))){
-    stopLog('Please check that GFF3 file contain Parent information')
+    stopLog(sprintf('Please check that %s GFF3 file contain Parent information', comment))
   }
   
   gffGRanges = gffGRanges %>% as.data.frame() %>%
