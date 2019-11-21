@@ -20,7 +20,6 @@
 #' (3) a list of GRanges objects similar to 'indentifyAddedRemovedRegions()' output (txrevise_out). 
 #' ?indentifyAddedRemovedRegions for more information
 #' 
-#' @export
 #' 
 #' @author Fursham Hamid
 #' 
@@ -94,7 +93,6 @@ testTXforStart <- function(queryTranscript, refCDS, full.output = FALSE) {
 #' function will also return a list of GRanges objects similar to 'indentifyAddedRemovedRegions()' output (txrevise_out). 
 #' ?indentifyAddedRemovedRegions for more information
 #' 
-#' @export
 #' 
 #' @author Fursham Hamid
 #'

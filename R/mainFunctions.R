@@ -28,8 +28,6 @@
 #' @return
 #' updated form of report_df
 #' @export
-#' @import dplyr
-#' @import GenomicRanges
 #'
 #' @examples
 runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS, 
@@ -200,7 +198,6 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
 #' @param nonClassicalNMD 
 #'
 #' @return
-#' @export
 #'
 #' @examples
 getORF <- function(knownCDS, queryTx, refsequence, gene_id, transcript_id) {

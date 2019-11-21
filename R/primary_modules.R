@@ -24,8 +24,6 @@
 #' (2) TRUE/FALSE object on whether ORF is an alternative CDS transcript
 
 #' @export
-#' @import Biostrings
-#' 
 #' @author Fursham Hamid
 #'
 #' @examples
@@ -132,7 +130,6 @@ reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL, 
 #' (4) coordinates of uATG
 #' (5) frame of uATG
 #' 
-#' @import Biostrings
 #' @author Fursham Hamid
 #' @export
 #' 
@@ -475,7 +472,6 @@ classifyAltSegments <- function(transcript1, transcript2, txrevise_out = NULL) {
 #' @param start Length of 5' end to truncate (positive val) or extend (negative val)
 #' @param end Length of 3' end to truncate (positive val) or extend (negative val)
 #'
-#' @import GenomicRanges
 #' @return a new GRanges transcript object 
 #' @export
 #'
