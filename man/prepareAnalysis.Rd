@@ -2,25 +2,23 @@
 % Please edit documentation in R/prep.prepareAnalysis.R
 \name{prepareAnalysis}
 \alias{prepareAnalysis}
-\title{_ workflow: Preparing for analysis}
+\title{NMDer workflow: Preparing for analysis}
 \usage{
 prepareAnalysis(inputGRanges, basicGRanges)
 }
 \arguments{
-\item{inputGRanges}{GRanges object containing transcript and exon features. It is recommended to create this object
-by importing gtf/gff3 files using rtracklayer::import}
+\item{inputGRanges}{Query GRanges object}
 
-\item{basicGRanges}{#' GRanges object containing reference transcript,exon and CDS features. 
-It is recommended to create this object by importing gtf/gff3 files using rtracklayer::import}
+\item{basicGRanges}{Reference GRanges object.}
 }
 \value{
 Function will return a list containing:
-(1) dataframe of a list of assembled transcripts and its information for output
-(2) dataframe of a list of reference CDS transcripts
-(3) GRangesList of exon coordinates of assembled transcripts grouped by transcript name
-(4) GRangesList of exon coordinates of reference CDS grouped by transcript name
+(1) dataframe of a list of query transcripts for downstream workflow
+(2) GRangesList of exon coordinates from query as dataframe
+(3) GRangesList of exon coordinates from reference as dataframe
+(4) GRangesList of exon coordinates of reference CDS as dataframe
 }
 \description{
-THIS FUNCTION IS PART OF THE _ PROGRAM WORKFLOW.
-This function will prepare output dataframes and GRanges objects for the _Program
+THIS FUNCTION IS PART OF THE NMDer PROGRAM WORKFLOW.
+This function will prepare output dataframes and GRanges objects for downstream workflow
 }

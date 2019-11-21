@@ -4,7 +4,7 @@
 \alias{gff3togtfconvert}
 \title{GFF3 to GTF converter}
 \usage{
-gff3togtfconvert(gffGRanges)
+gff3togtfconvert(gffGRanges, comment = "")
 }
 \arguments{
 \item{gffGRanges}{Input GFF3 GRanges object}
