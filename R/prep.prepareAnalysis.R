@@ -48,13 +48,13 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
                   Strand) 
   
   # prepare databases
-  inputDB = makeTxDbFromGRanges(inputGRanges)
-  basicDB = makeTxDbFromGRanges(basicGRanges)
+  inputDB = GenomicFeatures::makeTxDbFromGRanges(inputGRanges)
+  basicDB = GenomicFeatures::makeTxDbFromGRanges(basicGRanges)
   
   # prepare exon structures by transcripts/CDSs
-  inputExonsbyTx = exonsBy(inputDB, by="tx", use.names=TRUE) %>% as.data.frame()
-  basicExonsbyCDS = cdsBy(basicDB, by="tx", use.names=TRUE) %>% as.data.frame()
-  basicExonsbyTx = exonsBy(basicDB, by="tx", use.names=TRUE) %>% as.data.frame()
+  inputExonsbyTx = GenomicFeatures::exonsBy(inputDB, by="tx", use.names=TRUE) %>% as.data.frame()
+  basicExonsbyCDS = GenomicFeatures::cdsBy(basicDB, by="tx", use.names=TRUE) %>% as.data.frame()
+  basicExonsbyTx = GenomicFeatures::exonsBy(basicDB, by="tx", use.names=TRUE) %>% as.data.frame()
   
   # remove comparisons in which the reference transcript do not have a CDS
   basicCDS = basicExonsbyCDS %>% as.data.frame() %>%
@@ -69,10 +69,10 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
   
   # combine query transcripts with multiple comparisons to reference
   combined_report_df = combined_report_df %>% 
-    group_by(Transcript_ID) %>%
-    mutate(Ref_transcript_ID = paste(as.character(Ref_transcript_ID), collapse = '_')) %>%
-    ungroup() %>%
-    distinct(.keep_all = TRUE) %>%
+    dplyr::group_by(Transcript_ID) %>%
+    dplyr::mutate(Ref_transcript_ID = paste(as.character(Ref_transcript_ID), collapse = '_')) %>%
+    dplyr::ungroup() %>%
+    dplyr::distinct(.keep_all = TRUE) %>%
     dplyr::mutate(NMDer_ID = paste0('NMDer', formatC(as.integer(row_number()), width=7, flag='0'))) %>% 
     dplyr::select(NMDer_ID, Gene_ID:Strand)
   
