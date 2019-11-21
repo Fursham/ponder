@@ -24,8 +24,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
   # prepare output dataframe by getting transcript information from inputGRanges
   report_df = inputGRanges %>% as.data.frame() %>%
     dplyr::filter(type == 'transcript') %>%
-    dplyr::mutate(Transcript_coord = paste0(seqnames, ':', start, '-', end),
-                  NMDer_ID = as.character(NA)) %>%
+    dplyr::mutate(Transcript_coord = paste0(seqnames, ':', start, '-', end)) %>%
     dplyr::select(Gene_ID = gene_id, 
                   Original_Gene_ID = old_gene_id,
                   Gene_name = gene_name,
@@ -44,7 +43,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
   # and add in NMDerIDs
   combined_report_df = report_df %>%
     dplyr::left_join(basicTX_df, by = 'Gene_ID') %>%
-    dplyr::select(NMDer_ID, Gene_ID, Original_Gene_ID, Match_level, 
+    dplyr::select(Gene_ID, Original_Gene_ID, Match_level, 
                   Gene_Name, Transcript_ID, Ref_transcript_ID, Transcript_coord, 
                   Strand) 
   
@@ -74,7 +73,8 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
     mutate(Ref_transcript_ID = paste(as.character(Ref_transcript_ID), collapse = '_')) %>%
     ungroup() %>%
     distinct(.keep_all = TRUE) %>%
-    dplyr::mutate(NMDer_ID = paste0('NMDer', formatC(as.integer(row_number()), width=7, flag='0')))
+    dplyr::mutate(NMDer_ID = paste0('NMDer', formatC(as.integer(row_number()), width=7, flag='0'))) %>% 
+    dplyr::select(NMDer_ID, Gene_ID:Strand)
   
   
   # cleanup unused variables
