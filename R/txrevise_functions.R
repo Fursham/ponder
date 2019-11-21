@@ -59,7 +59,6 @@ compareGRanges <- function(target_regions, shared_region){
 #' @return List of GRanges object. First contains exons specific to transcript 1, second contains exons 
 #' specifc to transcript 2, third contains the shared exons between the two transcripts.
 #' @author Kaur Alasoo
-#' @import GenomicRanges
 #' @export 
 indentifyAddedRemovedRegions <- function(tx1_id, tx2_id, exons_list){
   
