@@ -82,20 +82,39 @@ prepNMDer <- function(query,
 }
 
 
-#' Title
+
+#' NMDer workflow: Run NMDer analysis
+#'
+#' @description Execute core analysis
 #'
 #' @param prepObject 
-#' @param testNMD 
-#' @param other_features 
+#' S4 object from prepNMDer output
+#' 
+#' @param testNMD
+#' If TRUE, program will test transcripts for primary NMD feature
+#'  
+#' @param testOtherFeatures 
+#' If TRUE, program will test transcripts for other NMD features
+#' 
 #' @param PTC_dist 
+#' Minimum distance of PTC to last exon-junction to trigger NMD.
+#' Default: 50bp
+#' 
 #' @param testAS 
+#' If TRUE, program will test for alternatively spliced segments
+#' 
+#' @param makeGTF 
+#' If TRUE, program will output a GTF file of query
+#' Provide path to output
+#' 
 #' @param clusters 
+#' Number of cores to run the program. Default = 4
 #'
 #' @return
-#' @import dplyr
 #' @export
 #'
 #' @examples
+#' 
 runNMDer <- function(prepObject,
                  testNMD = TRUE,
                  testOtherFeatures = FALSE,
@@ -114,7 +133,7 @@ runNMDer <- function(prepObject,
   # separate
   report_df_unmatched = report_df %>%
     dplyr::filter(Match_level == 5) %>%
-    dplyr::mutate(Ref_TX_ID = as.character(Ref_TX_ID))
+    dplyr::mutate(Ref_transcript_ID = as.character(Ref_transcript_ID))
   
   report_df = report_df %>% 
     dplyr::filter(Match_level != 5)
