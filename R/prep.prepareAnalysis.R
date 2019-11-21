@@ -36,23 +36,22 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
     dplyr::mutate(NMDer_ID = as.character(NA),
                   Alt_tx = as.logical(NA),
                   annotatedStart = as.logical(NA),
-                  predictedStart = as.logical(NA)) %>%
-    tidyr::unite(Tx_coord., c(start, end), sep = '-') %>%
-    tidyr::unite(Tx_coord, c(seqnames, Tx_coord.), sep = ':') 
+                  predictedStart = as.logical(NA),
+                  Transcript_coord = paste0(seqnames, ':', start, '-', end))
   
   # prepare df of gencode_basic transcripts
   basicTX_df = basicGRanges %>% as.data.frame() %>%
     dplyr::filter(type == 'transcript') %>%
-    dplyr::select(Gene_ID = gene_id, Ref_TX_ID = transcript_id) %>%
+    dplyr::select(Gene_ID = gene_id, Ref_transcript_ID = transcript_id) %>%
     dplyr::distinct()
   
   # join report_df and basicTX_df and generate a full list of query transcripts to be compared with every reference transcript
   # and add in NMDerIDs
-  combined_report_df = suppressMessages(report_df %>%
-                                          dplyr::left_join(basicTX_df) %>%
-                                          dplyr::select(NMDer_ID, Gene_ID, Original_Gene_ID, Match_level, 
-                                                        Gene_Name, Transcript_ID, Ref_TX_ID, Tx_coord, 
-                                                        Strand, annotatedStart, predictedStart, Alt_tx)) 
+  combined_report_df = report_df %>%
+    dplyr::left_join(basicTX_df, by = 'Gene_ID') %>%
+    dplyr::select(NMDer_ID, Gene_ID, Original_Gene_ID, Match_level, 
+                  Gene_Name, Transcript_ID, Ref_transcript_ID, Transcript_coord, 
+                  Strand, annotatedStart, predictedStart, Alt_tx) 
   
   # prepare databases
   inputDB = makeTxDbFromGRanges(inputGRanges)
@@ -65,19 +64,19 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
   
   # remove comparisons in which the reference transcript do not have a CDS
   basicCDS = basicExonsbyCDS %>% as.data.frame() %>%
-    dplyr::select(Ref_TX_ID = group_name) %>%
+    dplyr::select(Ref_transcript_ID = group_name) %>%
     dplyr::distinct() %>%
     dplyr::mutate(CDS = TRUE)
   
-  combined_report_df = suppressMessages(combined_report_df %>%
-                                          dplyr::left_join(basicCDS) %>%
-                                          dplyr::filter((!is.na(CDS) & !is.na(Ref_TX_ID)) | Match_level == 5) %>%
-                                          dplyr::select(-CDS))
+  combined_report_df = combined_report_df %>%
+    dplyr::left_join(basicCDS, by = 'Ref_transcript_ID') %>%
+    dplyr::filter((!is.na(CDS) & !is.na(Ref_transcript_ID)) | Match_level == 5) %>%
+    dplyr::select(-CDS)
   
   # combine query transcripts with multiple comparisons to reference
   combined_report_df = combined_report_df %>% 
     group_by(Transcript_ID) %>%
-    mutate(Ref_TX_ID = paste(as.character(Ref_TX_ID), collapse = '_')) %>%
+    mutate(Ref_transcript_ID = paste(as.character(Ref_transcript_ID), collapse = '_')) %>%
     ungroup() %>%
     distinct(.keep_all = TRUE) %>%
     dplyr::mutate(NMDer_ID = paste0('NMDer', formatC(as.integer(row_number()), width=7, flag='0')))
