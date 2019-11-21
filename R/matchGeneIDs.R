@@ -231,7 +231,7 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
                                       dplyr::mutate(match_level = ifelse(!is.na(basic_gene_id),
                                                                          4, 
                                                                          match_level)) %>%
-                                      dplyr::select(-basic_gene_id, -basic_gene_name) %>%
+                                      dplyr::select(-basic_gene_id) %>%
                                       dplyr::left_join(basicGRanges.genelist))
     
     # count number of unmatched ids after matching
