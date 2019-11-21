@@ -11,9 +11,11 @@ Imports:
     GenomicFeatures,
     rtracklayer,
     tidyr
-License: file License
+License: file LICENSE
 Encoding: UTF-8
 LazyData: true
 ByteCompile: true
 RoxygenNote: 6.1.1
-Suggests: testthat
+Suggests: 
+    testthat,
+    BSgenome.Mmusculus.UCSC.mm10
