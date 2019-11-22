@@ -71,8 +71,9 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
         dplyr::arrange(ifelse(strand == '+', start, desc(start))) %>% 
         GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
       
-      # update reference transcript
+      # update reference transcript and coverage
       thisline$Ref_transcript_ID = outBestRef$Ref_transcript_ID
+      thisline$Coverage = outBestRef$Coverage
       
       # set query ORF if it is similar to reference
       if(outBestRef$Coverage == 1) {
