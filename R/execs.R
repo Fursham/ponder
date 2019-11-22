@@ -132,7 +132,10 @@ runNMDer <- function(prepObject,
   
   # separate
   report_df = report_df %>%
-    dplyr::mutate()
+    dplyr::mutate(Coverage = 0,
+                  ORF_considered = as.character(NA),
+                  ORF_start = as.character('Not found'),
+                  ORF_found = FALSE)
   
   report_df_unmatched = report_df %>%
     dplyr::filter(Gene_match_level == 5) %>%
