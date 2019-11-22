@@ -23,7 +23,7 @@ getORF <- function(knownCDS, queryTx, refsequence, gene_id, transcript_id) {
   
   # precheck for annotated start codon on query transcript and update output
   pre_report = testTXforStart(queryTx, knownCDS, full.output=TRUE)
-  output = utils::modifyList(output, pre_report["annotatedStart"])
+  output = utils::modifyList(output, pre_report["ORF_start"])
   
   # return if there is no shared exons between transcript and CDS
   if (is.na(pre_report$txrevise_out[1])) {
@@ -31,8 +31,8 @@ getORF <- function(knownCDS, queryTx, refsequence, gene_id, transcript_id) {
   } 
   
   # attempt to reconstruct CDS for transcripts with unannotated start
-  if ((pre_report$annotatedStart == FALSE) |
-      (pre_report$annotatedStart == TRUE & pre_report$firstexlen < 3)) {
+  if ((pre_report$ORF_start == 'Not found') |
+      (pre_report$ORF_start == 'Annotated' & pre_report$firstexlen < 3)) {
     
     pre_report = reconstructCDSstart(queryTx, knownCDS,
                                      refsequence,
@@ -41,7 +41,7 @@ getORF <- function(knownCDS, queryTx, refsequence, gene_id, transcript_id) {
     output = utils::modifyList(output, list(predictedStart = pre_report$predictedStart))
     
     # return if CDS with new 5' do not contain a start codon
-    if (is.na(pre_report$ORF[1])) {
+    if (pre_report$ORF_start == 'Not found'){
       return(output)
     }
   } 
