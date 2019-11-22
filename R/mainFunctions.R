@@ -92,10 +92,6 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
       thisline = utils::modifyList(thisline, ORFreport)
     }
 
-    
-    
-    
-    
     # if requested, test for NMD features and update line entry
     if (testforNMD == TRUE) {
       NMDreport = testNMD(thisline$ORF_considered, 
@@ -125,10 +121,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     
     
     # update analyzed ORF coordinates into output
-    #  this part have to be done this way because some terminal exons have length of 1
-    #  and doing the conventional way will output 'xxx' rather than 'xxx-xxx'
     if (!is.na(thisline$ORF_considered[1])) {
-    
       thisline$ORF_considered = thisline$ORF_considered %>% as.data.frame()
     }
     rm(list = c('queryGRanges','basicCDSGRanges', 'basicTxGRanges'))
