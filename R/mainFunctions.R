@@ -81,16 +81,18 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
         thisline$ORF_start = 'Annotated'
         thisline$ORF_found = TRUE
       }
-     
     }
     
-   
+    # attempt to build ORF for query if absent
+    if(thisline$ORF_found == FALSE){
+      # attempt to build Open Reading Frame for query
+      ORFreport = getORF(basicCDSGRanges, queryGRanges,
+                         genome, thisline$Gene_ID,
+                         thisline$NMDer_ID)
+      thisline = utils::modifyList(thisline, ORFreport)
+    }
+
     
-    # attempt to build Open Reading Frame for query
-    ORFreport = getORF(basicCDSGRanges, queryGRanges,
-                       genome, thisline$Gene_ID,
-                       thisline$NMDer_ID)
-    thisline = utils::modifyList(thisline, ORFreport)
     
     
     
