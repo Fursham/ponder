@@ -26,6 +26,11 @@ getBestRef <- function(queryGRanges, basicTxGRanges){
       return(Shared_coverage)
     }, overlapHits$queryGRanges, overlapHits$basicTxGRanges) %>%
       as.data.frame() # output list as a dataframe
+    
+    if(nrow(overlapHitsMeta) == 0) {
+      return(list(Ref_transcript_ID = as.character(NA),
+                  Coverage = 0))
+    }
 
     # append reference tx IDs, sort dataframe and select best reference
     overlapHitsMeta$Ref_transcript_ID = names(overlapHits$basicTxGRanges)
