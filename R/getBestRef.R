@@ -1,3 +1,12 @@
+#' Title
+#'
+#' @param queryGRanges 
+#' @param basicTxGRanges 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 getBestRef <- function(queryGRanges, basicTxGRanges){
   
   # this function attempts to select the best reference for analysis if multiple
