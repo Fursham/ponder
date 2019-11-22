@@ -74,7 +74,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
     dplyr::ungroup() %>%
     dplyr::distinct(.keep_all = TRUE) %>%
     dplyr::mutate(NMDer_ID = paste0('NMDer', formatC(as.integer(row_number()), width=7, flag='0'))) %>% 
-    dplyr::select(NMDer_ID, Gene_ID:Strand)
+    dplyr::select(NMDer_ID, Gene_ID:Ref_transcript_ID)
   
   
   # cleanup unused variables
