@@ -28,7 +28,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
     dplyr::select(Gene_ID = gene_id, 
                   Original_Gene_ID = old_gene_id,
                   Gene_name = gene_name,
-                  Match_level = match_level,
+                  Gene_match_level = Gene_match_level,
                   Transcript_ID = transcript_id,
                   Strand = strand, 
                   Transcript_coord)
@@ -43,9 +43,9 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
   # and add in NMDerIDs
   combined_report_df = report_df %>%
     dplyr::left_join(basicTX_df, by = 'Gene_ID') %>%
-    dplyr::select(Gene_ID, Original_Gene_ID, Match_level, 
-                  Gene_name, Transcript_ID, Ref_transcript_ID, Transcript_coord, 
-                  Strand) 
+    dplyr::select(Gene_ID, Gene_name, Original_Gene_ID, Gene_match_level, 
+                  Transcript_ID, Transcript_coord, 
+                  Strand, Ref_transcript_ID) 
   
   # prepare databases
   inputDB = GenomicFeatures::makeTxDbFromGRanges(inputGRanges)
@@ -64,7 +64,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
   
   combined_report_df = combined_report_df %>%
     dplyr::left_join(basicCDS, by = 'Ref_transcript_ID') %>%
-    dplyr::filter((!is.na(CDS) & !is.na(Ref_transcript_ID)) | Match_level == 5) %>%
+    dplyr::filter((!is.na(CDS) & !is.na(Ref_transcript_ID)) | Gene_match_level == 5) %>%
     dplyr::select(-CDS)
   
   # combine query transcripts with multiple comparisons to reference
