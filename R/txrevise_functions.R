@@ -59,6 +59,7 @@ compareGRanges <- function(target_regions, shared_region){
 #' @return List of GRanges object. First contains exons specific to transcript 1, second contains exons 
 #' specifc to transcript 2, third contains the shared exons between the two transcripts.
 #' @author Kaur Alasoo
+#' @import GenomicRanges
 #' @export 
 indentifyAddedRemovedRegions <- function(tx1_id, tx2_id, exons_list){
   
@@ -69,7 +70,7 @@ indentifyAddedRemovedRegions <- function(tx1_id, tx2_id, exons_list){
   #Indentify shared exons
   shared_exons = GenomicRanges::intersect(exon_set1, exon_set2)
   #Only keep seqLevels that correspond to shared exons
-  shared_exons = GenomeInfoDb::keepSeqlevels(shared_exons, unique(as.vector(seqnames(shared_exons)))) 
+  shared_exons = GenomeInfoDb::keepSeqlevels(shared_exons, unique(as.vector(GenomeInfoDb::seqnames(shared_exons)))) 
   if(length(shared_exons) == 0){
     warning("No shared exons between two transcripts.")
     return(NULL)
