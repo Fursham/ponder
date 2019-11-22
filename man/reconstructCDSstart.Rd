@@ -21,7 +21,7 @@ for more information}
 \item{full.output}{if TRUE, function will output additional information}
 }
 \value{
-Default output (ORF),
+Default output (ORF_considered),
 If reconstructed CDS contain an in-frame ATG, function will output a GRanges Object describing the
 reconstructed CDS. Else, function will output 'NA'
 
