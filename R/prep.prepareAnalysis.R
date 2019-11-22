@@ -28,7 +28,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
     dplyr::select(Gene_ID = gene_id, 
                   Original_Gene_ID = old_gene_id,
                   Gene_name = gene_name,
-                  Gene_match_level = Gene_match_level,
+                  Gene_match_level = Match_level,
                   Transcript_ID = transcript_id,
                   Strand = strand, 
                   Transcript_coord)
