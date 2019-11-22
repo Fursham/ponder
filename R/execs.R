@@ -131,12 +131,15 @@ runNMDer <- function(prepObject,
 
   
   # separate
+  report_df = report_df %>%
+    dplyr::mutate()
+  
   report_df_unmatched = report_df %>%
-    dplyr::filter(Match_level == 5) %>%
+    dplyr::filter(Gene_match_level == 5) %>%
     dplyr::mutate(Ref_transcript_ID = as.character(Ref_transcript_ID))
   
   report_df = report_df %>% 
-    dplyr::filter(Match_level != 5)
+    dplyr::filter(Gene_match_level != 5)
 
   # run NMD analysis in parallel
   infoLog('Preparing clusters for analysis')
