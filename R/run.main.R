@@ -27,6 +27,7 @@
 #'
 #' @return
 #' updated form of report_df
+#' @export
 #'
 #' @examples
 runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS, 
@@ -44,14 +45,14 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     
     # Prepare list of reference transcript and GRanges
     thisline$Ref_transcript_ID = strsplit(thisline$Ref_transcript_ID, split = '_')
-    queryGRanges = inputExonsbyTx %>% 
+    queryGRanges = inputExonsbyTx %>% as.data.frame() %>%
       dplyr::filter(group_name == thisline$Transcript_ID) %>%
-      dplyr::arrange(ifelse(strand == '+', start, desc(start))) %>% 
+      dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
       GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
     
     basicTxGRanges = basicExonsbyTx %>% 
       dplyr::filter(group_name %in% thisline$Ref_transcript_ID[[1]]) %>%
-      dplyr::arrange(ifelse(strand == '+', start, desc(start))) %>% 
+      dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
       GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
 
     # this function attempts to select the best reference for analysis 
@@ -64,11 +65,11 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
       # create new GRanges
       basicCDSGRanges = basicExonsbyCDS %>% 
         dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
-        dplyr::arrange(ifelse(strand == '+', start, desc(start))) %>% 
+        dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
         GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
       basicTxGRanges = basicExonsbyTx %>% 
         dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
-        dplyr::arrange(ifelse(strand == '+', start, desc(start))) %>% 
+        dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
         GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
       
       # update reference transcript and coverage
