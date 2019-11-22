@@ -63,14 +63,18 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
       return(thisline)
     } else {
       # create new GRanges
+      queryGRanges = inputExonsbyTx %>% as.data.frame() %>%
+        dplyr::filter(group_name == thisline$Transcript_ID) %>%
+        dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
+        GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
       basicCDSGRanges = basicExonsbyCDS %>% 
         dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
         dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
-        GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
+        GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
       basicTxGRanges = basicExonsbyTx %>% 
         dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
         dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
-        GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
+        GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
       
       # update reference transcript and coverage
       thisline$Ref_transcript_ID = outBestRef$Ref_transcript_ID
@@ -122,7 +126,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     
     
     # update analyzed ORF coordinates into output
-    if (!is.na(thisline$ORF_considered[1])) {
+    if (thisline$ORF_found == TRUE) {
       thisline$ORF_considered = thisline$ORF_considered %>% as.data.frame()
     }
     rm(list = c('queryGRanges','basicCDSGRanges', 'basicTxGRanges'))
