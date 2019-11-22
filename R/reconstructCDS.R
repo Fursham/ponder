@@ -46,7 +46,7 @@ reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL, 
   }
   
   # prepare output
-  output = list(ORF_considered = NA, Alt_tx = NA)
+  output = list(ORF_considered = NA, ORF_found = FALSE)
   
   # return NA if there is no unique internal and downstream alternative segments
   # else, construct new CDS with insertion of segments from query transcript
@@ -95,13 +95,14 @@ reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL, 
       augmentedCDS$phase = c(0, head(augmentedCDS$phase, - 1))
       augmentedCDS = makeGRangesFromDataFrame(augmentedCDS, keep.extra.columns = TRUE)
       
+      output$ORF_found = TRUE
     } else {
       # if a stop codon is not found, return NA
       augmentedCDS = NA
     }
   }
   output = modifyList(output, 
-                      list(ORF_considered = augmentedCDS, Alt_tx = Alternative_tx))
+                      list(ORF_considered = augmentedCDS))
   return(output)
 }
 
