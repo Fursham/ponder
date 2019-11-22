@@ -58,7 +58,7 @@ reconstructCDS <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL, 
     
     # if not, it will return the refCDS as the CDS and return alternative_tx as false
     Alternative_tx = FALSE
-    augmentedCDS = sort(reduce(
+    augmentedCDS = sort(GenomicRanges::reduce(
       diffSegments$shared_exons),
       decreasing = as.character(strand(diffSegments$shared_exons))[1] == '-')
     
