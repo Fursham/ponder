@@ -38,7 +38,7 @@ getORF <- function(knownCDS, queryTx, refsequence, gene_id, transcript_id) {
                                      refsequence,
                                      pre_report$txrevise_out,
                                      full.output = TRUE)
-    output = utils::modifyList(output, list(predictedStart = pre_report$predictedStart))
+    output = utils::modifyList(output, list(ORF_start = pre_report$ORF_start))
     
     # return if CDS with new 5' do not contain a start codon
     if (pre_report$ORF_start == 'Not found'){
