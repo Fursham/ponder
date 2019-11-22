@@ -26,14 +26,14 @@ prepareInputs <- function(queryFile, refFile, fasta,
   
   # check file extension 
   query_format = tools::file_ext(queryFile)
-  
+
   # return if infile is a txt file with no user_query_format input
   if (query_format == 'txt' & is.null(user_query_format)) {
     stopLog('Query file contain .txt extension but query_format argument not provided')
   } else if (query_format == 'txt' & !is.null(user_query_format)) {
     query_format = user_query_format
   }
-  
+
   # process a gff3 query file to be compatible for analysis
   if (query_format == 'gff3') {
     inputGRanges = rtracklayer::import(queryFile, format = 'gff3')
@@ -46,12 +46,11 @@ prepareInputs <- function(queryFile, refFile, fasta,
   } else {
     stopLog('Query file format not supported')
   }
-  
-  if ('*' %in% strand(inputGRanges)) {
+
+  if ('*' %in% (BiocGenerics::strand(inputGRanges) %>% levels())) {
     warnLog('Query file contain transcripts with no strand information. These will be removed')
-    inputGRanges = inputGRanges[strand(inputGRanges) != '*']
+    inputGRanges = inputGRanges[BiocGenerics::strand(inputGRanges) != '*']
   }
-  
   
   
   # load provided genome_basic assembly, or import user refFileerence annotation
@@ -94,7 +93,7 @@ prepareInputs <- function(queryFile, refFile, fasta,
     }
     
   }
-  if ('*' %in% strand(basicGRanges)) {
+  if ('*' %in% (BiocGenerics::strand(basicGRanges) %>% levels())) {
     warnLog('Reference annotation contain transcripts with no strand information. These will be removed')
     basicGRanges = basicGRanges[strand(basicGRanges) != '*']
   }
