@@ -32,7 +32,7 @@
 testTXforStart <- function(queryTranscript, refCDS, full.output = FALSE) {
   
   # prepare output of function
-  output = list(annotatedStart = NA,
+  output = list(ORF_start = 'Not found',
                 txrevise_out = NA,
                 firstexlen = NA)
   
@@ -45,7 +45,7 @@ testTXforStart <- function(queryTranscript, refCDS, full.output = FALSE) {
   if (is.null(diffSegments)) {
     output = utils::modifyList(output, 
                         list(txrevise_out = NA, 
-                             annotatedStart = FALSE))
+                             ORF_start = 'Not found'))
   } else if (length(diffSegments$refTx$upstream[diffSegments$refTx$upstream == TRUE]) == 0) {
     # transcripts that contain same start codon as CDS will return true for the above if statement
     
@@ -53,15 +53,15 @@ testTXforStart <- function(queryTranscript, refCDS, full.output = FALSE) {
     lenfirstsharedexon = IRanges::width(sort(diffSegments$shared_exons[1], decreasing = (as.character(strand(refCDS))[1] == '-')))
     output = utils::modifyList(output, 
                         list(txrevise_out = diffSegments, 
-                             annotatedStart = TRUE, 
+                             ORF_start = 'Annotated', 
                              firstexlen = lenfirstsharedexon))
   } else {
     # transcripts that overlap with CDS but do not contain an annotated start codon
     output = utils::modifyList(output, 
                         list(txrevise_out = diffSegments, 
-                             annotatedStart = FALSE))
+                             ORF_start = 'Not found'))
   }
-  ifelse(full.output == TRUE, return(output), return(output["annotatedStart"]))
+  ifelse(full.output == TRUE, return(output), return(output["ORF_start"]))
 }
 
 
@@ -85,7 +85,7 @@ testTXforStart <- function(queryTranscript, refCDS, full.output = FALSE) {
 #' @param full.output if TRUE, function will output additional information
 #' 
 #' @return 
-#' Default output (ORF),
+#' Default output (ORF_considered),
 #' If reconstructed CDS contain an in-frame ATG, function will output a GRanges Object describing the
 #' reconstructed CDS. Else, function will output 'NA'
 #' 
@@ -102,7 +102,7 @@ testTXforStart <- function(queryTranscript, refCDS, full.output = FALSE) {
 #' 
 reconstructCDSstart <- function(queryTranscript, refCDS, fasta, txrevise_out = NULL, full.output = FALSE) {
   
-  out = list(ORF = NA, txrevise_out = NA, predictedStart = FALSE)
+  out = list(ORF_considered = NA, txrevise_out = NA, ORF_start = 'Not found')
   
   # check if txrevise_out input is provided, and build one if not.
   if (missing(refCDS) | missing(queryTranscript)) {
@@ -167,14 +167,14 @@ reconstructCDSstart <- function(queryTranscript, refCDS, fasta, txrevise_out = N
         # obtain txrevise output
         combinedList = list(refTx = setORF, testTx = queryTranscript)
         diffSegments = indentifyAddedRemovedRegions("refTx", "testTx", combinedList[c("refTx", "testTx")])
-        out = list(ORF = setORF, txrevise_out = diffSegments, predictedStart = TRUE)
+        out = list(ORF_considered = setORF, txrevise_out = diffSegments, ORF_start = 'In-frame ATG')
         
         if (is.null(diffSegments)) {
-          out = list(ORF = NA, txrevise_out = NA, predictedStart = FALSE)
+          out = list(ORF_considered = NA, txrevise_out = NA, ORF_start = 'Not found')
         }
       }
     }
   }
-  ifelse(full.output == TRUE, return(out), return(out["ORF"]))
+  ifelse(full.output == TRUE, return(out), return(out["ORF_considered"]))
 }
 
