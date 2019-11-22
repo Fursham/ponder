@@ -43,21 +43,21 @@ testTXforStart <- function(queryTranscript, refCDS, full.output = FALSE) {
   # test if the transcript contain same start codon as in CDS
     # do not test if transcript and CDS do not overlap at all
   if (is.null(diffSegments)) {
-    output = modifyList(output, 
+    output = utils::modifyList(output, 
                         list(txrevise_out = NA, 
                              annotatedStart = FALSE))
   } else if (length(diffSegments$refTx$upstream[diffSegments$refTx$upstream == TRUE]) == 0) {
     # transcripts that contain same start codon as CDS will return true for the above if statement
     
     # and also calculate size of first coding exon
-    lenfirstsharedexon = width(sort(diffSegments$shared_exons[1], decreasing = (as.character(strand(refCDS))[1] == '-')))
-    output = modifyList(output, 
+    lenfirstsharedexon = IRanges::width(sort(diffSegments$shared_exons[1], decreasing = (as.character(strand(refCDS))[1] == '-')))
+    output = utils::modifyList(output, 
                         list(txrevise_out = diffSegments, 
                              annotatedStart = TRUE, 
                              firstexlen = lenfirstsharedexon))
   } else {
     # transcripts that overlap with CDS but do not contain an annotated start codon
-    output = modifyList(output, 
+    output = utils::modifyList(output, 
                         list(txrevise_out = diffSegments, 
                              annotatedStart = FALSE))
   }
@@ -132,7 +132,7 @@ reconstructCDSstart <- function(queryTranscript, refCDS, fasta, txrevise_out = N
   # it is vital that the last codon is a stop codon
   list_startstopcodons = Biostrings::DNAStringSet(c('ATG',"TAA", "TAG", "TGA"))
   pdict_startstopcodons = Biostrings::PDict(list_startstopcodons)
-  StartStopCodons = Biostrings:: matchPDict(pdict_startstopcodons, thisqueryseq)
+  StartStopCodons = Biostrings::matchPDict(pdict_startstopcodons, thisqueryseq)
   
   if (length(unlist(StartStopCodons)) > 0) {
     
@@ -141,7 +141,7 @@ reconstructCDSstart <- function(queryTranscript, refCDS, fasta, txrevise_out = N
              rep('Stop', length(unlist(StartStopCodons))- length(StartStopCodons[[1]])))
     StartStopCodons = unlist(StartStopCodons)
     elementMetadata(StartStopCodons)$type = type
-    inFrameStartStopCodons = sort(StartStopCodons[(sum(width(reconstructedTx)) - (end(StartStopCodons))) %%3 == 0,])
+    inFrameStartStopCodons = sort(StartStopCodons[(sum(IRanges::width(reconstructedTx)) - (end(StartStopCodons))) %%3 == 0,])
     len_inFrameStartStopCodons = length(inFrameStartStopCodons)
     
     if (len_inFrameStartStopCodons > 0) {
