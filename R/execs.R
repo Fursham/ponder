@@ -148,23 +148,23 @@ runNMDer <- function(prepObject,
   infoLog('Preparing clusters for analysis')
   group <- rep(1:clusters, length.out = nrow(report_df))
   report_df <- bind_cols(tibble(group), report_df)
-  cluster <- create_cluster(cores = clusters, quiet = TRUE)
+  cluster <- multidplyr::create_cluster(cores = clusters, quiet = TRUE)
   
-  parallel_df = report_df %>% partition(group, cluster = cluster)
+  parallel_df = report_df %>% multidplyr::partition(group, cluster = cluster)
   parallel_df %>%
     # Assign libraries
-    cluster_library("NMDer") %>%
-    cluster_library("Biostrings") %>%
-    cluster_library("BSgenome") %>%
-    cluster_library("dplyr") %>%
-    cluster_assign_value("basicExonsbyCDS", basicExonsbyCDS) %>%
-    cluster_assign_value("inputExonsbyTx", inputExonsbyTx) %>%
-    cluster_assign_value("basicExonsbyTx", basicExonsbyTx) %>% 
-    cluster_assign_value("genome", genome) %>%
-    cluster_assign_value("testNMD", testNMD) %>%
-    cluster_assign_value("PTC_dist", PTC_dist) %>%
-    cluster_assign_value("testOtherFeatures", testOtherFeatures) %>%
-    cluster_assign_value("testAS", testAS)
+    multidplyr::cluster_library("NMDer") %>%
+    multidplyr::cluster_library("Biostrings") %>%
+    multidplyr::cluster_library("BSgenome") %>%
+    multidplyr::cluster_library("dplyr") %>%
+    multidplyr::cluster_assign_value("basicExonsbyCDS", basicExonsbyCDS) %>%
+    multidplyr::cluster_assign_value("inputExonsbyTx", inputExonsbyTx) %>%
+    multidplyr::cluster_assign_value("basicExonsbyTx", basicExonsbyTx) %>% 
+    multidplyr::cluster_assign_value("genome", genome) %>%
+    multidplyr::cluster_assign_value("testNMD", testNMD) %>%
+    multidplyr::cluster_assign_value("PTC_dist", PTC_dist) %>%
+    multidplyr::cluster_assign_value("testOtherFeatures", testOtherFeatures) %>%
+    multidplyr::cluster_assign_value("testAS", testAS)
   
   infoLog('Predicting NMD features')
   report_df <- parallel_df %>% # Use by_group party_df
