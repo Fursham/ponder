@@ -27,7 +27,6 @@
 #'
 #' @return
 #' updated form of report_df
-#' @export
 #'
 #' @examples
 runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS, 
@@ -43,84 +42,54 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     # can be referenced as thisline$_
     thisline = as.list(x)
     
-    thisline$Ref_TX_ID = strsplit(thisline$Ref_TX_ID, split = '_')
-
-    
-    
-    #############################################################################
-    # deprecated
-    
-    # Add in coordinates of query transcripts
-    #  this part have to be done this way because some exons are 1 nt in length
-    #  and doing the conventional way will output 'xxx' rather than 'xxx-xxx'
-    #string = paste(ranges(inputExonsbyTx[[thisline$Transcript_ID]]))
-    #string = sapply(string, function(y) {
-    #  newsstring = ifelse(!grepl('-', y), paste(c(y, '-', y), collapse = ''), y)
-    #  return(newsstring)
-    #})
-    #thisline$Tx_coordinates = paste(string, collapse = ';')
-    #############################################################################
-
-    # this function attempts to select the best reference for analysis if multiple
-    # reference transcripts exists
-    if (length(thisline$Ref_TX_ID[[1]]) > 1) {
-      # build GRanges object for query and GRangeslist object for reference
-      queryGRanges = inputExonsbyTx %>% 
-        filter(group_name == thisline$Transcript_ID) %>%
-        makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
-      
-      basicTxGRanges = basicExonsbyTx %>% 
-        filter(group_name %in% thisline$Ref_TX_ID[[1]]) %>%
-        makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
-      
-      # calculate the coverage of query and reference transcripts as a percentage
-      # of the mean width of query and reference
-      overlapHits = mergeByOverlaps(queryGRanges, basicTxGRanges)
-      overlapHitsMeta = mapply(function(x,y){
-        widthQuery = sum(width(x))
-        widthRef = sum(width(y))
-        aveWidth = (widthQuery + widthRef) / 2
-        commonCoverage = sum(width(reduce(intersect(x, y))))
-        Shared_coverage = commonCoverage/aveWidth
-        return(Shared_coverage)
-      }, overlapHits$queryGRanges, overlapHits$basicTxGRanges) %>%
-        as.data.frame() # output list as a dataframe
-      
-      # append reference tx IDs, sort dataframe and select best reference
-      overlapHitsMeta$Ref_TX_ID = names(overlapHits$basicTxGRanges)
-      overlapHitsMeta = overlapHitsMeta %>% 
-        filter(. < 1) %>%
-        arrange(desc(.))
-      thisline$Ref_TX_ID = overlapHitsMeta[1,2]
-      if(nrow(overlapHitsMeta) == 0){
-        return(thisline)
-      } 
-      
-    } else {
-      # convert list into character for comparisons with one reference transcript only
-      thisline$Ref_TX_ID = as.character(thisline$Ref_TX_ID[[1]])
-    }
-    
-    # prepare GRanges for analysis
+    # Prepare list of reference transcript and GRanges
+    thisline$Ref_transcript_ID = strsplit(thisline$Ref_transcript_ID, split = '_')
     queryGRanges = inputExonsbyTx %>% 
-      filter(group_name == thisline$Transcript_ID) %>%
-      makeGRangesFromDataFrame(keep.extra.columns = TRUE)
-    
-    basicCDSGRanges = basicExonsbyCDS %>% 
-      filter(group_name == thisline$Ref_TX_ID) %>%
-      makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+      dplyr::filter(group_name == thisline$Transcript_ID) %>%
+      dplyr::arrange(ifelse(strand == '+', start, desc(start))) %>% 
+      GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
     
     basicTxGRanges = basicExonsbyTx %>% 
-      filter(group_name == thisline$Ref_TX_ID) %>%
-      makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+      dplyr::filter(group_name %in% thisline$Ref_transcript_ID[[1]]) %>%
+      dplyr::arrange(ifelse(strand == '+', start, desc(start))) %>% 
+      GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
+
+    # this function attempts to select the best reference for analysis 
+    outBestRef = getBestRef(queryGRanges, basicTxGRanges)
     
+    if(is.na(outBestRef$Ref_transcript_ID)){
+      # return as query and reference do not match
+      return(thisline)
+    } else {
+      # create new GRanges
+      basicCDSGRanges = basicExonsbyCDS %>% 
+        dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
+        dplyr::arrange(ifelse(strand == '+', start, desc(start))) %>% 
+        GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
+      basicTxGRanges = basicExonsbyTx %>% 
+        dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
+        dplyr::arrange(ifelse(strand == '+', start, desc(start))) %>% 
+        GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
+      
+      # update reference transcript
+      thisline$Ref_transcript_ID = outBestRef$Ref_transcript_ID
+      
+      # set query ORF if it is similar to reference
+      if(outBestRef$Coverage == 1) {
+        thisline$ORF_considered = basicCDSGRanges
+        thisline$ORF_start = 'Annotated'
+        thisline$ORF_found = TRUE
+      }
+     
+    }
     
+   
     
     # attempt to build Open Reading Frame for query
     ORFreport = getORF(basicCDSGRanges, queryGRanges,
                        genome, thisline$Gene_ID,
                        thisline$NMDer_ID)
-    thisline = modifyList(thisline, ORFreport)
+    thisline = utils::modifyList(thisline, ORFreport)
     
     
     
@@ -131,7 +100,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
                           PTC_dist, 
                           testNonClassicalNMD,
                           genome)
-      thisline = modifyList(thisline, NMDreport)
+      thisline = utils::modifyList(thisline, NMDreport)
     }
     
     # if requested, classify alternative splicing events and update line entry
@@ -147,7 +116,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
       altevents = getASevents(basicTxGRanges, queryGRanges, 
                               testforNMD, ORF, is_NMD)
       
-      thisline = modifyList(thisline, altevents)
+      thisline = utils::modifyList(thisline, altevents)
       
     }
     
@@ -156,27 +125,18 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     #  this part have to be done this way because some terminal exons have length of 1
     #  and doing the conventional way will output 'xxx' rather than 'xxx-xxx'
     if (!is.na(thisline$ORF_considered[1])) {
-      
-      #### deprecated
-      #ORFstringlist = paste(ranges(thisline$ORF_considered))
-      #ORFstringlist = sapply(ORFstringlist, function(x){
-      #  return(ifelse(!grepl('-', x), paste(c(x, '-', x), collapse = ''), x))
-      #})
-      #thisline$ORF_considered = paste(ORFstringlist, collapse = ';')
-      ###################
-      
+    
       thisline$ORF_considered = thisline$ORF_considered %>% as.data.frame()
     }
     rm(list = c('queryGRanges','basicCDSGRanges', 'basicTxGRanges'))
-    #thisline[11:length(thisline)] = as.character(thisline[11:length(thisline)])
     return(thisline)
-    
-    
+
   }
   
   # run the above function on report_df
   report_df = report_df %>% 
-    rowwise() %>% do(data.frame(internalfunc(.), stringsAsFactors = FALSE)) 
+    dplyr::rowwise() %>% 
+    do(data.frame(internalfunc(.), stringsAsFactors = FALSE)) 
   
   return(report_df)
 }
@@ -210,7 +170,7 @@ getORF <- function(knownCDS, queryTx, refsequence, gene_id, transcript_id) {
   
   # precheck for annotated start codon on query transcript and update output
   pre_report = testTXforStart(queryTx, knownCDS, full.output=TRUE)
-  output = modifyList(output, pre_report["annotatedStart"])
+  output = utils::modifyList(output, pre_report["annotatedStart"])
   
   # return if there is no shared exons between transcript and CDS
   if (is.na(pre_report$txrevise_out[1])) {
@@ -237,7 +197,7 @@ getORF <- function(knownCDS, queryTx, refsequence, gene_id, transcript_id) {
     #                                 refsequence,
     #                                 pre_report$txrevise_out,
     #                                 full.output = TRUE)
-    output = modifyList(output, list(predictedStart = pre_report$predictedStart))
+    output = utils::modifyList(output, list(predictedStart = pre_report$predictedStart))
     
     # return if CDS with new 5' do not contain a start codon
     if (is.na(pre_report$ORF[1])) {
@@ -250,7 +210,7 @@ getORF <- function(knownCDS, queryTx, refsequence, gene_id, transcript_id) {
                                 fasta = refsequence, 
                                 gene_id = gene_id, 
                                 transcript_id = transcript_id)
-  output = modifyList(output, augmentedCDS)
+  output = utils::modifyList(output, augmentedCDS)
   
   return(output)
 }
@@ -265,7 +225,7 @@ getASevents <- function(transcript1, transcript2, testedNMD, orf, is_NMD) {
     dplyr::mutate_all(funs(as.character(.))) %>%
     as.list()
   if (testedNMD == TRUE) {
-    ASlist = modifyList(ASlist, list(NMDcausing = as.character(NA), NMDcausing.coord = as.character(NA)))
+    ASlist = utils::modifyList(ASlist, list(NMDcausing = as.character(NA), NMDcausing.coord = as.character(NA)))
   }
   
   # get AS classifications. transcript 1 is reference and transcript 2 is query in this case
@@ -331,16 +291,18 @@ getASevents <- function(transcript1, transcript2, testedNMD, orf, is_NMD) {
           }
         }
       }
-      ASlist = modifyList(ASlist, list(NMDcausing = NMDexon, NMDcausing.coord = NMDexon.coord))
+      ASlist = utils::modifyList(ASlist, list(NMDcausing = NMDexon, NMDcausing.coord = NMDexon.coord))
     }
   } 
   
   elementMetadata(combinedASoutput)$val = as.character(paste(ranges(combinedASoutput)))
   
   prepout = elementMetadata(combinedASoutput) %>% as.data.frame() %>%
-    dplyr::group_by(AS_class) %>% dplyr::summarise(vals = as.character(paste(val, collapse=";"))) %>% as.data.frame()
+    dplyr::group_by(AS_class) %>% 
+    dplyr::summarise(vals = as.character(paste(val, collapse=";"))) %>% 
+    as.data.frame()
   prepout2 = dplyr::select(prepout, vals) %>% unlist() %>% setNames(prepout[,1]) %>% as.list()
-  ASlist = modifyList(ASlist, prepout2)
+  ASlist = utils::modifyList(ASlist, prepout2)
   
   out = c(Shared_coverage = as.numeric(ASoutput$Shared_coverage), ASlist)
   return(out)
