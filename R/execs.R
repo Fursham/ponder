@@ -147,7 +147,7 @@ runNMDer <- function(prepObject,
   # run NMD analysis in parallel
   infoLog('Preparing clusters for analysis')
   group <- rep(1:clusters, length.out = nrow(report_df))
-  report_df <- bind_cols(tibble(group), report_df)
+  report_df <- dplyr::bind_cols(tibble(group), report_df)
   cluster <- multidplyr::create_cluster(cores = clusters, quiet = TRUE)
   
   parallel_df = report_df %>% multidplyr::partition(group, cluster = cluster)
