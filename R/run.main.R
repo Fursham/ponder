@@ -137,7 +137,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
   # run the above function on report_df
   report_df = report_df %>% 
     dplyr::rowwise() %>% 
-    do(data.frame(internalfunc(.), stringsAsFactors = FALSE)) 
+    dplyr::do(data.frame(internalfunc(.), stringsAsFactors = FALSE)) 
   
   return(report_df)
 }
