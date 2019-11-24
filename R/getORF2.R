@@ -20,5 +20,10 @@ getORF2 <- function(knownCDS, queryTx, fasta, gene_id, transcript_id) {
   report = getORFstop(queryTx, knownCDS, fasta)
   output = utils::modifyList(output, report)
   
+  # return if no stop codon is found
+  if(output$ORF_found == FALSE){
+    return(output[c('ORF_considered', 'ORF_start', 'ORF_found')])
+  }
+  
   
 }
