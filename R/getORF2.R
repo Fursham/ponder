@@ -25,5 +25,9 @@ getORF2 <- function(knownCDS, queryTx, fasta, gene_id, transcript_id) {
     return(output[c('ORF_considered', 'ORF_start', 'ORF_found')])
   }
   
+  report = getCDSranges(queryTx, output$fiveUTRlength, output$threeUTRlength,
+                        gene_id, transcript_id)
+  output = utils::modifyList(output, report)
+  return(output[c('ORF_considered', 'ORF_start', 'ORF_found')])
   
 }
