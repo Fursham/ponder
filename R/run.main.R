@@ -91,7 +91,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     # attempt to build ORF for query if absent
     if(thisline$ORF_found == FALSE){
       # attempt to build Open Reading Frame for query
-      ORFreport = getORF(basicCDSGRanges, queryGRanges,
+      ORFreport = getORF2(basicCDSGRanges, queryGRanges,
                          genome, thisline$Gene_ID,
                          thisline$NMDer_ID)
       thisline = utils::modifyList(thisline, ORFreport)
