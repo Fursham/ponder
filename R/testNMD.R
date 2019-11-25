@@ -35,7 +35,7 @@
 testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_features = FALSE, fasta){
   
   # prepare output list
-  output = list(is_NMD = as.logical(NA), dist_to_lastEJ = as.numeric(NA))
+  output = list(is_NMD = as.logical(FALSE), dist_to_lastEJ = as.numeric(0))
   if (other_features == TRUE) {
     output = modifyList(output, list(uORF = as.character(NA), 
                                      threeUTR = as.numeric(NA), 
@@ -43,32 +43,26 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
                                      uATG_frame = as.character(NA)))
   }
   
-  if (is.na(queryCDS[1])) {
-    return(output)
-  }
-  
+
   # sort queryCDS, by exon order (just in case)
   strand = as.character(strand(queryCDS))[1]
   queryCDS = sort(queryCDS, decreasing = strand == '-')
   queryTranscript = sort(queryTranscript, decreasing = strand == '-')
   
-  # get noncoding segments from indentifyAddedRemovedRegions
-  combinedList = list(CDS = queryCDS, Tx = queryTranscript)
-  noncodingSegments = indentifyAddedRemovedRegions("CDS", "Tx", combinedList[c("CDS", "Tx")])
-  # obtain coordinates of CDS and its 3'UTR
-  cds3UTR = sort(append(
-    noncodingSegments$shared_exons, 
-    reduce(noncodingSegments$Tx[noncodingSegments$Tx$downstream == TRUE])),
-    decreasing = (strand == '-'))
-  
-  # obtain distance of stop codon to last exon-exon junction and modify output list
-  stop_codon_position = sum(width(queryCDS))
-  exon_boundaries = cumsum(width(cds3UTR))
-  lastEJ = ifelse(length(exon_boundaries) > 1,head(tail(exon_boundaries, n=2), n=1), 0)
-  dist_stop_to_lastEJ = stop_codon_position - lastEJ
-  is_NMD = ifelse(dist_stop_to_lastEJ < -(distance_stop_EJ), TRUE, FALSE)
-  output = modifyList(output, list(is_NMD = is_NMD, dist_to_lastEJ = dist_stop_to_lastEJ))
-  
+  disjoint = BiocGenerics::append(queryCDS,queryTranscript) %>%
+    GenomicRanges::disjoin(with.revmap = T) %>%
+    sort(decreasing = strand == '-')
+  stopcodonindex = max(which(lengths(mcols(disjoint)$revmap) == 2))
+  num_of_exons_aft_stop = length(disjoint) - stopcodonindex
+  if(num_of_exons_aft_stop > 1){
+    output$dist_to_lastEJ = width(disjoint[stopcodonindex+1])
+    if(output$dist_to_lastEJ > distance_stop_EJ){
+      output$is_NMD = TRUE
+    }
+  }
+
+
+
   # test for other features if activated
   if (other_features == TRUE) {
     if (missing(fasta)) {

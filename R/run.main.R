@@ -45,7 +45,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     
     # Prepare GRanges and select best reference
     unpack[queryGRanges, basicTxGRanges, basicCDSGRanges, prepreport] = 
-      prepBestRef(thisline$Transcript_ID, thisline$Ref_transcript_ID,
+      getBestRef(thisline$Transcript_ID, thisline$Ref_transcript_ID,
                   thisline$Gene_ID, thisline$NMDer_ID,
                   inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS) 
     

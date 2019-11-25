@@ -1,44 +1,108 @@
 #' Title
 #'
-#' @param queryGRanges 
-#' @param basicTxGRanges 
+#' @param queryID 
+#' @param refID 
+#' @param gene_id 
+#' @param NMDer_ID 
+#' @param inputExonsbyTx 
+#' @param basicExonsbyTx 
+#' @param basicExonsbyCDS 
 #'
 #' @return
 #' @export
 #'
 #' @examples
-getBestRef <- function(queryGRanges, basicTxGRanges){
+getBestRef <- function(queryID, refID, gene_id, NMDer_ID, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS) {
   
-  # this function attempts to select the best reference for analysis if multiple
-  # reference transcripts exists
-    # build GRanges object for query and GRangeslist object for reference
-
-    # calculate the coverage of query and reference transcripts as a percentage
-    # of the mean width of query and reference
-    overlapHits = IRanges::mergeByOverlaps(queryGRanges, basicTxGRanges)
-
-    overlapHitsMeta = base::mapply(function(x,y){
-      widthQuery = sum(IRanges::width(x))
-      widthRef = sum(IRanges::width(y))
-      aveWidth = (widthQuery + widthRef) / 2
-      commonCoverage = sum(IRanges::width(GenomicRanges::reduce(GenomicRanges::intersect(x, y))))
-      Shared_coverage = commonCoverage/aveWidth
-      return(Shared_coverage)
-    }, overlapHits$queryGRanges, overlapHits$basicTxGRanges) %>%
-      as.data.frame() # output list as a dataframe
+  output = list('queryGRanges' = NA,
+                'basicTxGRanges' = NA,
+                'basicCDSGRanges' = NA,
+                'report' = list(
+                  'Ref_transcript_ID' = as.character(NA),
+                  'Coverage' = 0,
+                  'ORF_considered' = NA,
+                  'ORF_start' = 'Not found',
+                  'ORF_found' = FALSE))
+  
+  refID = strsplit(refID, split = '_')
+  queryGRanges = inputExonsbyTx %>% as.data.frame() %>%
+    dplyr::filter(group_name == queryID) %>%
+    dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
+    GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
+  
+  basicTxGRanges = basicExonsbyTx %>% 
+    dplyr::filter(group_name %in% refID[[1]]) %>%
+    dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
+    GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
+  
+  # this function attempts to select the best reference for analysis 
+  overlapHits = IRanges::mergeByOverlaps(queryGRanges, basicTxGRanges)
+  
+  overlapHitsMeta = base::mapply(function(x,y){
+    widthQuery = sum(IRanges::width(x))
+    widthRef = sum(IRanges::width(y))
+    aveWidth = (widthQuery + widthRef) / 2
+    commonCoverage = sum(IRanges::width(GenomicRanges::reduce(GenomicRanges::intersect(x, y))))
+    Shared_coverage = commonCoverage/aveWidth
+    return(Shared_coverage)
+  }, overlapHits$queryGRanges, overlapHits$basicTxGRanges) %>%
+    as.data.frame() # output list as a dataframe
+  
+  if(nrow(overlapHitsMeta) == 0) {
+    return(list(Ref_transcript_ID = as.character(NA),
+                Coverage = 0))
+  }
+  
+  # append reference tx IDs, sort dataframe and select best reference
+  overlapHitsMeta$Ref_transcript_ID = names(overlapHits$basicTxGRanges)
+  names(overlapHitsMeta) = c('Coverage', 'Ref_transcript_ID')
+  overlapHitsMeta = overlapHitsMeta %>%
+    dplyr::arrange(desc(Coverage)) %>%
+    dplyr::select(Ref_transcript_ID, Coverage)
+  
+  outBestRef = overlapHitsMeta[1,]
+  
+  if(is.na(outBestRef$Ref_transcript_ID)){
+    # return as query and reference do not match
+    return(output)
+  } else {
+    # create new GRanges
+    output$queryGRanges = inputExonsbyTx %>% as.data.frame() %>%
+      dplyr::filter(group_name == queryID) %>%
+      dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
+      dplyr::mutate(transcript_id = NMDer_ID, gene_id = gene_id) %>%
+      GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+    output$basicCDSGRanges = basicExonsbyCDS %>% 
+      dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
+      dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
+      GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+    output$basicTxGRanges = basicExonsbyTx %>% 
+      dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
+      dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
+      GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
     
-    if(nrow(overlapHitsMeta) == 0) {
-      return(list(Ref_transcript_ID = as.character(NA),
-                  Coverage = 0))
+    # update reference transcript and coverage
+    output$report$Ref_transcript_ID = outBestRef$Ref_transcript_ID
+    output$report$Coverage = outBestRef$Coverage
+    
+    # set query ORF if it is similar to reference
+    if(outBestRef$Coverage == 1) {
+      # reformat CDSGRanges
+      newbasicCDSGRanges = output$basicCDSGRanges %>% as.data.frame() %>%
+        dplyr::mutate(type = 'CDS', 
+                      gene_id = gene_id, 
+                      transcript_id = NMDer_ID) %>%
+        dplyr::mutate(phase = cumsum(width%%3)%%3) %>%
+        dplyr::select(seqnames:end, strand, type, phase, gene_id, transcript_id)
+      newbasicCDSGRanges$phase = c(0, head(newbasicCDSGRanges$phase, - 1))
+      newbasicCDSGRanges = GenomicRanges::makeGRangesFromDataFrame(newbasicCDSGRanges, keep.extra.columns = TRUE)
+      
+      output$report$ORF_considered = newbasicCDSGRanges
+      output$report$ORF_start = 'Annotated'
+      output$report$ORF_found = TRUE
+      
+      
     }
-
-    # append reference tx IDs, sort dataframe and select best reference
-    overlapHitsMeta$Ref_transcript_ID = names(overlapHits$basicTxGRanges)
-    names(overlapHitsMeta) = c('Coverage', 'Ref_transcript_ID')
-    overlapHitsMeta = overlapHitsMeta %>%
-      dplyr::arrange(desc(Coverage)) %>%
-      dplyr::select(Ref_transcript_ID, Coverage)
-
-    return(overlapHitsMeta[1,])
-    
+    return(output)
+  }
 }
