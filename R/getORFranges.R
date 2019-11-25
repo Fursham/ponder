@@ -1,4 +1,4 @@
-getCDSranges <- function(query, fiveUTRlength, threeUTRlength){
+getORFranges <- function(query, fiveUTRlength, threeUTRlength){
   
   CDSranges = resizeTranscripts(query, fiveUTRlength, threeUTRlength)
   CDSranges = CDSranges %>% as.data.frame() %>%

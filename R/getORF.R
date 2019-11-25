@@ -26,7 +26,7 @@ getORF <- function(knownCDS, queryTx, fasta) {
   }
   
   # build new ORF Granges
-  report = getCDSranges(queryTx, output$fiveUTRlength, output$threeUTRlength)
+  report = getORGranges(queryTx, output$fiveUTRlength, output$threeUTRlength)
   output = utils::modifyList(output, report) #update output
   return(output[c('ORF_considered', 'ORF_start', 'ORF_found')])
   
