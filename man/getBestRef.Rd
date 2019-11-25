@@ -4,12 +4,23 @@
 \alias{getBestRef}
 \title{Title}
 \usage{
-getBestRef(queryGRanges, basicTxGRanges)
+getBestRef(queryID, refID, gene_id, NMDer_ID, inputExonsbyTx,
+  basicExonsbyTx, basicExonsbyCDS)
 }
 \arguments{
-\item{queryGRanges}{}
+\item{queryID}{}
 
-\item{basicTxGRanges}{}
+\item{refID}{}
+
+\item{gene_id}{}
+
+\item{NMDer_ID}{}
+
+\item{inputExonsbyTx}{}
+
+\item{basicExonsbyTx}{}
+
+\item{basicExonsbyCDS}{}
 }
 \description{
 Title

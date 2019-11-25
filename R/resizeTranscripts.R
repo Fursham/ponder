@@ -1,81 +1,26 @@
-#' Resize GRanges transcript object
-#' 
-#' @description 
-#' This function will append/extend the 5' and 3' ends of a GRanges object which describes the 
-#' exon ranges of a transcript or a CDS
-#'
-#' @usage resizeTranscripts(x, start = 0, end = 0)
-#'
-#' @param x GRanges object containing exon coordinates of a transcript or CDS
-#' @param start Length of 5' end to truncate (positive val) or extend (negative val)
-#' @param end Length of 3' end to truncate (positive val) or extend (negative val)
-#'
-#' @return a new GRanges transcript object 
-#' @export
-#'
-#' @examples
-#' 
-#' resizeTranscripts(ptbp2Data$transcripts$ENSMUST00000197833, start = 100)
-#' 
-resizeTranscripts <- function(x, start = 0, end = 0) {
+resizeTranscripts <- function(x, headlength = 0, taillength = 0) {
   
-  if (sum(width(x)) < (start + end)) {
+  if (sum(width(x)) < (headlength + taillength)) {
     stop('Appending length is larger than size of transcript')
   }
   
   # retrieve important information
   strand = as.character(strand(x))[1]
-  firstlastexons = c(1, length(x))  # initiate index of first and last exons
-  startend = c(start,end) # store value for appending
+  x = x %>% as.data.frame() %>%
+    dplyr::arrange(ifelse(strand == '-', dplyr::desc(start), start)) %>%
+    dplyr::mutate(fwdcumsum = as.integer(cumsum(width) - headlength), 
+                  revcumsum = rev(cumsum(rev(width))) - taillength) %>%
+    dplyr::filter(fwdcumsum > 0 & revcumsum > 0)
   
-  totest = sapply(startend, function(x) {
-    ifelse(x > 0, TRUE, FALSE)
-  })
-  # append the start followed by the end
-  for (i in (1:2)[totest]) {
-    exonsize = width(x) # get the size of each exons as a list
-    loop = TRUE
-    while (loop == TRUE) {
-      # change the size of the first or last exon
-      exonsize[firstlastexons[[i]]] = exonsize[firstlastexons[[i]]] - startend[[i]]
-      
-      # if all of the exon sizes are more than 0, it means that the subtraction occurs within an exon
-      #   if there are some exon with negative sizes, it means that the subtraction bleed into the next exon
-      if (all(exonsize >= 0)) {
-        loop = FALSE
-      } else {
-        
-        # set the remaining start/end value to be subtracted
-        newval = ifelse(exonsize[firstlastexons[[i]]] < 0, abs(exonsize[firstlastexons[[i]]]), 0)
-        startend[[i]] = newval
-        
-        # convert negative widths to 0
-        exonsize = ifelse(exonsize > 0, exonsize, 0)
-        
-        # and change index of exon to be subtracted
-        if (i == 1) {
-          firstlastexons[1] = ifelse(exonsize[firstlastexons[1]] > 0, firstlastexons[1], firstlastexons[1] + 1)
-        } else if (i == 2) {
-          firstlastexons[2] = ifelse(exonsize[firstlastexons[2]] > 0, firstlastexons[2], firstlastexons[2] - 1)
-        }
-      }
-      
-    }
-    # resize the transcripts based on its new width
-    if (i == 1) {
-      x[1:length(x)] = resize(x[1:length(x)], 
-                              exonsize[1:length(x)], 
-                              fix = ifelse(strand == '-', "start", "end"), 
-                              ignore.strand = TRUE)
-    } else if (i == 2) {
-      x[1:length(x)] = resize(x[1:length(x)], 
-                              exonsize[1:length(x)], 
-                              fix = ifelse(strand == '-', "end", "start"), 
-                              ignore.strand = TRUE)
-    }
+  if(strand == '-'){
+    x[1,]$end = x[1,]$start + x[1,]$fwdcumsum -1
+    x[nrow(x),]$start = x[nrow(x),]$end - x[nrow(x),]$revcumsum + 1
+  } else{
+    x[1,]$start = x[1,]$end - x[1,]$fwdcumsum + 1
+    x[nrow(x),]$end = x[nrow(x),]$start + x[nrow(x),]$revcumsum - 1
   }
-  # return exons with width of more than 0
-  x = x[width(x) > 0]
+  x = x %>% dplyr::select(-fwdcumsum,-revcumsum) %>%
+    makeGRangesFromDataFrame(keep.extra.columns = T)
+  
   return(x)
 }
-

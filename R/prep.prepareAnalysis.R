@@ -73,7 +73,7 @@ prepareAnalysis <- function(inputGRanges, basicGRanges) {
     dplyr::mutate(Ref_transcript_ID = paste(as.character(Ref_transcript_ID), collapse = '_')) %>%
     dplyr::ungroup() %>%
     dplyr::distinct(.keep_all = TRUE) %>%
-    dplyr::mutate(NMDer_ID = paste0('NMDer', formatC(as.integer(row_number()), width=7, flag='0'))) %>% 
+    dplyr::mutate(NMDer_ID = paste0('NMDer', formatC(as.integer(dplyr::row_number()), width=7, flag='0'))) %>% 
     dplyr::select(NMDer_ID, Gene_ID:Ref_transcript_ID)
   
   
