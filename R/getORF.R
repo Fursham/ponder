@@ -1,4 +1,4 @@
-getORF <- function(knownCDS, queryTx, fasta, gene_id, transcript_id) {
+getORF <- function(knownCDS, queryTx, fasta) {
   
   # prep output list
   output = list(ORF_considered = as.character(NA),
@@ -25,8 +25,7 @@ getORF <- function(knownCDS, queryTx, fasta, gene_id, transcript_id) {
     return(output[c('ORF_considered', 'ORF_start', 'ORF_found')])
   }
   
-  report = getCDSranges(queryTx, output$fiveUTRlength, output$threeUTRlength,
-                        gene_id, transcript_id)
+  report = getCDSranges(queryTx, output$fiveUTRlength, output$threeUTRlength)
   output = utils::modifyList(output, report)
   return(output[c('ORF_considered', 'ORF_start', 'ORF_found')])
   

@@ -66,6 +66,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
       queryGRanges = inputExonsbyTx %>% as.data.frame() %>%
         dplyr::filter(group_name == thisline$Transcript_ID) %>%
         dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
+        dplyr::mutate(transcript_id = thisline$NMDer_ID, gene_id = thisline$Gene_ID) %>%
         GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
       basicCDSGRanges = basicExonsbyCDS %>% 
         dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
@@ -91,9 +92,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     # attempt to build ORF for query if absent
     if(thisline$ORF_found == FALSE){
       # attempt to build Open Reading Frame for query
-      ORFreport = getORF(basicCDSGRanges, queryGRanges,
-                         genome, thisline$Gene_ID,
-                         thisline$NMDer_ID)
+      ORFreport = getORF(basicCDSGRanges, queryGRanges, genome)
       thisline = utils::modifyList(thisline, ORFreport)
     }
 
