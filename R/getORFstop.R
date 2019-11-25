@@ -3,7 +3,7 @@ getORFstop <- function(query, fasta, fiveUTRlength){
   output = list(ORF_found = FALSE,
                 threeUTRlength = 0)
   
-  strand = as.character(strand(augmentedCDS))[1]
+  strand = as.character(strand(query))[1]
   queryCDS = resizeTranscripts(query, start = fiveUTRlength)
   queryseq = unlist(Biostrings::getSeq(fasta, queryCDS))
   
@@ -20,6 +20,7 @@ getORFstop <- function(query, fasta, fiveUTRlength){
     return(output)
   } else{
 
+    firststopcodon = stopcodons[1]
     threeUTRlength = length(queryseq) - end(firststopcodon)
     output$threeUTRlength = threeUTRlength
     output$ORF_found = TRUE
