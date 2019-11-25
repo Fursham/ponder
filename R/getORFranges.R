@@ -1,5 +1,8 @@
 getORFranges <- function(query, fiveUTRlength, threeUTRlength){
   
+  # prepare output list
+  output = list('ORF_considered' = NA)
+  
   CDSranges = resizeTranscripts(query, fiveUTRlength, threeUTRlength)
   CDSranges = CDSranges %>% as.data.frame() %>%
     dplyr::mutate(type = 'CDS', 
@@ -8,7 +11,8 @@ getORFranges <- function(query, fiveUTRlength, threeUTRlength){
     dplyr::mutate(phase = cumsum(width%%3)%%3) %>%
     dplyr::select(seqnames:end, strand, type, phase, gene_id, transcript_id)
   CDSranges$phase = c(0, head(CDSranges$phase, - 1))
-  CDSranges = GenomicRanges::makeGRangesFromDataFrame(CDSranges, keep.extra.columns = TRUE)
+  output$ORF_considered  = GenomicRanges::makeGRangesFromDataFrame(CDSranges, keep.extra.columns = TRUE)
   
-  return(list(ORF_considered = CDSranges))
+  
+  return(output)
 }
