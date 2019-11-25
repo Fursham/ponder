@@ -14,7 +14,7 @@ getORFstart <- function(query, refCDS, fasta){
       sort(decreasing = strand == '-')
     mcols(disjoint)$cumsum = cumsum(width(disjoint))
       
-    startcodonindex = match(2,lengths(mcols(disjoint)$revmap)) -1
+    startcodonindex = min(which(lengths(mcols(disjoint)$revmap) == 2)) -1
     fiveUTRlength = mcols(disjoint)$cumsum[startcodonindex]
     
     output$ORF_start = 'Annotated'
