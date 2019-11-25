@@ -9,7 +9,6 @@
 #' @param basicExonsbyCDS 
 #'
 #' @return
-#' @export
 #'
 #' @examples
 getBestRef <- function(queryID, refID, gene_id, NMDer_ID, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS) {
