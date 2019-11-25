@@ -1,9 +1,10 @@
 getORFstop <- function(query, fasta, fiveUTRlength){
   
+  # prepare output list
   output = list(ORF_found = FALSE,
                 threeUTRlength = 0)
   
-  strand = as.character(strand(query))[1]
+  # append query GRanges to start from star codon, and retrieve seq
   queryCDS = resizeTranscripts(query, start = fiveUTRlength)
   queryseq = unlist(Biostrings::getSeq(fasta, queryCDS))
   
@@ -16,10 +17,12 @@ getORFstop <- function(query, fasta, fiveUTRlength){
     unlist()
   stopcodons = sort(stopcodons[end(stopcodons) %% 3 == 0,])
   
+  # return if no in-frame stop codons are found
   if(length(stopcodons) == 0){
     return(output)
   } else{
 
+    # retrieve 3UTR length and update output file
     firststopcodon = stopcodons[1]
     threeUTRlength = length(queryseq) - end(firststopcodon)
     output$threeUTRlength = threeUTRlength
