@@ -43,62 +43,19 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     # can be referenced as thisline$_
     thisline = as.list(x)
     
-    # Prepare list of reference transcript and GRanges
-    thisline$Ref_transcript_ID = strsplit(thisline$Ref_transcript_ID, split = '_')
-    queryGRanges = inputExonsbyTx %>% as.data.frame() %>%
-      dplyr::filter(group_name == thisline$Transcript_ID) %>%
-      dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
-      GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
+    # Prepare GRanges and select best reference
+    unpack[queryGRanges, basicTxGRanges, basicCDSGRanges, prepreport] = 
+      prepBestRef(thisline$Transcript_ID, thisline$Ref_transcript_ID,
+                  thisline$Gene_ID, thisline$NMDer_ID,
+                  inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS) 
     
-    basicTxGRanges = basicExonsbyTx %>% 
-      dplyr::filter(group_name %in% thisline$Ref_transcript_ID[[1]]) %>%
-      dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
-      GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
-
-    # this function attempts to select the best reference for analysis 
-    outBestRef = getBestRef(queryGRanges, basicTxGRanges)
-    
-    if(is.na(outBestRef$Ref_transcript_ID)){
-      # return as query and reference do not match
+    # return if no overlap is found between query and any reference
+    if(is.na(queryGRanges)){
       return(thisline)
     } else {
-      # create new GRanges
-      queryGRanges = inputExonsbyTx %>% as.data.frame() %>%
-        dplyr::filter(group_name == thisline$Transcript_ID) %>%
-        dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
-        dplyr::mutate(transcript_id = thisline$NMDer_ID, gene_id = thisline$Gene_ID) %>%
-        GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
-      basicCDSGRanges = basicExonsbyCDS %>% 
-        dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
-        dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
-        GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
-      basicTxGRanges = basicExonsbyTx %>% 
-        dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
-        dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
-        GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
-      
-      # update reference transcript and coverage
-      thisline$Ref_transcript_ID = outBestRef$Ref_transcript_ID
-      thisline$Coverage = outBestRef$Coverage
-      
-      # set query ORF if it is similar to reference
-      if(outBestRef$Coverage == 1) {
-        # reformat CDSGRanges
-        basicCDSGRanges = basicCDSGRanges %>% as.data.frame() %>%
-          dplyr::mutate(type = 'CDS', 
-                        gene_id = thisline$Gene_ID, 
-                        transcript_id = thisline$NMDer_ID) %>%
-          dplyr::mutate(phase = cumsum(width%%3)%%3) %>%
-          dplyr::select(seqnames:end, strand, type, phase, gene_id, transcript_id)
-        basicCDSGRanges$phase = c(0, head(basicCDSGRanges$phase, - 1))
-        basicCDSGRanges = GenomicRanges::makeGRangesFromDataFrame(basicCDSGRanges, keep.extra.columns = TRUE)
-        
-        thisline$ORF_considered = basicCDSGRanges
-        thisline$ORF_start = 'Annotated'
-        thisline$ORF_found = TRUE
-      }
+      thisline = utils::modifyList(thisline, prepreport)
     }
-    
+  
     # attempt to build ORF for query if absent
     if(thisline$ORF_found == FALSE){
       # attempt to build Open Reading Frame for query
