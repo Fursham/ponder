@@ -97,6 +97,7 @@ getBestRef <- function(queryID, refID, gene_id, NMDer_ID, inputExonsbyTx, basicE
     newbasicCDSGRanges$phase = c(0, head(newbasicCDSGRanges$phase, - 1))
     newbasicCDSGRanges = GenomicRanges::makeGRangesFromDataFrame(newbasicCDSGRanges, keep.extra.columns = TRUE)
     
+    # update output variables
     output$report$ORF_considered = newbasicCDSGRanges
     output$report$ORF_start = 'Annotated'
     output$report$ORF_found = TRUE
