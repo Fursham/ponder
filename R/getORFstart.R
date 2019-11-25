@@ -5,7 +5,7 @@ getORFstart <- function(query, refCDS, fasta){
                 fiveUTRlength = 0)
   
   # get coord of start codon on reference and strand info
-  startcodon = resizeTranscripts(refCDS, end = sum(width(refCDS))-3)
+  startcodon = resizeTranscripts(refCDS, taillength = sum(width(refCDS))-3)
   strand = as.character(strand(query))[1]
   
   # if query containg annotated start codon:
