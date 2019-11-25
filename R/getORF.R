@@ -12,7 +12,7 @@ getORF <- function(knownCDS, queryTx, fasta) {
   output = utils::modifyList(output, report)
   
   # return if no start codon is found
-  if(output$ORF_start == 'Not_found'){
+  if(output$ORF_start == 'Not found'){
     return(output[c('ORF_considered', 'ORF_start', 'ORF_found')])
   }
   
