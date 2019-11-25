@@ -25,6 +25,7 @@ resizeTranscripts <- function(x, start = 0, end = 0) {
   
   # retrieve important information
   strand = as.character(strand(x))[1]
+  x = sort(x, decreasing = strand == '-')
   firstlastexons = c(1, length(x))  # initiate index of first and last exons
   startend = c(start,end) # store value for appending
   
