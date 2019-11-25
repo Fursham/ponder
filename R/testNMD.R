@@ -49,15 +49,25 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
   queryCDS = sort(queryCDS, decreasing = strand == '-')
   queryTranscript = sort(queryTranscript, decreasing = strand == '-')
   
+  # test if query is NMD sensitive
+  #   disjoin will create a new GRanges that will separate the queryTranscript
+  #   into discernable 5UTR, ORF and 3UTR
+  #   we can then try to use the new GRanges to infer NMD susceptibility
   disjoint = BiocGenerics::append(queryCDS,queryTranscript) %>%
     GenomicRanges::disjoin(with.revmap = T) %>%
     sort(decreasing = strand == '-')
+  
+  # retrieve index of last ORF segment and determine if there are 
+  # more than 1 exons after stop codon
   stopcodonindex = max(which(lengths(mcols(disjoint)$revmap) == 2))
   num_of_exons_aft_stop = length(disjoint) - stopcodonindex
+  
+  # if more than 1 segment is found, test for distance to last EJ
   if(num_of_exons_aft_stop > 1){
     output$dist_to_lastEJ = width(disjoint[stopcodonindex+1])
     if(output$dist_to_lastEJ > distance_stop_EJ){
-      output$is_NMD = TRUE
+      #annotated transcript as NMD if dist_to_lastEJ is NMD triggering
+      output$is_NMD = TRUE  
     }
   }
 
