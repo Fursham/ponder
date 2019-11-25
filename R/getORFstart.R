@@ -40,7 +40,7 @@ getORFstart <- function(query, refCDS, fasta){
         return(startcodoninGRanges)
       }, start(inframestarts), end(inframestarts)))
       
-      if(any(inframestartsingranges) %within% query){
+      if(any(inframestartsingranges %within% query)){
         startgranges = inframestartsingranges[inframestartsingranges %within% query][1]
         disjoint = BiocGenerics::append(query,startgranges) %>%
           GenomicRanges::disjoin(with.revmap = T) %>%
