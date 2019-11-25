@@ -54,8 +54,7 @@ getBestRef <- function(queryID, refID, gene_id, NMDer_ID, inputExonsbyTx, basicE
   
   # return
   if(nrow(overlapHitsMeta) == 0) {
-    return(list(Ref_transcript_ID = as.character(NA),
-                Coverage = 0))
+    return(output)
   }
   
   # append reference tx IDs, sort dataframe and select best reference
@@ -67,47 +66,40 @@ getBestRef <- function(queryID, refID, gene_id, NMDer_ID, inputExonsbyTx, basicE
   
   outBestRef = overlapHitsMeta[1,]
   
-  if(is.na(outBestRef$Ref_transcript_ID)){
-    # return as query and reference do not match
-    return(output)
-  } else {
-    # create new GRanges
-    output$queryGRanges = inputExonsbyTx %>% as.data.frame() %>%
-      dplyr::filter(group_name == queryID) %>%
-      dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
-      dplyr::mutate(transcript_id = NMDer_ID, gene_id = gene_id) %>%
-      GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
-    output$basicCDSGRanges = basicExonsbyCDS %>% 
-      dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
-      dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
-      GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
-    output$basicTxGRanges = basicExonsbyTx %>% 
-      dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
-      dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
-      GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+  # prepare GRanges for output
+  output$queryGRanges = inputExonsbyTx %>% as.data.frame() %>%
+    dplyr::filter(group_name == queryID) %>%
+    dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
+    dplyr::mutate(transcript_id = NMDer_ID, gene_id = gene_id) %>%
+    GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+  output$basicCDSGRanges = basicExonsbyCDS %>% 
+    dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
+    dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
+    GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+  output$basicTxGRanges = basicExonsbyTx %>% 
+    dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
+    dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
+    GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+  
+  # update reference transcript and coverage
+  output$report$Ref_transcript_ID = outBestRef$Ref_transcript_ID
+  output$report$Coverage = outBestRef$Coverage
+  
+  # set query ORF if it is similar to reference
+  if(outBestRef$Coverage == 1) {
+    # reformat CDSGRanges
+    newbasicCDSGRanges = output$basicCDSGRanges %>% as.data.frame() %>%
+      dplyr::mutate(type = 'CDS', 
+                    gene_id = gene_id, 
+                    transcript_id = NMDer_ID) %>%
+      dplyr::mutate(phase = cumsum(width%%3)%%3) %>%
+      dplyr::select(seqnames:end, strand, type, phase, gene_id, transcript_id)
+    newbasicCDSGRanges$phase = c(0, head(newbasicCDSGRanges$phase, - 1))
+    newbasicCDSGRanges = GenomicRanges::makeGRangesFromDataFrame(newbasicCDSGRanges, keep.extra.columns = TRUE)
     
-    # update reference transcript and coverage
-    output$report$Ref_transcript_ID = outBestRef$Ref_transcript_ID
-    output$report$Coverage = outBestRef$Coverage
-    
-    # set query ORF if it is similar to reference
-    if(outBestRef$Coverage == 1) {
-      # reformat CDSGRanges
-      newbasicCDSGRanges = output$basicCDSGRanges %>% as.data.frame() %>%
-        dplyr::mutate(type = 'CDS', 
-                      gene_id = gene_id, 
-                      transcript_id = NMDer_ID) %>%
-        dplyr::mutate(phase = cumsum(width%%3)%%3) %>%
-        dplyr::select(seqnames:end, strand, type, phase, gene_id, transcript_id)
-      newbasicCDSGRanges$phase = c(0, head(newbasicCDSGRanges$phase, - 1))
-      newbasicCDSGRanges = GenomicRanges::makeGRangesFromDataFrame(newbasicCDSGRanges, keep.extra.columns = TRUE)
-      
-      output$report$ORF_considered = newbasicCDSGRanges
-      output$report$ORF_start = 'Annotated'
-      output$report$ORF_found = TRUE
-      
-      
-    }
-    return(output)
+    output$report$ORF_considered = newbasicCDSGRanges
+    output$report$ORF_start = 'Annotated'
+    output$report$ORF_found = TRUE
   }
+  return(output)
 }
