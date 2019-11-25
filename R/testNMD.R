@@ -55,7 +55,6 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
   # get noncoding segments from indentifyAddedRemovedRegions
   combinedList = list(CDS = queryCDS, Tx = queryTranscript)
   noncodingSegments = indentifyAddedRemovedRegions("CDS", "Tx", combinedList[c("CDS", "Tx")])
-  
   # obtain coordinates of CDS and its 3'UTR
   cds3UTR = sort(append(
     noncodingSegments$shared_exons, 

@@ -6,9 +6,9 @@ getCDSranges <- function(query, fiveUTRlength, threeUTRlength){
                   gene_id = mcols(queryGRanges)$gene_id[1], 
                   transcript_id = mcols(queryGRanges)$transcript_id[1]) %>%
     dplyr::mutate(phase = cumsum(width%%3)%%3) %>%
-    dplyr::select(seqnames:end, type, phase, gene_id, transcript_id)
+    dplyr::select(seqnames:end, strand, type, phase, gene_id, transcript_id)
   CDSranges$phase = c(0, head(CDSranges$phase, - 1))
-  CDSranges = makeGRangesFromDataFrame(CDSranges, keep.extra.columns = TRUE)
+  CDSranges = GenomicRanges::makeGRangesFromDataFrame(CDSranges, keep.extra.columns = TRUE)
   
   return(list(ORF_considered = CDSranges))
 }
