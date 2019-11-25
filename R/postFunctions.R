@@ -5,8 +5,6 @@
 #' @param output_dir 
 #'
 #' @return
-#' @import tidyr
-#' @import IRanges
 #' @export
 #'
 #' @examples
