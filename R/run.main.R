@@ -83,6 +83,16 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
       
       # set query ORF if it is similar to reference
       if(outBestRef$Coverage == 1) {
+        # reformat CDSGRanges
+        basicCDSGRanges = basicCDSGRanges %>% as.data.frame() %>%
+          dplyr::mutate(type = 'CDS', 
+                        gene_id = thisline$Gene_ID, 
+                        transcript_id = thisline$NMDer_ID) %>%
+          dplyr::mutate(phase = cumsum(width%%3)%%3) %>%
+          dplyr::select(seqnames:end, type, phase, gene_id, transcript_id)
+        basicCDSGRanges$phase = c(0, head(basicCDSGRanges$phase, - 1))
+        basicCDSGRanges = makeGRangesFromDataFrame(basicCDSGRanges, keep.extra.columns = TRUE)
+        
         thisline$ORF_considered = basicCDSGRanges
         thisline$ORF_start = 'Annotated'
         thisline$ORF_found = TRUE
