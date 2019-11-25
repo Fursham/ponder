@@ -106,7 +106,12 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
       thisline = utils::modifyList(thisline, ORFreport)
     }
 
-
+    # return if ORF is still not found 
+    if(thisline$ORF_found == FALSE){
+      # attempt to build Open Reading Frame for query
+      return(thisline)
+    }
+    
     # if requested, test for NMD features and update line entry
     if (testforNMD == TRUE) {
       NMDreport = testNMD(thisline$ORF_considered, 
