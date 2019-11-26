@@ -21,11 +21,11 @@ getORFstart <- function(query, refCDS, fasta){
       sort(decreasing = strand == '-')
     
     # calculates cumulative sum of segment
-    mcols(disjoint)$cumsum = cumsum(width(disjoint))
+    cumsumwidth = cumsum(width(disjoint))
       
     # retrieve index of segment upstream of start codon and return its cumsumwidth
     startcodonindex = min(which(lengths(mcols(disjoint)$revmap) == 2)) -1
-    fiveUTRlength = mcols(disjoint)$cumsum[startcodonindex]
+    fiveUTRlength = cumsumwidth[startcodonindex]
     
     # update output list
     output$ORF_start = 'Annotated'
