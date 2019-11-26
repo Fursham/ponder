@@ -29,12 +29,12 @@ getBestRef <- function(queryID, refID, gene_id, NMDer_ID, inputExonsbyTx, basicE
   # prepare GRanges for intersection
   queryGRanges = inputExonsbyTx %>% as.data.frame() %>%
     dplyr::filter(group_name == queryID) %>%
-    dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
+    dplyr::arrange(ifelse(strand == '-', dplyr::desc(start), start)) %>% 
     GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
   
   basicTxGRanges = basicExonsbyTx %>% 
     dplyr::filter(group_name %in% refID[[1]]) %>%
-    dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
+    dplyr::arrange(ifelse(strand == '-', dplyr::desc(start), start))  %>% 
     GenomicRanges::makeGRangesListFromDataFrame(keep.extra.columns = TRUE, split = 'group_name')
   
   # intersect query to the list of reference
@@ -68,16 +68,16 @@ getBestRef <- function(queryID, refID, gene_id, NMDer_ID, inputExonsbyTx, basicE
   # prepare GRanges for output
   output$queryGRanges = inputExonsbyTx %>% as.data.frame() %>%
     dplyr::filter(group_name == queryID) %>%
-    dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
+    dplyr::arrange(ifelse(strand == '-', dplyr::desc(start), start)) %>% 
     dplyr::mutate(transcript_id = NMDer_ID, gene_id = gene_id) %>%
     GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
   output$basicCDSGRanges = basicExonsbyCDS %>% 
     dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
-    dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
+    dplyr::arrange(ifelse(strand == '-', dplyr::desc(start), start)) %>% 
     GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
   output$basicTxGRanges = basicExonsbyTx %>% 
     dplyr::filter(group_name %in% outBestRef$Ref_transcript_ID) %>%
-    dplyr::arrange(ifelse(strand == '+', start, dplyr::desc(start))) %>% 
+    dplyr::arrange(ifelse(strand == '-', dplyr::desc(start), start))  %>% 
     GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
   
   # update reference transcript and coverage
