@@ -22,6 +22,9 @@ getBestRef(queryID, refID, gene_id, NMDer_ID, inputExonsbyTx,
 
 \item{basicExonsbyCDS}{}
 }
+\value{
+
+}
 \description{
 Title
 }

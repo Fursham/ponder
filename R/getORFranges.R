@@ -4,7 +4,7 @@ getORFranges <- function(query, fiveUTRlength, threeUTRlength){
   output = list('ORF_considered' = NA)
   
   # resize query GRanges to ORF and renew metadata info
-  CDSranges = resizeTranscripts(query, fiveUTRlength, threeUTRlength)
+  CDSranges = resizeGRangesTranscripts(query, fiveUTRlength, threeUTRlength)
   CDSranges = CDSranges %>% as.data.frame() %>%
     dplyr::mutate(type = 'CDS', 
                   gene_id = mcols(query)$gene_id[1], 

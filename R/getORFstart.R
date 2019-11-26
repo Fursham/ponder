@@ -5,7 +5,7 @@ getORFstart <- function(query, refCDS, fasta){
                 fiveUTRlength = 0)
   
   # get coord of start codon on reference and strand info
-  startcodon = resizeTranscripts(refCDS, taillength = sum(width(refCDS))-3)
+  startcodon = resizeGRangesTranscripts(refCDS, end = sum(width(refCDS))-3)
   strand = as.character(strand(query))[1]
   
   # if query containg annotated start codon:
@@ -51,7 +51,7 @@ getORFstart <- function(query, refCDS, fasta){
       inframestartsingranges = do.call('c', base::mapply(function(x,y){
         start = x - 1
         end = length(refsequence) - y
-        startcodoninGRanges = resizeTranscripts(refCDS, start, end)
+        startcodoninGRanges = resizeGRangesTranscripts(refCDS, start, end)
         return(startcodoninGRanges)
       }, start(inframestarts), end(inframestarts)))
       

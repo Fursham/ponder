@@ -5,7 +5,7 @@ getORFstop <- function(query, fasta, fiveUTRlength){
                 threeUTRlength = 0)
   
   # append query GRanges to start from star codon, and retrieve seq
-  queryCDS = resizeTranscripts(query, headlength = fiveUTRlength)
+  queryCDS = resizeGRangesTranscripts(query, start = fiveUTRlength)
   queryseq = unlist(Biostrings::getSeq(fasta, queryCDS))
   
   # prepare a dict of stop codons for pattern matching
