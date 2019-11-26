@@ -19,7 +19,7 @@
 resizeGRangesTranscripts <- function(GRanges, start = 0, end = 0) {
   
   # return if appending length is longer than transcript
-  if (sum(width(GRanges)) < (headlength + taillength)) {
+  if (sum(width(GRanges)) < (start + end)) {
     stop('Appending length is larger than size of transcript')
   }
   
@@ -31,6 +31,8 @@ resizeGRangesTranscripts <- function(GRanges, start = 0, end = 0) {
   # the length to append from both ends
   headlength = ifelse(strand == '-', end, start)  
   taillength = ifelse(strand == '-', start, end)
+  
+  
   
   GRanges = GRanges %>% as.data.frame() %>%
     dplyr::arrange(start) %>%
