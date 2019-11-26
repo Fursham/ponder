@@ -78,13 +78,20 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     if (missing(fasta)) {
       stop('Please provide fasta sequence')
     }
-    # obtain size of 3'UTR
-    threeUTR = sum(width(noncodingSegments$Tx[noncodingSegments$Tx$downstream == TRUE]))
+    # obtain size of UTRs
+    startcodonindex = min(which(lengths(mcols(disjoint)$revmap) == 2))
+    stopcodonindex = max(which(lengths(mcols(disjoint)$revmap) == 2))
     
+    disjoint = disjoint %>% as.data.frame() %>%
+      dplyr::mutate(tmp.fwdcumsum = cumsum(width),
+                    tmp.revcumsum = rev(cumsum(rev(width))))
+    
+    fiveUTRlength = disjoint[startcodonindex-1,]$tmp.fwdcumsum
+    threeUTRlength = disjoint[stopcodonindex+1,]$tmp.revcumsum
+
     # test for uORF on 5'UTR
     # get sequence of 5'UTR
-    fiveUTRGRanges = sort(noncodingSegments$Tx[noncodingSegments$Tx$upstream == TRUE], 
-                          decreasing = strand == '-')
+    fiveUTRGRanges = resizeGRangesTranscripts(queryTranscript, end = sum(width(queryTranscript)) - fiveUTRlength)
     list_startstopcodons = Biostrings::DNAStringSet(c("ATG","TAA", "TAG", "TGA"))
     pdict_startstopcodons = Biostrings::PDict(list_startstopcodons)
     
@@ -95,12 +102,48 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     uATG = as.character(NA)
     uATG_frame = as.character(NA)
     
+    fiveUTRseq = unlist(Biostrings::getSeq(fasta, fiveUTRGRanges))
+    allmatches = Biostrings::matchPDict(pdict_startstopcodons, fiveUTRseq) %>%
+      as.data.frame()
+    
+    if(nrow(allmatches) == 0){
+      return()
+    }
+    uORFs = allmatches %>%
+      dplyr::mutate(group_name = ifelse(group == 1, 'start', 'stop'),
+                    frame = end%%3) %>%
+      dplyr::group_by(frame) %>%
+      dplyr::mutate(shiftype = dplyr::lag(group_name, order_by = start, default = 'stop')) %>%
+      dplyr::filter(group_name != shiftype) %>%
+      dplyr::ungroup()
+    
+    uORFGranges = do.call('c', base::mapply(function(x,y){
+      start = x - 1
+      end = length(refsequence) - y
+      startcodoninGRanges = resizeGRangesTranscripts(refCDS, start, end)
+      return(startcodoninGRanges)
+    }, start(inframestarts), end(inframestarts)))
+    
+    
     # cycle each frame to find 5UTR and uATGs
     for (i in 0:2) {
       thisfiveUTRGRanges = fiveUTRGRanges
       # get sequence of 5UTR and search for all start and stop codons
       fiveUTRseq = unlist(Biostrings::getSeq(fasta, thisfiveUTRGRanges))
-      allmatches = Biostrings::matchPDict(pdict_startstopcodons, fiveUTRseq)
+      allmatches = Biostrings::matchPDict(pdict_startstopcodons, fiveUTRseq) %>%
+        as.data.frame()
+        
+      if(nrow(allmatches) == 0){
+        return()
+      }
+      uORFs = allmatches %>%
+        dplyr::mutate(group_name = ifelse(group == 1, 'start', 'stop'),
+                      frame = end%%3) %>%
+        dplyr::group_by(frame) %>%
+        dplyr::mutate(shiftype = dplyr::lag(group_name, order_by = start, default = 'stop')) %>%
+        dplyr::filter(group_name != shiftype) %>%
+        dplyr::ungroup()
+        
       
       # this part adds type and frame information into allmatches as a metadata
       type = c(rep('Start', length(allmatches[[1]])), rep('Stop', length(unlist(allmatches))- length(allmatches[[1]])))
