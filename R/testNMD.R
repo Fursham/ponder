@@ -109,20 +109,23 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     if(nrow(allmatches) == 0){
       return()
     }
-    uORFs = allmatches %>%
+    allmatches = allmatches %>%
       dplyr::mutate(group_name = ifelse(group == 1, 'start', 'stop'),
-                    frame = end%%3) %>%
+                    frame = (length(fiveUTRseq) - end%%3)) %>%
+      dplyr::arrange(start) %>%
       dplyr::group_by(frame) %>%
-      dplyr::mutate(shiftype = dplyr::lag(group_name, order_by = start, default = 'stop')) %>%
+      dplyr::mutate(shiftype = dplyr::lag(group_name, default = 'stop')) %>%
       dplyr::filter(group_name != shiftype) %>%
+      dplyr::mutate(group_name = ifelse(dplyr::n()%%2 != 0 & dplyr::row_number()==dplyr::n(),
+                           'uATG', group_name)) %>%
       dplyr::ungroup()
     
     uORFGranges = do.call('c', base::mapply(function(x,y){
       start = x - 1
-      end = length(refsequence) - y
-      startcodoninGRanges = resizeGRangesTranscripts(refCDS, start, end)
+      end = length(fiveUTRseq) - y
+      startcodoninGRanges = resizeGRangesTranscripts(fiveUTRGRanges, start, end)
       return(startcodoninGRanges)
-    }, start(inframestarts), end(inframestarts)))
+    }, uORFs$start, uORFs$end))
     
     
     # cycle each frame to find 5UTR and uATGs
