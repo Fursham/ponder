@@ -37,8 +37,8 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
   # prepare output list
   output = list(is_NMD = as.logical(FALSE), dist_to_lastEJ = as.numeric(0))
   if (other_features == TRUE) {
-    output = modifyList(output, list(uORF = as.character(NA), 
-                                     threeUTR = as.numeric(NA), 
+    output = modifyList(output, list(threeUTRlength = as.numeric(NA),
+                                     uORF = as.character(NA), 
                                      uATG = as.character(NA), 
                                      uATG_frame = as.character(NA)))
   }
@@ -78,16 +78,17 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     if (missing(fasta)) {
       stop('Please provide fasta sequence')
     }
-    # obtain size of UTRs
+    
+    # obtain position of start/stop codons in disjointed GRanges
     startcodonindex = min(which(lengths(mcols(disjoint)$revmap) == 2))
     stopcodonindex = max(which(lengths(mcols(disjoint)$revmap) == 2))
     
+    # obtain cumsumlength of disjointed GRanges and obtain UTR lengths
     disjoint = disjoint %>% as.data.frame() %>%
       dplyr::mutate(tmp.fwdcumsum = cumsum(width),
                     tmp.revcumsum = rev(cumsum(rev(width))))
-    
     fiveUTRlength = disjoint[startcodonindex-1,]$tmp.fwdcumsum
-    threeUTRlength = disjoint[stopcodonindex+1,]$tmp.revcumsum
+    output$threeUTRlength = disjoint[stopcodonindex+1,]$tmp.revcumsum
 
     # test for uORF on 5'UTR
     # get sequence of 5'UTR
@@ -96,113 +97,82 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     pdict_startstopcodons = Biostrings::PDict(list_startstopcodons)
     
     # this part will test the presence of uORFs and uATGs in the 5UTR
-    
-    # prepare output variables
-    uORF = as.character(NA)
-    uATG = as.character(NA)
-    uATG_frame = as.character(NA)
-    
     fiveUTRseq = unlist(Biostrings::getSeq(fasta, fiveUTRGRanges))
     allmatches = Biostrings::matchPDict(pdict_startstopcodons, fiveUTRseq) %>%
       as.data.frame()
     
+    # return if 5UTR contain no start/stop codons
     if(nrow(allmatches) == 0){
       return()
     }
-    allmatches = allmatches %>%
+    
+    # this code will generate a dataframe of start/stop coordinates of
+    # uORFs and uATGs
+    uORFuATG = allmatches %>%
       dplyr::mutate(group_name = ifelse(group == 1, 'start', 'stop'),
-                    frame = (length(fiveUTRseq) - end%%3)) %>%
+                    frame = (length(fiveUTRseq) - end)%%3) %>%
       dplyr::arrange(start) %>%
       dplyr::group_by(frame) %>%
       dplyr::mutate(shiftype = dplyr::lag(group_name, default = 'stop')) %>%
       dplyr::filter(group_name != shiftype) %>%
       dplyr::mutate(group_name = ifelse(dplyr::n()%%2 != 0 & dplyr::row_number()==dplyr::n(),
                            'uATG', group_name)) %>%
-      dplyr::ungroup()
+      dplyr::mutate(end = ifelse(group_name == 'start', NA, end)) %>%
+      tidyr::fill(end, .direction = 'up') %>%
+      dplyr::filter(group_name != 'stop') %>%
+      dplyr::mutate(group_name = ifelse(group_name == 'start', 'uORF', group_name),
+                    width = end - start + 1) %>% 
+      dplyr::ungroup() %>%
+      dplyr::arrange(start) %>%
+      dplyr::select(-shiftype)
     
-    uORFGranges = do.call('c', base::mapply(function(x,y){
+    # return if no uORFs or uATGs are found
+    if(nrow(uORFuATG) == 0){
+      return()
+    }
+    
+    # this code will return non-overlapping uORFs and 
+    nonoverlaps = uORFuATG %>%
+      dplyr::mutate(orfid = dplyr::row_number()) %>% 
+      dplyr::select(orfid, start, end) %>% 
+      tidyr::gather('type', 'pos', start:end) %>% 
+      dplyr::arrange(pos) %>% 
+      dplyr::mutate(typelag = dplyr::lag(type, default = 'stop')) %>%
+      dplyr::filter(type == 'start' & type != typelag) %>%
+      dplyr::distinct(orfid)
+    uORFuATG = uORFuATG %>% dplyr::filter(dplyr::row_number() %in% nonoverlaps$orfid)
+      
+    uORFuATG = uORFuATG %>%
+      dplyr::filter(dplyr::row_number() %in% nonoverlaps$orfid) %>%
+      dplyr::rowwise() %>%
+      dplyr::filter(start == .$start[1] | any(start > slopedMaxima(.$end))) %>%
+      dplyr::slice(1:ifelse('uATG'%in%.$group_name, which(.$group_name == 'uATG')[1],dplyr::n()))
+
+    uORFGranges = do.call('c', base::mapply(function(x,y,z,a){
       start = x - 1
       end = length(fiveUTRseq) - y
       startcodoninGRanges = resizeGRangesTranscripts(fiveUTRGRanges, start, end)
+      mcols(startcodoninGRanges)$group_name = z
+      mcols(startcodoninGRanges)$frame = a
       return(startcodoninGRanges)
-    }, uORFs$start, uORFs$end))
+    }, allmatches$start, allmatches$end, allmatches$group_name, allmatches$frame)) %>% as.data.frame()
     
-    
-    # cycle each frame to find 5UTR and uATGs
-    for (i in 0:2) {
-      thisfiveUTRGRanges = fiveUTRGRanges
-      # get sequence of 5UTR and search for all start and stop codons
-      fiveUTRseq = unlist(Biostrings::getSeq(fasta, thisfiveUTRGRanges))
-      allmatches = Biostrings::matchPDict(pdict_startstopcodons, fiveUTRseq) %>%
-        as.data.frame()
-        
-      if(nrow(allmatches) == 0){
-        return()
-      }
-      uORFs = allmatches %>%
-        dplyr::mutate(group_name = ifelse(group == 1, 'start', 'stop'),
-                      frame = end%%3) %>%
-        dplyr::group_by(frame) %>%
-        dplyr::mutate(shiftype = dplyr::lag(group_name, order_by = start, default = 'stop')) %>%
-        dplyr::filter(group_name != shiftype) %>%
-        dplyr::ungroup()
-        
-      
-      # this part adds type and frame information into allmatches as a metadata
-      type = c(rep('Start', length(allmatches[[1]])), rep('Stop', length(unlist(allmatches))- length(allmatches[[1]])))
-      combinedmatches = unlist(allmatches)
-      elementMetadata(combinedmatches)$type = type
-      frame = dplyr::data_frame(frame = (length(fiveUTRseq) - end(combinedmatches))%%3) %>% as.data.frame()
-      elementMetadata(combinedmatches)$frame = frame
-      
-      # break loop if there are no start and stop codons for frame i
-      if ((length(combinedmatches) == 0)){
-        next
-      } else if(!any(mcols(combinedmatches)$frame == i)) {
-        next
-      }
-      
-      shiftype = c('Stop', head(type, length(type)-1))
-      elementMetadata(combinedmatches)$shiftype = shiftype
-      ORForder = sort(combinedmatches[elementMetadata(combinedmatches)$frame == i])
-      if ((length(ORForder[elementMetadata(ORForder)$type == 'Start']) == 0)) {
-        next
-      } 
-      ORForder = ORForder[elementMetadata(ORForder)$type != elementMetadata(ORForder)$shiftype]
-      if (length(ORForder) == 0) {
-        next
-      }
-      
-      for (j in seq(1, length(ORForder), 2)) {
-        
-        startGRanges = ORForder[j]
-        startFrame = elementMetadata(startGRanges)$frame
-        startlength = start(startGRanges) - 1
-        
-        if (match(startGRanges, ORForder) == length(ORForder)) {
-          # return uATG
-          endlength = length(fiveUTRseq) - end(startGRanges)
-          startCoords = resizeTranscripts(thisfiveUTRGRanges, startlength, endlength)
-          uATG = c(uATG, paste(ranges(startCoords)))
-          uATG_frame = c(uATG_frame, startFrame)
-        } else {
-          # return uORF
-          stopGRanges = ORForder[(j+1)]
-          endlength = length(fiveUTRseq) - end(stopGRanges)
-          ORFcoord = resizeTranscripts(thisfiveUTRGRanges, startlength, endlength)
-          uORF = c(uORF, paste(ranges(ORFcoord), collapse = ';')) # need to remove NA first later
-        }
-      }
+    if('uORF'%in%uORFGranges$group_name){
+      uORF = uORFGranges %>% 
+        dplyr::filter(group_name == 'uORF') %>%
+        dplyr::mutate(coord = paste0(start, '-', end)) %>%
+        dplyr::select(coord)
+      output$uORF = paste(uORF$coord, collapse = '|')
     }
-    # update output list
-    uORF = ifelse(all(is.na(uORF)), FALSE, paste(uORF[!is.na(uORF)], collapse = '|'))
-    uATG = ifelse(all(is.na(uATG)), FALSE, paste(uATG[!is.na(uATG)], collapse = '|'))
-    uATG_frame = ifelse(all(is.na(uATG_frame)), FALSE, paste(uATG_frame[!is.na(uATG_frame)], collapse = '|'))
     
-    output = modifyList(output, list(uORF = as.character(uORF), 
-                                     threeUTR = as.numeric(threeUTR), 
-                                     uATG = as.character(uATG), 
-                                     uATG_frame = as.character(uATG_frame)))
+    if('uATG'%in%uORFGranges$group_name){
+      uATG = uORFGranges %>% 
+        dplyr::filter(group_name == 'uATG') %>%
+        dplyr::mutate(coord = paste0(start, '-', end)) %>%
+        dplyr::select(coord, frame)
+      output$uATG = paste(uATG$coord, collapse = '|')
+      output$uATG_frame = paste(uATG$frame, collapse = '|')
+    }
   }
   # return output
   return(output)

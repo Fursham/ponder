@@ -76,3 +76,14 @@ setMethod("test", "packNMDer", definition = function(object) {
 })
 
 
+slopedMaxima <- function(x, direction = 'up'){
+  x = x %>% as.data.frame() %>%
+    dplyr::mutate(rownum = dplyr::row_number()) %>%
+    dplyr::arrange(dplyr::desc(.)) %>% 
+    dplyr::mutate(diff = rownum - dplyr::lag(rownum, default = dplyr::n())) %>%
+    dplyr::filter(diff <=0) %>%
+    dplyr::slice(1:which(rownum==1)) %>%
+    dplyr::arrange(rownum)
+  return(x$.)
+}
+
