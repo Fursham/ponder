@@ -132,30 +132,24 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     }
     
     # this code will return non-overlapping uORFs and 
-    nonoverlaps = uORFuATG %>%
-      dplyr::mutate(orfid = dplyr::row_number()) %>% 
-      dplyr::select(orfid, start, end) %>% 
-      tidyr::gather('type', 'pos', start:end) %>% 
-      dplyr::arrange(pos) %>% 
-      dplyr::mutate(typelag = dplyr::lag(type, default = 'stop')) %>%
-      dplyr::filter(type == 'start' & type != typelag) %>%
-      dplyr::distinct(orfid)
-    uORFuATG = uORFuATG %>% dplyr::filter(dplyr::row_number() %in% nonoverlaps$orfid)
-      
-    uORFuATG = uORFuATG %>%
-      dplyr::filter(dplyr::row_number() %in% nonoverlaps$orfid) %>%
-      dplyr::rowwise() %>%
-      dplyr::filter(start == .$start[1] | any(start > slopedMaxima(.$end))) %>%
-      dplyr::slice(1:ifelse('uATG'%in%.$group_name, which(.$group_name == 'uATG')[1],dplyr::n()))
+    nonOverlapsuORFuATG = uORFuATG %>%
+      dplyr::mutate(tmp.start = start,
+                    tmp.end = end) %>% 
+      tidyr::gather('tmp.type', 'tmp.pos', tmp.start:tmp.end) %>% 
+      dplyr::arrange(tmp.pos) %>% 
+      dplyr::filter(tmp.type == 'tmp.start' & dplyr::row_number()%%2!=0) %>%
+      dplyr::select(-dplyr::starts_with('tmp'))
 
+      
+    # retrieve GRanges for the uORFs and uATGs above
     uORFGranges = do.call('c', base::mapply(function(x,y,z,a){
       start = x - 1
       end = length(fiveUTRseq) - y
-      startcodoninGRanges = resizeGRangesTranscripts(fiveUTRGRanges, start, end)
+      startcodoninGRanges = range(resizeGRangesTranscripts(fiveUTRGRanges, start, end))
       mcols(startcodoninGRanges)$group_name = z
       mcols(startcodoninGRanges)$frame = a
       return(startcodoninGRanges)
-    }, allmatches$start, allmatches$end, allmatches$group_name, allmatches$frame)) %>% as.data.frame()
+    }, nonOverlapsuORFuATG$start, nonOverlapsuORFuATG$end, nonOverlapsuORFuATG$group_name, nonOverlapsuORFuATG$frame)) %>% as.data.frame()
     
     if('uORF'%in%uORFGranges$group_name){
       uORF = uORFGranges %>% 
