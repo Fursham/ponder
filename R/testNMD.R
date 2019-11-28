@@ -103,7 +103,7 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     
     # return if 5UTR contain no start/stop codons
     if(nrow(allmatches) == 0){
-      return()
+      return(output)
     }
     
     # this code will generate a dataframe of start/stop coordinates of
@@ -128,7 +128,7 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     
     # return if no uORFs or uATGs are found
     if(nrow(uORFuATG) == 0){
-      return()
+      return(output)
     }
     
     # this code will return non-overlapping uORFs and stops at the first uATG
