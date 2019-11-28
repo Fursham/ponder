@@ -131,16 +131,11 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
       return()
     }
     
-    # this code will return non-overlapping uORFs and 
-    nonOverlapsuORFuATG = uORFuATG %>%
-      dplyr::mutate(tmp.start = start,
-                    tmp.end = end) %>% 
-      tidyr::gather('tmp.type', 'tmp.pos', tmp.start:tmp.end) %>% 
-      dplyr::arrange(tmp.pos) %>% 
-      dplyr::filter(tmp.type == 'tmp.start' & dplyr::row_number()%%2!=0) %>%
-      dplyr::select(-dplyr::starts_with('tmp'))
+    # this code will return non-overlapping uORFs and stops at the first uATG
+    gr = uORFuATG %>% dplyr::mutate(seqnames = 1) %>% makeGRangesFromDataFrame()
+    nonOverlapsuORFuATG = uORFuATG[unique(findOverlaps(gr, type = "any", select = "first")),] %>%
+      dplyr::slice(1:ifelse('uATG'%in%group_name, min(which('uATG' == group_name)), dplyr::n()))
 
-      
     # retrieve GRanges for the uORFs and uATGs above
     uORFGranges = do.call('c', base::mapply(function(x,y,z,a){
       start = x - 1
@@ -149,7 +144,9 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
       mcols(startcodoninGRanges)$group_name = z
       mcols(startcodoninGRanges)$frame = a
       return(startcodoninGRanges)
-    }, nonOverlapsuORFuATG$start, nonOverlapsuORFuATG$end, nonOverlapsuORFuATG$group_name, nonOverlapsuORFuATG$frame)) %>% as.data.frame()
+    }, nonOverlapsuORFuATG$start, nonOverlapsuORFuATG$end, 
+    nonOverlapsuORFuATG$group_name, nonOverlapsuORFuATG$frame)) %>% 
+      as.data.frame()
     
     if('uORF'%in%uORFGranges$group_name){
       uORF = uORFGranges %>% 
