@@ -72,7 +72,7 @@ classifyAS <- function(tx1, tx2){
   # convert cases depending on whether segment is found in tx1 or tx2
   #return as GRanges
   disjoint = disjoint %>% 
-    dplyr::mutate(AS = ifelse(source == 2, toupper(AS), tolower(AS))) %>%
+    dplyr::mutate(AS = ifelse(source == 1, toupper(AS), tolower(AS))) %>%
     dplyr::select(seqnames:strand, AS) %>%
     GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = T)
   return(disjoint)
