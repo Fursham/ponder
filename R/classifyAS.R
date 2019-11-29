@@ -18,14 +18,24 @@ classifyAS <- function(tx1, tx2){
   
   # get information on transcripts
   tx1index = c(1:length(tx1))
-  tx2index = c(length(tx1)+length(tx1)+length(tx2))
+  tx2index = c((length(tx1)+1):(length(tx1)+length(tx2)))
   strand = strand(tx1)[1] %>% as.character()
 
   # combine transcripts and disjoin, annotate position of alt segments
   disjoint = BiocGenerics::append(tx1,tx2) %>%
     GenomicRanges::disjoin(with.revmap = T) %>%
     as.data.frame() %>%
-    dplyr::mutate(type = ifelse(lengths(revmap)==2, 'cons','alt')) 
+    dplyr::mutate(type = ifelse(lengths(revmap)==2, 'cons','alt'))
+  
+  # return empty GRanges if there is no alternative segments
+  if(!'alt' %in% disjoint$type){
+    disjoint = disjoint %>%
+      dplyr::mutate(AS = as.character(NA)) %>%
+      dplyr::filter(type != 'cons') %>%
+      dplyr::select(seqnames:strand, AS) %>%
+      GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = T)
+    return
+  }
   disjoint[1:min(which(disjoint$type == 'cons'))-1,]$type = 'up'
   disjoint[(max(which(disjoint$type == 'cons'))+1):nrow(disjoint),]$type = 'down'
   
@@ -41,7 +51,7 @@ classifyAS <- function(tx1, tx2){
   # classify AS based on features
   disjoint = disjoint %>%
     dplyr::filter(type != 'cons') %>%
-    dplyr::mutate(AS = NA) %>%
+    dplyr::mutate(AS = as.character(NA)) %>%
     dplyr::mutate(AS = ifelse(type == 'up' & downdiff == 1, 'ts',AS)) %>%
     dplyr::mutate(AS = ifelse(type == 'up' & downdiff > 1, 'FE',AS)) %>%
     dplyr::mutate(AS = ifelse(type == 'down' &updiff == 1, 'pa',AS)) %>%
