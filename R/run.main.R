@@ -81,6 +81,10 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     
     # if requested, classify alternative splicing events and update line entry
     if (testforAS == TRUE) {
+      ASreport = classifyAS(queryGRanges, basicTxGRanges)
+      
+      
+      
       if (testforNMD == FALSE) {
         ORF = NA
         is_NMD = NA
