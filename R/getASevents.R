@@ -10,24 +10,16 @@ getASevents <- function(transcript1, transcript2, testedNMD, orf, is_NMD) {
     ASlist = utils::modifyList(ASlist, list(NMDcausing = as.character(NA), NMDcausing.coord = as.character(NA)))
   }
   
+  
   # get AS classifications. transcript 1 is reference and transcript 2 is query in this case
-  ASoutput = classifyAltSegments(transcript1, transcript2)
-  
-  # return if there is no alternative segments between transcripts
-  if (is.null(ASoutput)){
-    out = c(Shared_coverage = as.numeric(NA), ASlist)
-    return(out)
-  } else if (length(ASoutput[[1]]) == 0 & length(ASoutput[[2]]) == 0) {
-    out = c(Shared_coverage = as.numeric(NA), ASlist)
-    return(out)
-  }
-  
-  # combine alternative segments and update ASlist with segment coordinates by matching class annotations with the named ASlist
+  ASoutput = classifyAS(transcript1, transcript2)
   strand = as.character(strand(transcript1)[1])
-  combinedASoutput = append(ASoutput[[1]], ASoutput[[2]])
-  combinedASoutput$AS_class = as.character(combinedASoutput$AS_class)
-  combinedASoutput = sort(combinedASoutput, decreasing = strand == '-')
-  combinedASoutput$size = width(combinedASoutput)
+  
+
+  # combine alternative segments and update ASlist with segment coordinates by matching class annotations with the named ASlist
+  
+  ASoutput = ASoutput %>% as.data.frame()
+
   
   NMDexon = NA
   NMDexon.coord = NA
