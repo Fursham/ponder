@@ -1,7 +1,7 @@
-#' Title
+#' Classify alternative splicing between transcripts
 #'
 #' @param tx1 GRanges object of exons by transcript 1
-#' @param tx2 GRanges object of exons by transcript 1
+#' @param tx2 GRanges object of exons by transcript 2
 #'
 #' @return GRanges object of alternative segments
 #' @export
