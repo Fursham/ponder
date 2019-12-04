@@ -50,9 +50,10 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
                   inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS) 
     
     # return if no overlap is found between query and any reference
-    if(is.na(queryGRanges)){
+    if(is.na(queryGRanges[1])){
       return(thisline)
     } else {
+      #thisline$ORF_considered = prepreport["ORF_considered"]
       thisline = utils::modifyList(thisline, prepreport)
     }
   
@@ -82,7 +83,7 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     # if requested, classify alternative splicing events and update line entry
     if (testforAS == TRUE) {
       altevents = getASevents(queryGRanges, basicTxGRanges, 
-                              testforNMD, ORF, is_NMD)
+                              testforNMD, thisline$ORF_considered, thisline$is_NMD)
       
       thisline = utils::modifyList(thisline, altevents)
     }
