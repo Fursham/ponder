@@ -92,9 +92,9 @@ getBestRef <- function(queryID, refID, gene_id, NMDer_ID, inputExonsbyTx, basicE
                     gene_id = gene_id, 
                     transcript_id = NMDer_ID) %>%
       dplyr::mutate(phase = cumsum(width%%3)%%3) %>%
-      dplyr::select(seqnames:end, strand, type, phase, gene_id, transcript_id)
-    newbasicCDSGRanges$phase = c(0, head(newbasicCDSGRanges$phase, - 1))
-    newbasicCDSGRanges = GenomicRanges::makeGRangesFromDataFrame(newbasicCDSGRanges, keep.extra.columns = TRUE)
+      dplyr::select(seqnames:end, strand, type, phase, gene_id, transcript_id) %>%
+      dplyr::mutate(phase = dplyr::lag(phase, default = 0)) %>%
+      GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = TRUE)
     
     # update output variables
     output$report$ORF_considered = newbasicCDSGRanges
