@@ -81,26 +81,13 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     
     # if requested, classify alternative splicing events and update line entry
     if (testforAS == TRUE) {
-      ASreport = classifyAS(queryGRanges, basicTxGRanges)
-      
-      
-      
-      if (testforNMD == FALSE) {
-        ORF = NA
-        is_NMD = NA
-      } else {
-        ORF = thisline$ORF_considered
-        is_NMD = thisline$is_NMD
-      }
-      
-      altevents = getASevents(basicTxGRanges, queryGRanges, 
+      altevents = getASevents(queryGRanges, basicTxGRanges, 
                               testforNMD, ORF, is_NMD)
       
       thisline = utils::modifyList(thisline, altevents)
-      
     }
-    
-    
+      
+
     # update analyzed ORF coordinates into output
     if (thisline$ORF_found == TRUE) {
       thisline$ORF_considered = thisline$ORF_considered %>% as.data.frame()
