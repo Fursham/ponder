@@ -34,7 +34,7 @@ classifyAS <- function(tx1, tx2){
       dplyr::filter(type != 'cons') %>%
       dplyr::select(seqnames:strand, AS) %>%
       GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = T)
-    return
+    return(disjoint)
   }
   disjoint[1:min(which(disjoint$type == 'cons'))-1,]$type = 'up'
   disjoint[(max(which(disjoint$type == 'cons'))+1):nrow(disjoint),]$type = 'down'
