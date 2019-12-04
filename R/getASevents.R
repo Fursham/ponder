@@ -2,8 +2,8 @@
 getASevents <- function(transcript1, transcript2, testedNMD, orf, is_NMD) {
   
   # prepare list to be returned
-  ASlist = list(CE = 'NA', MX = 'NA', A5 = 'NA', A3 = 'NA', AF = 'NA', ATS = 'NA', AL = 'NA', APA = 'NA', IR = 'NA',
-                      ce = 'NA', mx = 'NA', a5 = 'NA', a3 = 'NA', af = 'NA', ats = 'NA', al = 'NA', apa = 'NA', ir = 'NA') 
+  ASlist = list(CE = 'NA', MX = 'NA', SD = 'NA', SA = 'NA', FE = 'NA', TS = 'NA', LE = 'NA', PA = 'NA', RI = 'NA',
+                      ce = 'NA', mx = 'NA', sd = 'NA', sa = 'NA', fe = 'NA', ts = 'NA', le = 'NA', pa = 'NA', ri = 'NA') 
   if (testedNMD == TRUE) {
     ASlist = utils::modifyList(ASlist, list(NMDcausing = as.character('NA'), NMDcausing.coord = as.character('NA')))
   }
