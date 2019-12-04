@@ -1,7 +1,7 @@
 identifyNMDcausing <- function(ASgranges, cds){
   
-  output = list(NMDexon = NA, 
-                NMDexon.coord = NA)
+  output = list(NMDcausing = NA, 
+                NMDcausing.coord = NA)
   
   tx1index = c(1:length(ASgranges))
   tx2index = c((length(ASgranges)+1):(length(ASgranges)+length(cds)))
@@ -32,8 +32,8 @@ identifyNMDcausing <- function(ASgranges, cds){
     dplyr::mutate(AS = paste0(append,AS)) %>%
     dplyr::select(seqnames:strand,AS)
   
-  output$NMDexon = disjoint[1,]$AS
-  output$NMDexon.coord = paste0(disjoint[1,2:3], collapse = '-')
+  output$NMDcausing = disjoint[1,]$AS
+  output$NMDcausing.coord = paste0(disjoint[1,2:3], collapse = '-')
 
   return(output)
 }
