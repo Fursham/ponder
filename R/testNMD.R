@@ -83,12 +83,25 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     startcodonindex = min(which(lengths(mcols(disjoint)$revmap) == 2))
     stopcodonindex = max(which(lengths(mcols(disjoint)$revmap) == 2))
     
+    if(startcodonindex >1){
+      fiveUTRindex = startcodonindex -1
+    } else{
+      fiveUTRindex = 1
+    }
+    
+
+    if(stopcodonindex < length(disjoint)){
+      threeUTRindex = stopcodonindex + 1
+    } else {
+      threeUTRindex = stopcodonindex 
+    }
+    
     # obtain cumsumlength of disjointed GRanges and obtain UTR lengths
     disjoint = disjoint %>% as.data.frame() %>%
       dplyr::mutate(tmp.fwdcumsum = cumsum(width),
                     tmp.revcumsum = rev(cumsum(rev(width))))
-    fiveUTRlength = disjoint[startcodonindex-1,]$tmp.fwdcumsum
-    output$threeUTRlength = disjoint[stopcodonindex+1,]$tmp.revcumsum
+    fiveUTRlength = disjoint[fiveUTRindex,]$tmp.fwdcumsum
+    output$threeUTRlength = disjoint[threeUTRindex,]$tmp.revcumsum
 
     # test for uORF on 5'UTR
     # get sequence of 5'UTR

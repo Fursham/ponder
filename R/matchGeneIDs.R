@@ -151,7 +151,7 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
       #   and match those gene_ids to the appended reference gene_ids
       #   and change the match_level of matched transcripts
       inputGRanges = suppressMessages(inputGRanges %>%
-                                        group_by(transcript_id) %>%
+                                        dplyr::group_by(transcript_id) %>%
                                         dplyr::mutate(appended_ens_id = ifelse(startsWith(get(primary_gene_id), 'ENS') & is.na(matched), 
                                                                                strsplit(get(primary_gene_id), split = '\\.')[[1]][1], 
                                                                                as.character(NA))) %>%
@@ -164,7 +164,7 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
                                                                            match_level + 2, 
                                                                            match_level)) %>%
                                         dplyr::select(-appended_ens_id, -basic_gene_id) %>%
-                                        ungroup())
+                                        dplyr::ungroup())
       
       # count number of non-standard ids after matching
       countsafter= inputGRanges %>% 

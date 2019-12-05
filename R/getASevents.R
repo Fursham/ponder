@@ -17,7 +17,7 @@ getASevents <- function(transcript1, transcript2, testedNMD, orf, is_NMD) {
   ASlist = utils::modifyList(ASlist, split(ASreport_out$combcoord, ASreport_out$AS))
   
   
-  if(testedNMD == T & is_NMD == T){
+  if(testedNMD == T & is_NMD == T & length(ASreport) > 0){
     NMDexonreport = identifyNMDcausing(ASreport, orf)
     ASlist = utils::modifyList(ASlist, NMDexonreport)
   }

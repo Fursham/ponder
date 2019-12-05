@@ -17,11 +17,13 @@ context("Test runNMDer workflow")
 
 # perform workflow
 out@df = out@df %>% dplyr::mutate(Coverage = 0,ORF_considered = as.character(NA), ORF_start = as.character('Not found'),ORF_found = FALSE)
-out.main = suppressWarnings(runMain(out@df, out@inputTranscripts, out@basicCDS, out@basicTranscripts, Mmusculus, testforNMD = T, testNonClassicalNMD = T))
+out.main = suppressWarnings(runMain(out@df, out@inputTranscripts, out@basicCDS, out@basicTranscripts, Mmusculus, testforNMD = T, testNonClassicalNMD = T, testforAS = T))
 test_that("Test the structure of output file", {
   
   expect_equal(names(out.main), names(runNMDer.out)) 
   expect_equal(out.main$Coverage, runNMDer.out$Coverage)
   expect_equal(out.main$is_NMD, runNMDer.out$is_NMD) 
   expect_equal(out.main$uORF, runNMDer.out$uORF) 
+  expect_equal(out.main$NMDcausing, runNMDer.out$NMDcausing)
+  expect_equal(out.main$ce, runNMDer.out$ce) 
 })

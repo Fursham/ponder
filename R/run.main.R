@@ -28,8 +28,7 @@
 #' @return
 #' updated form of report_df
 #' @export
-#'
-#' @examples
+
 runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS, 
                             basicExonsbyTx, genome, 
                             testforNMD = TRUE, PTC_dist = 50, 

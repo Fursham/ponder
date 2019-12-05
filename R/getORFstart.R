@@ -18,14 +18,18 @@ getORFstart <- function(query, refCDS, fasta){
     #   of the break
     disjoint = BiocGenerics::append(query,startcodon) %>%
       GenomicRanges::disjoin(with.revmap = T) %>%
-      sort(decreasing = strand == '-')
+      sort(decreasing = strand == '-') %>%
+      as.data.frame() %>%
+      dplyr::mutate(cumsum = cumsum(width))
     
-    # calculates cumulative sum of segment
-    cumsumwidth = cumsum(width(disjoint))
       
     # retrieve index of segment upstream of start codon and return its cumsumwidth
-    startcodonindex = min(which(lengths(mcols(disjoint)$revmap) == 2)) -1
-    fiveUTRlength = cumsumwidth[startcodonindex]
+    startcodonindex = min(which(lengths(disjoint$revmap) == 2))
+    if(startcodonindex > 1){
+      fiveUTRlength = disjoint[startcodonindex-1,]$cumsum
+    } else{
+      fiveUTRlength = disjoint[1,]$cumsum
+    }
     
     # update output list
     output$ORF_start = 'Annotated'
@@ -61,11 +65,18 @@ getORFstart <- function(query, refCDS, fasta){
         firststartgranges = inframestartsingranges[inframestartsingranges %within% query][1]
         disjoint = BiocGenerics::append(query,firststartgranges) %>%
           GenomicRanges::disjoin(with.revmap = T) %>%
-          sort(decreasing = strand == '-')
-        mcols(disjoint)$cumsum = cumsum(width(disjoint))
+          sort(decreasing = strand == '-') %>%
+          as.data.frame() %>%
+          dplyr::mutate(cumsum = cumsum(width))
         
-        startcodonindex = match(2,lengths(mcols(disjoint)$revmap)) -1
-        fiveUTRlength = mcols(disjoint)$cumsum[startcodonindex]
+        startcodonindex = min(which(lengths(disjoint$revmap) == 2))
+        if(startcodonindex > 1){
+          fiveUTRlength = disjoint[startcodonindex-1,]$cumsum
+        } else{
+          fiveUTRlength = disjoint[1,]$cumsum
+        }
+        
+
         
         output$ORF_start = 'Predicted'
         output$fiveUTRlength = fiveUTRlength

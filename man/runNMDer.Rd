@@ -5,7 +5,7 @@
 \title{NMDer workflow: Run NMDer analysis}
 \usage{
 runNMDer(prepObject, testNMD = TRUE, testOtherFeatures = FALSE,
-  PTC_dist = 50, testAS = FALSE, makeGTF = FALSE, clusters = 4)
+  PTC_dist = 50, testAS = FALSE, makeGTF = FALSE, clusters = 1)
 }
 \arguments{
 \item{prepObject}{S4 object from prepNMDer output}
@@ -23,6 +23,9 @@ Default: 50bp}
 Provide path to output}
 
 \item{clusters}{Number of cores to run the program. Default = 4}
+}
+\value{
+df with analysis
 }
 \description{
 Execute core analysis

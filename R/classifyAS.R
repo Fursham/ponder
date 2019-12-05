@@ -6,7 +6,6 @@
 #' @return GRanges object of alternative segments
 #' @export
 #'
-#' @examples
 classifyAS <- function(tx1, tx2){
   
   # input checks
@@ -36,8 +35,15 @@ classifyAS <- function(tx1, tx2){
       GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = T)
     return(disjoint)
   }
-  disjoint[1:min(which(disjoint$type == 'cons'))-1,]$type = 'up'
-  disjoint[(max(which(disjoint$type == 'cons'))+1):nrow(disjoint),]$type = 'down'
+  constartindex = min(which(disjoint$type == 'cons'))
+  if(constartindex >1){
+    disjoint[1:constartindex-1,]$type = 'up'
+  }
+  
+  conslastindex = max(which(disjoint$type == 'cons'))
+  if(conslastindex < nrow(disjoint)){
+    disjoint[(conslastindex+1):nrow(disjoint),]$type = 'down'
+  }
   
   # prepare dataframe for classifcation
   disjoint = disjoint %>%

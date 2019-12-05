@@ -4,10 +4,8 @@
 #' @param df 
 #' @param output_dir 
 #'
-#' @return
 #' @export
-#'
-#' @examples
+
 makeGTF <- function(df, output_dir = getwd()) {
   
   infoLog('Writing GTF file...', logf, quiet)

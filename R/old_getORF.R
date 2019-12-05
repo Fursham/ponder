@@ -11,9 +11,8 @@
 #' @param gene_id 
 #' @param transcript_id 
 #'
-#' @return
-#'
-#' @examples
+#' @return df
+
 getORFold <- function(knownCDS, queryTx, refsequence, gene_id, transcript_id) {
   
   # prep output list

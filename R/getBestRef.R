@@ -8,9 +8,8 @@
 #' @param basicExonsbyTx 
 #' @param basicExonsbyCDS 
 #'
-#' @return
-#'
-#' @examples
+#' @return df
+
 getBestRef <- function(queryID, refID, gene_id, NMDer_ID, inputExonsbyTx, basicExonsbyTx, basicExonsbyCDS) {
   
   # prepare output list
@@ -42,11 +41,7 @@ getBestRef <- function(queryID, refID, gene_id, NMDer_ID, inputExonsbyTx, basicE
   
   # mapply function to return Coverage value
   overlapHitsMeta = base::mapply(function(x,y){
-    widthQuery = sum(IRanges::width(x))
-    widthRef = sum(IRanges::width(y))
-    aveWidth = (widthQuery + widthRef) / 2
-    commonCoverage = sum(IRanges::width(GenomicRanges::reduce(GenomicRanges::intersect(x, y))))
-    Shared_coverage = commonCoverage/aveWidth
+    Shared_coverage = getCoverage(x,y)
     return(Shared_coverage)
   }, overlapHits$queryGRanges, overlapHits$basicTxGRanges) %>%
     as.data.frame() # output list as a dataframe
