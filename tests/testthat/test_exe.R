@@ -2,8 +2,8 @@ context("Test prepNMDer workflow")
 
 # perform workflow
 library(BSgenome.Mmusculus.UCSC.mm10)
-testQuerynew = paste0('../../', testQuery)
-out = suppressWarnings(prepNMDer(testQuerynew, testRef, Mmusculus, match_chrom = T, match_geneIDs = T, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id'))
+testQuerynew = system.file(testQuery, package = 'NMDer')
+out = suppressWarnings(prePonder(testQuerynew, testRef, Mmusculus, match_chrom = T, match_geneIDs = T, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id'))
 test_that("Test the structure of output file", {
   
   expect_equal(isS4(out), TRUE) 
