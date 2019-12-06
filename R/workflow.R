@@ -156,11 +156,15 @@ runPonder <- function(prepObject,
   runMain(report_df[i,], inputExonsbyTx, basicExonsbyCDS,
                           basicExonsbyTx, genome, testNMD, 
                        PTC_dist,testOtherFeatures, testAS)
-  }
+  } %>%
+    as.data.frame() %>%
+    dplyr::arrange(NMDer_ID) %>% dplyr::select(-ORF_considered)
   
   doParallel::stopImplicitCluster()
   
-  # 
+  # OLD parallel code using multidplyr 
+  #
+  #
   # # run analysis using single core or multidplyr
   # if(clusters == 1){
   #   infoLog('Predicting NMD features')
@@ -206,7 +210,7 @@ runPonder <- function(prepObject,
   # }
 
   # combine report with unmatched entries
-  output_df = report_df %>% 
+  output_df = report_df %>%
     dplyr::select(-dplyr::starts_with('ORF_considered')) %>%
     dplyr::bind_rows(report_df_unmatched) %>%
     dplyr::distinct(NMDer_ID, .keep_all = TRUE) %>%
