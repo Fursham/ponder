@@ -123,7 +123,7 @@ runPonder <- function(prepObject,
                  PTC_dist = 50,
                  testAS = FALSE,
                  makeGTF = FALSE,
-                 clusters = 1) {
+                 clusters = 4) {
   
   options(warn=-1)
   
