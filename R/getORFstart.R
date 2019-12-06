@@ -43,8 +43,8 @@ getORFstart <- function(query, refCDS, fasta){
     # get sequence of ref, find all internal inframe-ATG
     refsequence = unlist(BSgenome::getSeq(fasta, refCDS)) # 
     startcodons = Biostrings::matchPattern('ATG', refsequence) %>% IRanges::ranges()
-    inframestarts = startcodons[end(startcodons) %% 3 == 0 & 
-                                  start(startcodons) != 1]
+    inframestarts = startcodons[BiocGenerics::end(startcodons) %% 3 == 0 & 
+                                  BiocGenerics::start(startcodons) != 1]
     
     # return if no internal ATG is found
     if(length(inframestarts) == 0){
@@ -57,7 +57,7 @@ getORFstart <- function(query, refCDS, fasta){
         end = length(refsequence) - y
         startcodoninGRanges = resizeGRangesTranscripts(refCDS, start, end)
         return(startcodoninGRanges)
-      }, start(inframestarts), end(inframestarts)))
+      }, BiocGenerics::start(inframestarts), BiocGenerics::end(inframestarts)))
       
       # obtain 5'UTR length if query contain any of the inframe ATG
       if(any(inframestartsingranges %within% query)){

@@ -5,12 +5,12 @@ identifyNMDcausing <- function(ASgranges, cds){
   
   tx1index = c(1:length(ASgranges))
   tx2index = c((length(ASgranges)+1):(length(ASgranges)+length(cds)))
-  lastcodingexonstart = start(cds[length(cds)])
+  lastcodingexonstart = BiocGenerics::start(cds[length(cds)])
   strand = BiocGenerics::strand(ASgranges)[1] %>% as.character()
   
   combinedGRanges = BiocGenerics::append(ASgranges, cds)
   disjoint = GenomicRanges::disjoin(combinedGRanges, with.revmap = T) 
-  S4Vectors::mcols(disjoint)$AS = extractList(S4Vectors::mcols(combinedGRanges)$AS, disjoint$revmap) %>% 
+  S4Vectors::mcols(disjoint)$AS = IRanges::extractList(S4Vectors::mcols(combinedGRanges)$AS, disjoint$revmap) %>% 
     as.list() %>% purrr::map(1) %>% unlist()
 
   disjoint = disjoint %>% as.data.frame() %>%

@@ -46,8 +46,8 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
 
   # sort queryCDS, by exon order (just in case)
   strand = as.character(BiocGenerics::strand(queryCDS))[1]
-  queryCDS = sort(queryCDS, decreasing = strand == '-')
-  queryTranscript = sort(queryTranscript, decreasing = strand == '-')
+  queryCDS = BiocGenerics::sort(queryCDS, decreasing = strand == '-')
+  queryTranscript = BiocGenerics::sort(queryTranscript, decreasing = strand == '-')
   
   # test if query is NMD sensitive
   #   disjoin will create a new GRanges that will separate the queryTranscript
@@ -55,7 +55,7 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
   #   we can then try to use the new GRanges to infer NMD susceptibility
   disjoint = BiocGenerics::append(queryCDS,queryTranscript) %>%
     GenomicRanges::disjoin(with.revmap = T) %>%
-    sort(decreasing = strand == '-')
+    BiocGenerics::sort(decreasing = strand == '-')
   
   # retrieve index of last ORF segment and determine if there are 
   # more than 1 exons after stop codon
@@ -145,8 +145,8 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     }
     
     # this code will return non-overlapping uORFs and stops at the first uATG
-    gr = uORFuATG %>% dplyr::mutate(seqnames = 1) %>% makeGRangesFromDataFrame()
-    nonOverlapsuORFuATG = uORFuATG[unique(findOverlaps(gr, type = "any", select = "first")),] %>%
+    gr = uORFuATG %>% dplyr::mutate(seqnames = 1) %>% GenomicRanges::makeGRangesFromDataFrame()
+    nonOverlapsuORFuATG = uORFuATG[BiocGenerics::unique(GenomicRanges::findOverlaps(gr, type = "any", select = "first")),] %>%
       dplyr::slice(1:ifelse('uATG'%in%group_name, min(which('uATG' == group_name)), dplyr::n()))
 
     # retrieve GRanges for the uORFs and uATGs above

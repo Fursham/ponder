@@ -14,17 +14,19 @@ getORFstop <- function(query, fasta, fiveUTRlength){
   
   # search for in-frame stop codons
   stopcodons = Biostrings::matchPDict(pdict_stopcodons, queryseq) %>% 
-    unlist()
-  stopcodons = sort(stopcodons[end(stopcodons) %% 3 == 0,])
+    unlist() %>% 
+    as.data.frame() %>%
+    dplyr::filter(end %%3 ==0) %>%
+    dplyr::arrange(start)
   
   # return if no in-frame stop codons are found
-  if(length(stopcodons) == 0){
+  if(nrow(stopcodons) == 0){
     return(output)
   } else{
 
     # retrieve 3UTR length and update output file
-    firststopcodon = stopcodons[1]
-    threeUTRlength = length(queryseq) - end(firststopcodon)
+    firststopcodon = stopcodons[1,]
+    threeUTRlength = length(queryseq) - firststopcodon$end
     output$threeUTRlength = threeUTRlength
     output$ORF_found = TRUE
     
