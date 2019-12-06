@@ -1,4 +1,4 @@
-#' NMDer workflow: Prepare NMDer analysis
+#' PONDER workflow: Prepare PONDER analysis
 #'
 #' @description Import transcript annotation file, 
 #' match chromosome levels and gene IDs and prepare for NMD prediction analysis
@@ -39,7 +39,7 @@
 #' preppedObject = prepNMDer(testQuery, testRef, Mmusculus, match_geneIDs = TRUE)
 #' preppedObject = prepNMDer(testQuery, testRef, Mmusculus, match_geneIDs = TRUE, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
 #' 
-prepNMDer <- function(query,
+prePonder <- function(query,
                  reference, 
                  fasta,
                  query_format = NULL,
@@ -83,7 +83,7 @@ prepNMDer <- function(query,
 
 
 
-#' NMDer workflow: Run NMDer analysis
+#' PONDER workflow: Run PONDER analysis
 #'
 #' @description Execute core analysis
 #'
@@ -115,7 +115,7 @@ prepNMDer <- function(query,
 #'
 #' @examples
 #' 
-runNMDer <- function(prepObject,
+runPonder <- function(prepObject,
                  testNMD = TRUE,
                  testOtherFeatures = FALSE,
                  PTC_dist = 50,
