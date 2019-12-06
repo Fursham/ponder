@@ -112,6 +112,8 @@ prePonder <- function(query,
 #'
 #' @return df with analysis
 #' @export
+#' @importFrom magrittr %>%
+#' @importFrom foreach %dopar%
 #'
 #' @examples
 #' 
@@ -145,49 +147,63 @@ runPonder <- function(prepObject,
   report_df = report_df %>% 
     dplyr::filter(Gene_match_level != 5)
   
-  # run analysis using single core or multidplyr
-  if(clusters == 1){
-    infoLog('Predicting NMD features')
-    report_df <- report_df %>% 
-      dplyr::do(runMain(., inputExonsbyTx, basicExonsbyCDS,
-                 basicExonsbyTx, genome, testNMD, 
-                 PTC_dist,testOtherFeatures, testAS)) %>%
-      as.data.frame() %>%
-      dplyr::arrange(NMDer_ID) %>% dplyr::select(-ORF_considered)
-  } else {
-    # run NMD analysis in parallel
-    infoLog('Preparing clusters for analysis')
-    group <- rep(1:clusters, length.out = nrow(report_df))
-    report_df <- dplyr::bind_cols(tibble::tibble(group), report_df)
-    cluster <- multidplyr::new_cluster(clusters)
-    
-    parallel_df = report_df %>% 
-      dplyr::group_by(group) %>% 
-      multidplyr::partition(cluster)
-    cluster %>%
-      # Assign libraries
-      multidplyr::cluster_library("NMDer") %>%
-      #multidplyr::cluster_library("Biostrings") %>%
-      #multidplyr::cluster_library("BSgenome") %>%
-      #multidplyr::cluster_library("dplyr") %>%
-      multidplyr::cluster_assign("basicExonsbyCDS" = basicExonsbyCDS) %>%
-      multidplyr::cluster_assign("inputExonsbyTx" = inputExonsbyTx) %>%
-      multidplyr::cluster_assign("basicExonsbyTx" = basicExonsbyTx) %>% 
-      multidplyr::cluster_assign("genome" = genome) %>%
-      multidplyr::cluster_assign("testNMD" = testNMD) %>%
-      multidplyr::cluster_assign("PTC_dist" = PTC_dist) %>%
-      multidplyr::cluster_assign("testOtherFeatures" = testOtherFeatures) %>%
-      multidplyr::cluster_assign("testAS" = testAS)
-    
-    infoLog('Predicting NMD features')
-    report_df <- parallel_df %>% # Use by_group party_df
-      do(runMain(., inputExonsbyTx, basicExonsbyCDS,
-                 basicExonsbyTx, genome, testNMD, 
-                 PTC_dist,testOtherFeatures, testAS)) %>%
-      collect() %>% # Special collect() function to recombine partitions
-      as.data.frame() %>%
-      dplyr::arrange(NMDer_ID) %>% dplyr::select(-group, -ORF_considered)
+  infoLog('Preparing clusters for analysis')
+  cluster = parallel::makeCluster(clusters)
+  doParallel::registerDoParallel(cluster)
+  
+  infoLog('Predicting NMD features')
+  report_df <- foreach::foreach(i=1:nrow(report_df), .combine = dplyr::bind_rows) %dopar% {
+  runMain(report_df[i,], inputExonsbyTx, basicExonsbyCDS,
+                          basicExonsbyTx, genome, testNMD, 
+                       PTC_dist,testOtherFeatures, testAS)
   }
+  
+  doParallel::stopImplicitCluster()
+  
+  # 
+  # # run analysis using single core or multidplyr
+  # if(clusters == 1){
+  #   infoLog('Predicting NMD features')
+  #   report_df <- report_df %>% 
+  #     dplyr::do(runMain(., inputExonsbyTx, basicExonsbyCDS,
+  #                basicExonsbyTx, genome, testNMD, 
+  #                PTC_dist,testOtherFeatures, testAS)) %>%
+  #     as.data.frame() %>%
+  #     dplyr::arrange(NMDer_ID) %>% dplyr::select(-ORF_considered)
+  # } else {
+  #   # run NMD analysis in parallel
+  #   infoLog('Preparing clusters for analysis')
+  #   group <- rep(1:clusters, length.out = nrow(report_df))
+  #   report_df <- dplyr::bind_cols(tibble::tibble(group), report_df)
+  #   cluster <- multidplyr::new_cluster(clusters)
+  #   
+  #   parallel_df = report_df %>% 
+  #     dplyr::group_by(group) %>% 
+  #     multidplyr::partition(cluster)
+  #   cluster %>%
+  #     # Assign libraries
+  #     multidplyr::cluster_library("NMDer") %>%
+  #     multidplyr::cluster_library("Biostrings") %>%
+  #     multidplyr::cluster_library("BSgenome") %>%
+  #     multidplyr::cluster_library("dplyr") %>%
+  #     multidplyr::cluster_assign("basicExonsbyCDS" = basicExonsbyCDS) %>%
+  #     multidplyr::cluster_assign("inputExonsbyTx" = inputExonsbyTx) %>%
+  #     multidplyr::cluster_assign("basicExonsbyTx" = basicExonsbyTx) %>% 
+  #     multidplyr::cluster_assign("genome" = genome) %>%
+  #     multidplyr::cluster_assign("testNMD" = testNMD) %>%
+  #     multidplyr::cluster_assign("PTC_dist" = PTC_dist) %>%
+  #     multidplyr::cluster_assign("testOtherFeatures" = testOtherFeatures) %>%
+  #     multidplyr::cluster_assign("testAS" = testAS)
+  #   
+  #   infoLog('Predicting NMD features')
+  #   report_df <- parallel_df %>% # Use by_group party_df
+  #     do(runMain(., inputExonsbyTx, basicExonsbyCDS,
+  #                basicExonsbyTx, genome, testNMD, 
+  #                PTC_dist,testOtherFeatures, testAS)) %>%
+  #     collect() %>% # Special collect() function to recombine partitions
+  #     as.data.frame() %>%
+  #     dplyr::arrange(NMDer_ID) %>% dplyr::select(-group, -ORF_considered)
+  # }
 
   # combine report with unmatched entries
   output_df = report_df %>% 
@@ -206,3 +222,6 @@ runPonder <- function(prepObject,
 
   return(output_df)
 }
+
+
+
