@@ -60,7 +60,6 @@ compareGRanges <- function(target_regions, shared_region){
 #' specifc to transcript 2, third contains the shared exons between the two transcripts.
 #' @author Kaur Alasoo
 
-#' @export 
 indentifyAddedRemovedRegions <- function(tx1_id, tx2_id, exons_list){
   
   #Extract exons of the transcripts
