@@ -4,8 +4,13 @@
 \alias{testNMD}
 \title{Test ORF for NMD}
 \usage{
-testNMD(queryCDS, queryTranscript, distance_stop_EJ = 50,
-  other_features = FALSE, fasta)
+testNMD(
+  queryCDS,
+  queryTranscript,
+  distance_stop_EJ = 50,
+  other_features = FALSE,
+  fasta
+)
 }
 \arguments{
 \item{queryCDS}{GRanges Object containing CDS structure of a transcript}

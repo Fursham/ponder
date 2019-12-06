@@ -10,8 +10,7 @@
 #' @param start Length of 5' end to truncate (positive val) or extend (negative val)
 #' @param end Length of 3' end to truncate (positive val) or extend (negative val)
 #'
-#' @return a new GRanges transcript object 
-#' @export
+#' @return a new GRanges transcript object
 #'
 #' @examples
 #' 

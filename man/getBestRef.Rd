@@ -4,8 +4,15 @@
 \alias{getBestRef}
 \title{Title}
 \usage{
-getBestRef(queryID, refID, gene_id, NMDer_ID, inputExonsbyTx,
-  basicExonsbyTx, basicExonsbyCDS)
+getBestRef(
+  queryID,
+  refID,
+  gene_id,
+  NMDer_ID,
+  inputExonsbyTx,
+  basicExonsbyTx,
+  basicExonsbyCDS
+)
 }
 \arguments{
 \item{queryID}{}

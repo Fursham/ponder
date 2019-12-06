@@ -23,7 +23,6 @@
 #' (1) A GRanges Object of new ORF, or NA if no ORF is found
 #' (2) TRUE/FALSE object on whether ORF is an alternative CDS transcript
 
-#' @export
 #' @author Fursham Hamid
 #'
 #' @examples

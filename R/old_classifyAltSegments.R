@@ -11,7 +11,6 @@
 #'
 #' @return a list of GRanges objects similar to 'indentifyAddedRemovedRegions()' output (txrevise_out). 
 #' ?indentifyAddedRemovedRegions for more information
-#' @export
 #'
 #' @examples
 #' 

@@ -19,7 +19,8 @@ License: file LICENSE
 Encoding: UTF-8
 LazyData: true
 ByteCompile: true
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
 Suggests: 
+    BSgenome.Mmusculus.UCSC.mm10,
+    multidplyr,
     testthat,
-    BSgenome.Mmusculus.UCSC.mm10

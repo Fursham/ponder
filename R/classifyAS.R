@@ -5,6 +5,8 @@
 #'
 #' @return GRanges object of alternative segments
 #' @export
+#' 
+#' @import dplyr
 #'
 classifyAS <- function(tx1, tx2){
   

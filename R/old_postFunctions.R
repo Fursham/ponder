@@ -1,11 +1,4 @@
 
-#' Title
-#'
-#' @param df 
-#' @param output_dir 
-#'
-#' @export
-
 makeGTF <- function(df, output_dir = getwd()) {
   
   infoLog('Writing GTF file...', logf, quiet)

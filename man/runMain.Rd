@@ -4,9 +4,17 @@
 \alias{runMain}
 \title{_ workflow: Test transcripts for NMD feature}
 \usage{
-runMain(report_df, inputExonsbyTx, basicExonsbyCDS, basicExonsbyTx, genome,
-  testforNMD = TRUE, PTC_dist = 50, testNonClassicalNMD = FALSE,
-  testforAS = FALSE)
+runMain(
+  report_df,
+  inputExonsbyTx,
+  basicExonsbyCDS,
+  basicExonsbyTx,
+  genome,
+  testforNMD = TRUE,
+  PTC_dist = 50,
+  testNonClassicalNMD = FALSE,
+  testforAS = FALSE
+)
 }
 \arguments{
 \item{report_df}{dataframe of a list of assembled transcripts. It is recommended to create this object using

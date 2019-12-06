@@ -4,8 +4,7 @@
 \alias{prepareInputs}
 \title{NMDer workflow: Import files}
 \usage{
-prepareInputs(queryFile, refFile, fasta, user_query_format,
-  user_ref_format)
+prepareInputs(queryFile, refFile, fasta, user_query_format, user_ref_format)
 }
 \arguments{
 \item{queryFile}{Path to query GTF/GFF3 transcript annotation file}

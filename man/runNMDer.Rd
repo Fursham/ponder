@@ -4,8 +4,15 @@
 \alias{runNMDer}
 \title{NMDer workflow: Run NMDer analysis}
 \usage{
-runNMDer(prepObject, testNMD = TRUE, testOtherFeatures = FALSE,
-  PTC_dist = 50, testAS = FALSE, makeGTF = FALSE, clusters = 1)
+runNMDer(
+  prepObject,
+  testNMD = TRUE,
+  testOtherFeatures = FALSE,
+  PTC_dist = 50,
+  testAS = FALSE,
+  makeGTF = FALSE,
+  clusters = 1
+)
 }
 \arguments{
 \item{prepObject}{S4 object from prepNMDer output}

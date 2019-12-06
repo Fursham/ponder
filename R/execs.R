@@ -159,23 +159,25 @@ runNMDer <- function(prepObject,
     infoLog('Preparing clusters for analysis')
     group <- rep(1:clusters, length.out = nrow(report_df))
     report_df <- dplyr::bind_cols(tibble::tibble(group), report_df)
-    cluster <- multidplyr::create_cluster(cores = clusters, quiet = TRUE)
+    cluster <- multidplyr::new_cluster(clusters)
     
-    parallel_df = report_df %>% multidplyr::partition(group, cluster = cluster)
-    parallel_df %>%
+    parallel_df = report_df %>% 
+      dplyr::group_by(group) %>% 
+      multidplyr::partition(cluster)
+    cluster %>%
       # Assign libraries
       multidplyr::cluster_library("NMDer") %>%
-      multidplyr::cluster_library("Biostrings") %>%
-      multidplyr::cluster_library("BSgenome") %>%
-      multidplyr::cluster_library("dplyr") %>%
-      multidplyr::cluster_assign_value("basicExonsbyCDS", basicExonsbyCDS) %>%
-      multidplyr::cluster_assign_value("inputExonsbyTx", inputExonsbyTx) %>%
-      multidplyr::cluster_assign_value("basicExonsbyTx", basicExonsbyTx) %>% 
-      multidplyr::cluster_assign_value("genome", genome) %>%
-      multidplyr::cluster_assign_value("testNMD", testNMD) %>%
-      multidplyr::cluster_assign_value("PTC_dist", PTC_dist) %>%
-      multidplyr::cluster_assign_value("testOtherFeatures", testOtherFeatures) %>%
-      multidplyr::cluster_assign_value("testAS", testAS)
+      #multidplyr::cluster_library("Biostrings") %>%
+      #multidplyr::cluster_library("BSgenome") %>%
+      #multidplyr::cluster_library("dplyr") %>%
+      multidplyr::cluster_assign("basicExonsbyCDS" = basicExonsbyCDS) %>%
+      multidplyr::cluster_assign("inputExonsbyTx" = inputExonsbyTx) %>%
+      multidplyr::cluster_assign("basicExonsbyTx" = basicExonsbyTx) %>% 
+      multidplyr::cluster_assign("genome" = genome) %>%
+      multidplyr::cluster_assign("testNMD" = testNMD) %>%
+      multidplyr::cluster_assign("PTC_dist" = PTC_dist) %>%
+      multidplyr::cluster_assign("testOtherFeatures" = testOtherFeatures) %>%
+      multidplyr::cluster_assign("testAS" = testAS)
     
     infoLog('Predicting NMD features')
     report_df <- parallel_df %>% # Use by_group party_df

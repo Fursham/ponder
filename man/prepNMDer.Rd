@@ -4,10 +4,17 @@
 \alias{prepNMDer}
 \title{NMDer workflow: Prepare NMDer analysis}
 \usage{
-prepNMDer(query, reference, fasta, query_format = NULL,
-  reference_format = NULL, match_chrom = FALSE,
-  match_geneIDs = FALSE, primary_gene_id = NULL,
-  secondary_gene_id = NULL)
+prepNMDer(
+  query,
+  reference,
+  fasta,
+  query_format = NULL,
+  reference_format = NULL,
+  match_chrom = FALSE,
+  match_geneIDs = FALSE,
+  primary_gene_id = NULL,
+  secondary_gene_id = NULL
+)
 }
 \arguments{
 \item{query}{Mandatory. Path to query GTF/GFF3 transcript annotation file}
