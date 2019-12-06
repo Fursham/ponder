@@ -7,11 +7,14 @@ Depends: R (>= 3.4.0)
 Imports:
     BiocGenerics,
     Biostrings,
+    BSgenome,
     dplyr,
+    foreach,
     GenomicFeatures,
     GenomeInfoDb,
     GenomicRanges,
     IRanges,
+    parallel,
     purrr,
     rtracklayer,
     tidyr
@@ -22,5 +25,4 @@ ByteCompile: true
 RoxygenNote: 7.0.2
 Suggests: 
     BSgenome.Mmusculus.UCSC.mm10,
-    multidplyr,
-    testthat,
+    testthat
