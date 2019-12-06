@@ -6,7 +6,8 @@
 #' @return GRanges object of alternative segments
 #' @export
 #' 
-#' @import dplyr
+#' @importFrom IRanges %over%
+#' @importFrom IRanges %within%
 #'
 classifyAS <- function(tx1, tx2){
   
@@ -20,7 +21,7 @@ classifyAS <- function(tx1, tx2){
   # get information on transcripts
   tx1index = c(1:length(tx1))
   tx2index = c((length(tx1)+1):(length(tx1)+length(tx2)))
-  strand = strand(tx1)[1] %>% as.character()
+  strand = BiocGenerics::strand(tx1)[1] %>% as.character()
 
   # combine transcripts and disjoin, annotate position of alt segments
   disjoint = BiocGenerics::append(tx1,tx2) %>%

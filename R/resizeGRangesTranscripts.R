@@ -19,12 +19,12 @@
 resizeGRangesTranscripts <- function(GRanges, start = 0, end = 0) {
   
   # return if appending length is longer than transcript
-  if (sum(width(GRanges)) < (start + end)) {
+  if (sum(BiocGenerics::width(GRanges)) < (start + end)) {
     stop('Appending length is larger than size of transcript')
   }
   
   # retrieve strand information
-  strand = as.character(strand(GRanges))[1]
+  strand = as.character(BiocGenerics::strand(GRanges))[1]
   
   # subsequently,we will treat granges as forward stranded
   # so if granges is initially on rev strand, we will swap
@@ -45,7 +45,7 @@ resizeGRangesTranscripts <- function(GRanges, start = 0, end = 0) {
                   end = ifelse(dplyr::row_number() == dplyr::n(), tmp.start + tmp.revcumsum - 1, end)) %>%
     dplyr::arrange(ifelse(strand == '-', dplyr::desc(start), start)) %>%
     dplyr::select(-dplyr::starts_with('tmp.')) %>%
-    makeGRangesFromDataFrame(keep.extra.columns = T)
+    GenomicRanges::makeGRangesFromDataFrame(keep.extra.columns = T)
   
   return(GRanges)
 }

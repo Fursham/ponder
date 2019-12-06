@@ -257,7 +257,7 @@ matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secon
                                        5,match_level)) %>%
     dplyr::select(-matched)
     
-  if('gene_name' %in% names(inputGRanges) & 'gene_name' %in% names(mcols(basicGRanges))){
+  if('gene_name' %in% names(inputGRanges) & 'gene_name' %in% names(S4Vectors::mcols(basicGRanges))){
     basicGRanges.genelist.1 = basicGRanges %>% as.data.frame() %>%
       dplyr::select(gene_id, ref_gene_name = gene_name) %>%
       dplyr::distinct() 

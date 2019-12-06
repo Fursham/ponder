@@ -5,8 +5,8 @@ getORFstart <- function(query, refCDS, fasta){
                 fiveUTRlength = 0)
   
   # get coord of start codon on reference and strand info
-  startcodon = resizeGRangesTranscripts(refCDS, end = sum(width(refCDS))-3)
-  strand = as.character(strand(query))[1]
+  startcodon = resizeGRangesTranscripts(refCDS, end = sum(BiocGenerics::width(refCDS))-3)
+  strand = as.character(BiocGenerics::strand(query))[1]
   
   # if query containg annotated start codon:
   if(startcodon %within% query & length(startcodon) == 1){
@@ -41,8 +41,8 @@ getORFstart <- function(query, refCDS, fasta){
   else {
     
     # get sequence of ref, find all internal inframe-ATG
-    refsequence = unlist(Biostrings::getSeq(fasta, refCDS)) # 
-    startcodons = Biostrings::matchPattern('ATG', refsequence) %>% ranges()
+    refsequence = unlist(BSgenome::getSeq(fasta, refCDS)) # 
+    startcodons = Biostrings::matchPattern('ATG', refsequence) %>% IRanges::ranges()
     inframestarts = startcodons[end(startcodons) %% 3 == 0 & 
                                   start(startcodons) != 1]
     

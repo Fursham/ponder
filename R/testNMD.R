@@ -45,7 +45,7 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
   
 
   # sort queryCDS, by exon order (just in case)
-  strand = as.character(strand(queryCDS))[1]
+  strand = as.character(BiocGenerics::strand(queryCDS))[1]
   queryCDS = sort(queryCDS, decreasing = strand == '-')
   queryTranscript = sort(queryTranscript, decreasing = strand == '-')
   
@@ -59,12 +59,12 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
   
   # retrieve index of last ORF segment and determine if there are 
   # more than 1 exons after stop codon
-  stopcodonindex = max(which(lengths(mcols(disjoint)$revmap) == 2))
+  stopcodonindex = max(which(lengths(S4Vectors::mcols(disjoint)$revmap) == 2))
   num_of_exons_aft_stop = length(disjoint) - stopcodonindex
   
   # if more than 1 segment is found, test for distance to last EJ
   if(num_of_exons_aft_stop > 1){
-    output$dist_to_lastEJ = width(disjoint[stopcodonindex+1])
+    output$dist_to_lastEJ = BiocGenerics::width(disjoint[stopcodonindex+1])
     if(output$dist_to_lastEJ > distance_stop_EJ){
       #annotated transcript as NMD if dist_to_lastEJ is NMD triggering
       output$is_NMD = TRUE  
@@ -80,8 +80,8 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     }
     
     # obtain position of start/stop codons in disjointed GRanges
-    startcodonindex = min(which(lengths(mcols(disjoint)$revmap) == 2))
-    stopcodonindex = max(which(lengths(mcols(disjoint)$revmap) == 2))
+    startcodonindex = min(which(lengths(S4Vectors::mcols(disjoint)$revmap) == 2))
+    stopcodonindex = max(which(lengths(S4Vectors::mcols(disjoint)$revmap) == 2))
     
     if(startcodonindex >1){
       fiveUTRindex = startcodonindex -1
@@ -105,12 +105,12 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
 
     # test for uORF on 5'UTR
     # get sequence of 5'UTR
-    fiveUTRGRanges = resizeGRangesTranscripts(queryTranscript, end = sum(width(queryTranscript)) - fiveUTRlength)
+    fiveUTRGRanges = resizeGRangesTranscripts(queryTranscript, end = sum(BiocGenerics::width(queryTranscript)) - fiveUTRlength)
     list_startstopcodons = Biostrings::DNAStringSet(c("ATG","TAA", "TAG", "TGA"))
     pdict_startstopcodons = Biostrings::PDict(list_startstopcodons)
     
     # this part will test the presence of uORFs and uATGs in the 5UTR
-    fiveUTRseq = unlist(Biostrings::getSeq(fasta, fiveUTRGRanges))
+    fiveUTRseq = unlist(BSgenome::getSeq(fasta, fiveUTRGRanges))
     allmatches = Biostrings::matchPDict(pdict_startstopcodons, fiveUTRseq) %>%
       as.data.frame()
     
@@ -154,8 +154,8 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
       start = x - 1
       end = length(fiveUTRseq) - y
       startcodoninGRanges = range(resizeGRangesTranscripts(fiveUTRGRanges, start, end))
-      mcols(startcodoninGRanges)$group_name = z
-      mcols(startcodoninGRanges)$frame = a
+      S4Vectors::mcols(startcodoninGRanges)$group_name = z
+      S4Vectors::mcols(startcodoninGRanges)$frame = a
       return(startcodoninGRanges)
     }, nonOverlapsuORFuATG$start, nonOverlapsuORFuATG$end, 
     nonOverlapsuORFuATG$group_name, nonOverlapsuORFuATG$frame)) %>% 

@@ -7,7 +7,7 @@
 #'
 gff3togtfconvert <- function(gffGRanges, comment = '') {
   
-  if(!'Parent' %in% names(mcols(gffGRanges))){
+  if(!'Parent' %in% names(S4Vectors::mcols(gffGRanges))){
     stopLog(sprintf('Please check that %s GFF3 file contain Parent information', comment))
   }
   
@@ -21,7 +21,7 @@ gff3togtfconvert <- function(gffGRanges, comment = '') {
     dplyr::mutate(gene_id = ifelse(Parent %in% gffGRanges$gene_id, Parent, gene_id)) %>% 
     dplyr::mutate(transcript_id = ifelse(Parent %in% gffGRanges$transcript_id, Parent, transcript_id)) %>% 
     dplyr::group_by(transcript_id) %>%
-    dplyr::arrange(desc(width)) %>%
+    dplyr::arrange(dplyr::desc(width)) %>%
     tidyr::fill() %>%
     dplyr::ungroup() %>%
     dplyr::arrange(start) %>%

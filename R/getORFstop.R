@@ -6,7 +6,7 @@ getORFstop <- function(query, fasta, fiveUTRlength){
   
   # append query GRanges to start from star codon, and retrieve seq
   queryCDS = resizeGRangesTranscripts(query, start = fiveUTRlength)
-  queryseq = unlist(Biostrings::getSeq(fasta, queryCDS))
+  queryseq = unlist(BSgenome::getSeq(fasta, queryCDS))
   
   # prepare a dict of stop codons for pattern matching
   list_stopcodons = Biostrings::DNAStringSet(c("TAA", "TAG", "TGA"))
