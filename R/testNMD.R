@@ -91,7 +91,7 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     
     # obtain position of start/stop codons in disjointed GRanges
     startcodonindex = min(which(lengths(disjoint$revmap) == 2))
-    stopcodonindex = max(which(lengths(Sdisjoint$revmap) == 2))
+    stopcodonindex = max(which(lengths(disjoint$revmap) == 2))
     
     if(startcodonindex >1){
       fiveUTRindex = startcodonindex -1
