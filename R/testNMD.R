@@ -35,7 +35,9 @@
 testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_features = FALSE, fasta){
   
   # prepare output list
-  output = list(is_NMD = as.logical(FALSE), dist_to_lastEJ = as.numeric(0))
+  output = list(is_NMD = as.logical(FALSE), 
+                dist_to_lastEJ = as.numeric(0),
+                num_of_down_EJC = as.numeric(0))
   if (other_features == TRUE) {
     output = modifyList(output, list(threeUTRlength = as.numeric(NA),
                                      uORF = as.character(NA), 
@@ -50,28 +52,28 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
   queryTranscript = BiocGenerics::sort(queryTranscript, decreasing = strand == '-')
   
   # test if query is NMD sensitive
+  #   get distance of last EJC from start of transcript
   #   disjoin will create a new GRanges that will separate the queryTranscript
   #   into discernable 5UTR, ORF and 3UTR
   #   we can then try to use the new GRanges to infer NMD susceptibility
+  lengthtolastEJ = sum(head(BiocGenerics::width(queryTranscript),-1)) 
   disjoint = BiocGenerics::append(queryCDS,queryTranscript) %>%
     GenomicRanges::disjoin(with.revmap = T) %>%
-    BiocGenerics::sort(decreasing = strand == '-')
+    BiocGenerics::sort(decreasing = strand == '-') %>%
+    as.data.frame() %>%
+    dplyr::mutate(disttolastEJ = lengthtolastEJ - cumsum(width))
   
   # retrieve index of last ORF segment and determine if there are 
   # more than 1 exons after stop codon
-  stopcodonindex = max(which(lengths(S4Vectors::mcols(disjoint)$revmap) == 2))
-  num_of_exons_aft_stop = length(disjoint) - stopcodonindex
+  stopcodonindex = max(which(lengths(disjoint$revmap) == 2))
+  output$dist_to_lastEJ = disjoint[stopcodonindex,]$disttolastEJ
+  output$num_of_down_EJC = nrow(disjoint) - stopcodonindex -1
   
-  # if more than 1 segment is found, test for distance to last EJ
-  if(num_of_exons_aft_stop > 1){
-    output$dist_to_lastEJ = BiocGenerics::width(disjoint[stopcodonindex+1])
-    if(output$dist_to_lastEJ > distance_stop_EJ){
-      #annotated transcript as NMD if dist_to_lastEJ is NMD triggering
-      output$is_NMD = TRUE  
-    }
+  if(output$dist_to_lastEJ > distance_stop_EJ){
+    #annotated transcript as NMD if dist_to_lastEJ is NMD triggering
+    output$is_NMD = TRUE  
   }
-
-
+  
 
   # test for other features if activated
   if (other_features == TRUE) {
