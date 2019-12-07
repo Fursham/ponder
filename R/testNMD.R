@@ -36,10 +36,11 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
   
   # prepare output list
   output = list(is_NMD = as.logical(FALSE), 
-                dist_to_lastEJ = as.numeric(0),
-                num_of_down_EJC = as.numeric(0))
+                dist_to_lastEJ = as.numeric(0))
   if (other_features == TRUE) {
-    output = modifyList(output, list(threeUTRlength = as.numeric(NA),
+    output = modifyList(output, list(num_of_down_EJs = as.numeric(0),
+                                     dist_to_downEJs = as.numeric(0),
+                                     threeUTRlength = as.numeric(NA),
                                      uORF = as.character(NA), 
                                      uATG = as.character(NA), 
                                      uATG_frame = as.character(NA)))
@@ -67,7 +68,7 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
   # more than 1 exons after stop codon
   stopcodonindex = max(which(lengths(disjoint$revmap) == 2))
   output$dist_to_lastEJ = disjoint[stopcodonindex,]$disttolastEJ
-  output$num_of_down_EJC = nrow(disjoint) - stopcodonindex -1
+  
   
   if(output$dist_to_lastEJ > distance_stop_EJ){
     #annotated transcript as NMD if dist_to_lastEJ is NMD triggering
@@ -81,9 +82,16 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
       stop('Please provide fasta sequence')
     }
     
+    # report number of downstream EJ and its distance to PTC
+    output$num_of_down_EJs = nrow(disjoint) - stopcodonindex -1
+    downEJCdf = disjoint %>% dplyr::filter(dplyr::row_number() >= stopcodonindex+1) %>%
+      dplyr::filter(disttolastEJ >= 0) %>%
+      dplyr::mutate(disttoPTC = cumsum(width))
+    output$dist_to_downEJs = paste(downEJCdf$disttoPTC, collapse = ',')
+    
     # obtain position of start/stop codons in disjointed GRanges
-    startcodonindex = min(which(lengths(S4Vectors::mcols(disjoint)$revmap) == 2))
-    stopcodonindex = max(which(lengths(S4Vectors::mcols(disjoint)$revmap) == 2))
+    startcodonindex = min(which(lengths(disjoint$revmap) == 2))
+    stopcodonindex = max(which(lengths(Sdisjoint$revmap) == 2))
     
     if(startcodonindex >1){
       fiveUTRindex = startcodonindex -1
@@ -92,7 +100,7 @@ testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_feat
     }
     
 
-    if(stopcodonindex < length(disjoint)){
+    if(stopcodonindex < nrow(disjoint)){
       threeUTRindex = stopcodonindex + 1
     } else {
       threeUTRindex = stopcodonindex 
