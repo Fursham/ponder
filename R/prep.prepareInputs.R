@@ -95,7 +95,7 @@ prepareInputs <- function(queryFile, refFile, fasta,
   }
   if ('*' %in% (BiocGenerics::strand(basicGRanges) %>% levels())) {
     warnLog('Reference annotation contain transcripts with no strand information. These will be removed')
-    basicGRanges = basicGRanges[strand(basicGRanges) != '*']
+    basicGRanges = basicGRanges[BiocGenerics::strand(basicGRanges) != '*']
   }
   
   
