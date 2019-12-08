@@ -25,11 +25,18 @@
 #' @examples
 #' 
 #' library("BSgenome.Mmusculus.UCSC.mm10")
-#' testNMD(ptbp2Data$refCDS, ptbp2Data$transcripts$ENSMUST00000029780)
-#' testNMD(ptbp2Data$refCDS, ptbp2Data$transcripts$ENSMUST00000029780, other_features = TRUE, fasta = BSgenome.Mmusculus.UCSC.mm10)
+#' library(wiggleplotr)
 #' 
-#' testNMD(ptbp2Data$skipE10CDS, ptbp2Data$transcripts$ENSMUST00000197833)
-#' testNMD(ptbp2Data$skipE10CDS, ptbp2Data$transcripts$ENSMUST00000197833, other_features = TRUE, fasta = BSgenome.Mmusculus.UCSC.mm10)
+#' # Analyze on non-NMD transcript
+#' plotTranscripts(txl["ENSMUST00000029780"], cdsl["ENSMUST00000029780"])
+#' testNMD(txl[["ENSMUST00000029780"]], cdsl[["ENSMUST00000029780"]])
+#' testNMD(txl[["ENSMUST00000029780"]], cdsl[["ENSMUST00000029780"]], 
+#' other_features = T, fasta = Mmusculus)
+#' 
+#' # Analyze on nNMD-sensitive transcript
+#' plotTranscripts(tx['b'], cds['b'])
+#' testNMD(tx[['b']], cds[['b']])
+#' testNMD(tx[['b']], cds[['b']], other_features=T, fasta=Mmusculus)
 #' 
 #' 
 testNMD <- function(queryTranscript, queryCDS, distance_stop_EJ = 50, other_features = FALSE, fasta){
