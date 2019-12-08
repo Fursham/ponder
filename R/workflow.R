@@ -35,8 +35,17 @@
 #' @export
 #'
 #' @examples 
-#' library("BSgenome.Mmusculus.UCSC.mm10")
-#' preppedObject = prepNMDer(testQuery, testRef, Mmusculus, match_geneIDs = TRUE)
+#' library(BSgenome.Mmusculus.UCSC.mm10)
+#' library(AnnotationHub)
+#' 
+#' # Load sample input file
+#' query = system.file('extdata/sampleQuery.gtf, package = 'NMDer')
+#' 
+#' # pr
+#' ah = AnnotationHub()
+#' ref = ah[['AH49547']]
+#' 
+#' preppedObject = prepNMDer(query, testRef, Mmusculus, match_geneIDs = TRUE)
 #' preppedObject = prepNMDer(testQuery, testRef, Mmusculus, match_geneIDs = TRUE, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
 #' 
 prePonder <- function(query,
