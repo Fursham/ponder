@@ -71,8 +71,8 @@ runMain <- function(report_df, inputExonsbyTx, basicExonsbyCDS,
     
     # if requested, test for NMD features and update line entry
     if (testforNMD == TRUE) {
-      NMDreport = testNMD(thisline$ORF_considered, 
-                          queryGRanges, 
+      NMDreport = testNMD(queryGRanges,
+                          thisline$ORF_considered, 
                           PTC_dist, 
                           testNonClassicalNMD,
                           genome)

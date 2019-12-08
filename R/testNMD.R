@@ -32,7 +32,7 @@
 #' testNMD(ptbp2Data$skipE10CDS, ptbp2Data$transcripts$ENSMUST00000197833, other_features = TRUE, fasta = BSgenome.Mmusculus.UCSC.mm10)
 #' 
 #' 
-testNMD <- function(queryCDS, queryTranscript, distance_stop_EJ = 50, other_features = FALSE, fasta){
+testNMD <- function(queryTranscript, queryCDS, distance_stop_EJ = 50, other_features = FALSE, fasta){
   
   # prepare output list
   output = list(is_NMD = as.logical(FALSE), 
