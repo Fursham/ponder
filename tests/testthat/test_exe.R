@@ -2,7 +2,8 @@ context("Test prepNMDer workflow")
 
 # perform workflow
 library(BSgenome.Mmusculus.UCSC.mm10)
-testQuerynew = system.file(testQuery, package = 'NMDer')
+testQuerynew = system.file('extdata/sampleQuery.gtf', package = 'NMDer')
+
 out = suppressWarnings(prePonder(testQuerynew, testRef, Mmusculus, match_chrom = T, match_geneIDs = T, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id'))
 test_that("Test the structure of output file", {
   
