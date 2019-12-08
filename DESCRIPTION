@@ -8,6 +8,7 @@ Imports:
     BiocGenerics,
     Biostrings,
     BSgenome,
+    doParallel,
     dplyr,
     foreach,
     GenomicFeatures,
