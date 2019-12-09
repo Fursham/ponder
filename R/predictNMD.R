@@ -29,8 +29,14 @@
 #' upstream position of STOP codon while negative value indicates downstream 
 #' position together with distances of STOP codon to last EJ
 #' @export
+#' @author Fursham Hamid
 #'
 #' @examples
+#' 
+#' ### To visualize transcripts
+#' library(wiggleplotr)
+#' plotTranscripts(txl[1:2], cdsl[1:2])
+#' plotTranscripts(txl[3:4], cdsl[3:4])
 #' 
 #' ### Examples with single GRanges objects
 #' predictNMD(txl$ENSMUST00000029780,cdsl$ENSMUST00000029780) # NMD-insensitive

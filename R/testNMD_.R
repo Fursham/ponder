@@ -20,23 +20,6 @@
 #' (5) frame of uATG
 #' 
 #' @author Fursham Hamid
-#' @export
-#' 
-#' @examples
-#' 
-#' library("BSgenome.Mmusculus.UCSC.mm10")
-#' library(wiggleplotr)
-#' 
-#' # Analyze on non-NMD transcript
-#' plotTranscripts(txl["ENSMUST00000029780"], cdsl["ENSMUST00000029780"])
-#' testNMD(txl[["ENSMUST00000029780"]], cdsl[["ENSMUST00000029780"]])
-#' testNMD(txl[["ENSMUST00000029780"]], cdsl[["ENSMUST00000029780"]], 
-#' other_features = T, fasta = Mmusculus)
-#' 
-#' # Analyze on nNMD-sensitive transcript
-#' plotTranscripts(tx['b'], cds['b'])
-#' testNMD(tx[['b']], cds[['b']])
-#' testNMD(tx[['b']], cds[['b']], other_features=T, fasta=Mmusculus)
 #' 
 #' 
 testNMD_ <- function(queryTranscript, queryCDS, distance_stop_EJ = 50, other_features = FALSE, fasta){
