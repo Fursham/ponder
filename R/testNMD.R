@@ -1,4 +1,51 @@
-testNMD <- function(tx, cds, NMDthreshold = 50, which = NULL){
+#' Predict NMD nature of mRNA transcripts
+#'
+#' @description Predicts NMD-sensitivity of transcripts
+#' @param tx 
+#' GRanges object or GRangesList object containing exons
+#' for each transcript
+#' @param cds 
+#' GRanges object or GRangesList object containing coding regions (CDS)
+#' for each transcript. GRangesList must have names that match names in tx,
+#' else tx with missing cds will not be analysed
+#' @param NMDthreshold 
+#' Minimum distance of STOP codon to last exon junction (EJ) which triggers NMD.
+#' Default = 50bp
+#' @param which 
+#' List containing tx names to filter for analysis
+#' @param return 
+#' If tx and cds are GRangesList, returns only NMD-sensitive
+#' transcripts or all transcripts. Default = 'NMD'
+#'
+#' @return
+#' List with prediction of NMD sensitivity and statistics:
+#' is_NMD: logical value in prediciting transcript sensitivity to NMD
+#' dist_to_lastEJ: Integer value indicating distance of STOP codon to last EJ
+#' Values are referenced from last EJ, thus a positive value indicates upstream
+#' position of STOP codon while negative value indicates downstream position
+#' num_of_down_EJs: Number of downstream EJs
+#' dist_to_downEJs: Integer value indicating distance of STOP codon to each down 
+#' EJs Values are referenced from last EJ, thus a positive value indicates 
+#' upstream position of STOP codon while negative value indicates downstream 
+#' position together with distances of STOP codon to last EJ
+#' @export
+#'
+#' @examples
+#' 
+#' ### Examples with single GRanges objects
+#' predictNMD(txl$ENSMUST00000029780,cdsl$ENSMUST00000029780) # NMD-insensitive
+#' predictNMD(txl$ENSMUST00000197833,cdsl$ENSMUST00000197833) # NMD-sensitive
+#' ###
+#' 
+#' ### Examples with GRangesList object
+#' predictNMD(txl,cdsl)
+#' predictNMD(txl,cdsl, return = 'all')
+#' predictNMD(txl,cdsl,which=c('ENSMUST00000029780', 'ENSMUST00000197833'), return = 'all')
+#' 
+#' 
+#' 
+predictNMD <- function(tx, cds, NMDthreshold = 50, 
+                       which = NULL, return = c('NMD','all')){
   
   # catch missing args
   mandargs <- c('tx', 'cds')
@@ -18,8 +65,8 @@ testNMD <- function(tx, cds, NMDthreshold = 50, which = NULL){
       stop(sprintf('cds is type %s but tx is type %s',
                    cdstype, txtype))
     }
-  } else if(is(tx,'list')){
-    if(is(cds,'list')){
+  } else if(is(tx,'GRangesList') | is(tx,'list')){
+    if(is(cds,'GRangesList') | is(cds,'list')){
       intype = 'grl'
     } else {
       txtype = is(tx)[1]
@@ -51,12 +98,14 @@ testNMD <- function(tx, cds, NMDthreshold = 50, which = NULL){
     
     # running brlapply and testNMD
     out = BiocParallel::bplapply(totest,  function(x){
-      report = list(tx = x, is_NMD = F, dist_to_lastEJ = 0)
+      report = list(tx = x, is_NMD = F, dist_to_lastEJ = 0,
+                    num_of_down_EJs = 0,dist_to_downEJs = 0)
       NMDreport = testNMD_(tx[[x]],cds[[x]],distance_stop_EJ=NMDthreshold)
       report = utils::modifyList(report, NMDreport)
       return(report)
     }, BPPARAM = BiocParallel::MulticoreParam()) %>%
-      dplyr::bind_rows()
+      dplyr::bind_rows() %>%
+      dplyr::filter(if(return[1]=='NMD') is_NMD ==T else T)
     return(out)
   }
 }
