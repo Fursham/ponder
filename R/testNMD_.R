@@ -28,7 +28,8 @@ testNMD_ <- function(queryTranscript, queryCDS, distance_stop_EJ = 50, other_fea
   output = list(is_NMD = as.logical(FALSE), 
                 dist_to_lastEJ = as.numeric(0),
                 num_of_down_EJs = as.numeric(0),
-                dist_to_downEJs = as.numeric(0))
+                dist_to_downEJs = as.numeric(0),
+                threeUTRlength = as.numeric(0))
   if (other_features == TRUE) {
     output = modifyList(output, list(threeUTRlength = as.numeric(NA),
                                      uORF = as.character(NA), 
@@ -52,12 +53,14 @@ testNMD_ <- function(queryTranscript, queryCDS, distance_stop_EJ = 50, other_fea
     GenomicRanges::disjoin(with.revmap = T) %>%
     BiocGenerics::sort(decreasing = strand == '-') %>%
     as.data.frame() %>%
-    dplyr::mutate(disttolastEJ = lengthtolastEJ - cumsum(width))
+    dplyr::mutate(disttolastEJ = lengthtolastEJ - cumsum(width)) %>%
+    dplyr::mutate(threeUTR = dplyr::lead(rev(cumsum(rev(width))),default = 0))
   
   # retrieve index of last ORF segment and determine if there are 
   # more than 1 exons after stop codon
   stopcodonindex = max(which(lengths(disjoint$revmap) == 2))
   output$dist_to_lastEJ = disjoint[stopcodonindex,]$disttolastEJ
+  output$threeUTRlength = disjoint[stopcodonindex,]$threeUTR
  
   # report number of downstream EJ and its distance to PTC
   output$num_of_down_EJs = nrow(disjoint) - stopcodonindex -1
