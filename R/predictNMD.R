@@ -19,11 +19,15 @@
 #'
 #' @return
 #' List with prediction of NMD sensitivity and statistics:
+#' 
 #' is_NMD: logical value in prediciting transcript sensitivity to NMD
+#' 
 #' dist_to_lastEJ: Integer value indicating distance of STOP codon to last EJ
 #' Values are referenced from last EJ, thus a positive value indicates upstream
 #' position of STOP codon while negative value indicates downstream position
+#' 
 #' num_of_down_EJs: Number of downstream EJs
+#' 
 #' dist_to_downEJs: Integer value indicating distance of STOP codon to each down 
 #' EJs Values are referenced from last EJ, thus a positive value indicates 
 #' upstream position of STOP codon while negative value indicates downstream 
