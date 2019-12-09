@@ -57,9 +57,3 @@ S4 object containing dataframes and objects for downstream NMD prediction analys
 Import transcript annotation file, 
 match chromosome levels and gene IDs and prepare for NMD prediction analysis
 }
-\examples{
-library("BSgenome.Mmusculus.UCSC.mm10")
-preppedObject = prepNMDer(testQuery, testRef, Mmusculus, match_geneIDs = TRUE)
-preppedObject = prepNMDer(testQuery, testRef, Mmusculus, match_geneIDs = TRUE, primary_gene_id = 'gene_id', secondary_gene_id = 'ref_gene_id')
-
-}
