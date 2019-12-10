@@ -98,12 +98,14 @@ predictNMD <- function(tx, cds, NMDthreshold = 50,
       totest = totest[totest %in% which] #subset list if which list is given
     }
     # check for missing cds and return warnings/errors
-    skiptest = totest[!totest %in% names(cds)]
-    if(length(skiptest)==length(totest)){
+    totest = totest[totest %in% names(cds)]
+    if(length(totest)==0){
       stop('all tx have missing cds info. please ensure tx and cds names match')
-    } else if(length(skiptest)>0){
-      rlang::warn(sprintf('%s tx(s) have missing cds info and will be skipped',
-                   length(skiptest)))
+    } 
+    if(length(totest) < length(tx)){
+      skiptest = length(tx) - length(totest)
+      rlang::warn(sprintf('%s tx(s) have missing cds info and have been skipped',
+                   skiptest))
     }
     
     # running brlapply and testNMD
