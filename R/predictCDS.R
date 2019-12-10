@@ -1,4 +1,4 @@
-predictCDS <- function(query, ref, fasta,
+predictCDS <- function(query, refCDS, fasta,
                        query2ref, ids = c(1,2), 
                        coverage = NULL){
   
@@ -11,21 +11,21 @@ predictCDS <- function(query, ref, fasta,
   }
   
   # catch unmatched seqlevels
-  if(GenomeInfoDb::seqlevelsStyle(query) != GenomeInfoDb::seqlevelsStyle(ref)){
+  if(GenomeInfoDb::seqlevelsStyle(query) != GenomeInfoDb::seqlevelsStyle(refCDS)){
     querystyle = GenomeInfoDb::seqlevelsStyle(query)
-    refstyle = GenomeInfoDb::seqlevelsStyle(ref)
-    stop('query and ref has unmatched seqlevel styles. try matching using? function')
+    refstyle = GenomeInfoDb::seqlevelsStyle(refCDS)
+    stop('query and refCDS has unmatched seqlevel styles. try matching using? function')
   }
   
-  # sanity check if query and ref names are in q2f df
+  # sanity check if query and refCDS names are in q2f df
   if(all(!names(query) %in% query2ref[ids[1]])){
     unannotatedq = sum((!names(query) %in% query2ref[ids[1]]))
-    rlang::warn(sprintf('%s query transcripts were missing from query2ref df',
+    rlang::warn(sprintf('%s query transcript ids were missing from query2ref df',
                         unnanotated))
   }
-  if(all(!names(ref) %in% query2ref[ids[2]])){
-    unannotatedq = sum((!names(ref) %in% query2ref[ids[2]]))
-    rlang::warn(sprintf('%s ref CDS were missing from query2ref df',
+  if(all(!names(refCDS) %in% query2ref[ids[2]])){
+    unannotatedq = sum((!names(refCDS) %in% query2ref[ids[2]]))
+    rlang::warn(sprintf('%s reference CDS ids were missing from query2ref df',
                         unnanotated))
   }
   
