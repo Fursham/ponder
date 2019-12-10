@@ -18,15 +18,15 @@ predictCDS <- function(query, refCDS, fasta,
   }
   
   # sanity check if query and refCDS names are in q2f df
-  if(all(!names(query) %in% query2ref[ids[1]])){
+  if(all(!names(query) %in% query2ref[[ids[1]]])){
     unannotatedq = sum((!names(query) %in% query2ref[ids[1]]))
     rlang::warn(sprintf('%s query transcript ids were missing from query2ref df',
-                        unnanotated))
+                        unnanotatedq))
   }
-  if(all(!names(refCDS) %in% query2ref[ids[2]])){
-    unannotatedq = sum((!names(refCDS) %in% query2ref[ids[2]]))
+  if(all(!names(refCDS) %in% query2ref[[ids[2]]])){
+    unannotatedr = sum((!names(refCDS) %in% query2ref[ids[2]]))
     rlang::warn(sprintf('%s reference CDS ids were missing from query2ref df',
-                        unnanotated))
+                        unnanotatedr))
   }
   
   # create CDS list for tx with coverage of 1
