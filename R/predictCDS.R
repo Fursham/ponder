@@ -28,9 +28,11 @@ predictCDS <- function(query, refCDS, fasta,
     rlang::warn(sprintf('%s reference CDS ids were missing from query2ref df',
                         unnanotatedr))
   }
-  
+  # create output df
+  outCDS = data.frame()
   # create CDS list for tx with coverage of 1
   if(!is.null(coverage)){
+    fullcovindex = which(query2ref[[coverage]]==1)
     
   }
   
