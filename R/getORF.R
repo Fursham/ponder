@@ -1,4 +1,4 @@
-getORF <- function(knownCDS, queryTx, fasta) {
+getORF <- function(query, CDS, fasta) {
   
   # prepare output list
   output = list(ORF_considered = as.character(NA),
@@ -7,13 +7,16 @@ getORF <- function(knownCDS, queryTx, fasta) {
                 threeUTRlength = 0,
                 ORF_found = FALSE)
   
+  queryTx = query[[1]]
+  knownCDS = CDS[[1]]
+  mcols(queryTx)$transcript_id = names(query)
   # attempt to find an aligned start codon
   report = getORFstart(queryTx, knownCDS, fasta)
   output = utils::modifyList(output, report) #update output
   
   # return if no start codon is found
   if(output$ORF_start == 'Not found'){
-    return(output[c('ORF_considered', 'ORF_start', 'ORF_found')])
+    return()
   }
   
   # attempt to search for an in-frame stop codon
@@ -22,12 +25,13 @@ getORF <- function(knownCDS, queryTx, fasta) {
   
   # return if no stop codon is found
   if(output$ORF_found == FALSE){
-    return(output[c('ORF_considered', 'ORF_start', 'ORF_found')])
+    return()
   }
   
   # build new ORF Granges
   report = getORFranges(queryTx, output$fiveUTRlength, output$threeUTRlength)
   output = utils::modifyList(output, report) #update output
-  return(output[c('ORF_considered', 'ORF_start', 'ORF_found')])
+  #return(output[c('ORF_considered', 'ORF_start', 'ORF_found')])
+  return(output$ORF_considered)
   
 }
