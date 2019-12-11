@@ -26,6 +26,7 @@ predictCDS(query, refCDS, fasta, query2ref, ids = c(1, 2), coverage = NULL)
 Title
 }
 \examples{
+library(BSgenome.Mmusculus.UCSC.mm10)
 predictCDS(querytx, refCDS, Mmusculus, q2r_df)
 
 }
