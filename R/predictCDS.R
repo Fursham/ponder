@@ -11,6 +11,7 @@
 #' @export
 #'
 #' @examples 
+#' library(BSgenome.Mmusculus.UCSC.mm10)
 #' predictCDS(querytx, refCDS, Mmusculus, q2r_df)
 #' 
 predictCDS <- function(query, refCDS, fasta,
@@ -71,8 +72,6 @@ predictCDS <- function(query, refCDS, fasta,
   
   # create CDS list for all remaining tx
   out = BiocParallel::bpmapply(function(x,y){
-
-
     CDSreport = getORF(querytx[x], refCDS[y], fasta) %>%
       as.data.frame()
     return(CDSreport)
