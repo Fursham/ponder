@@ -1,4 +1,7 @@
-getCoverages <- function(query, ref, query2ref, ids = c(1,2)){
+getCoverages <- function(query, ref, query2ref, 
+                         ids = c(1,2), return = c('best','all')){
+  
+  #Plans: ensure query2ref ids are in query and refCDS
   
   # catch missing args
   mandargs <- c('query','ref','query2ref')
@@ -37,7 +40,12 @@ getCoverages <- function(query, ref, query2ref, ids = c(1,2)){
     return(covrep)
   },query2ref[[txname]], query2ref[[refname]],
   BPPARAM = BiocParallel::MulticoreParam())
-  
   query2ref$coverage = out
+  
+  if(return[1] == 'best'){
+    query2ref = query2ref %>%
+      dplyr::arrange(!!as.symbol(txname), dplyr::desc(coverage)) %>%
+      dplyr::distinct(!!as.symbol(txname), .keep_all = T)
+  }
   return(query2ref)
 }
