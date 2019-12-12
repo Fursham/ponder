@@ -18,6 +18,18 @@ getCoverages <- function(query, ref, query2ref,
     stop('query and ref has unmatched seqlevel styles. try matching using? function')
   }
   
+  # sanity check if all tx in q2r have GRanges object
+  if(!all(query2ref[[ids[1]]] %in% names(query))){
+    missing = sum(!query2ref[[ids[1]]] %in% names(query))
+    stop(sprintf('%s query transcripts have missing GRanges object',
+                 missing))
+  }
+  if(!all(query2ref[[ids[2]]] %in% names(refCDS))){
+    missing = sum(!query2ref[[ids[2]]] %in% names(refCDS))
+    stop(sprintf('%s reference CDSs have missing GRanges object',
+                 missing))
+  }
+  
   # sanity check if query and ref names are in q2f df
   if(all(!names(query) %in% query2ref[[ids[1]]])){
     unannotatedq = sum((!names(query) %in% query2ref[ids[1]]))

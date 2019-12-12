@@ -18,6 +18,8 @@ predictCDS <- function(query, refCDS, fasta,
                        query2ref, ids = c(1,2), 
                        coverage = NULL){
   
+  #Plans: ensure query2ref ids are in query and refCDS
+  
   # catch missing args
   mandargs <- c('query','refCDS','fasta','query2ref')
   passed <- names(as.list(match.call())[-1])
@@ -33,17 +35,30 @@ predictCDS <- function(query, refCDS, fasta,
     stop('query and refCDS has unmatched seqlevel styles. try matching using? function')
   }
   
-  # sanity check if query and refCDS names are in q2f df
+  # sanity check if all tx in q2r have GRanges object
+  if(!all(query2ref[[ids[1]]] %in% names(query))){
+    missing = sum(!query2ref[[ids[1]]] %in% names(query))
+    stop(sprintf('%s query transcripts have missing GRanges object',
+                 missing))
+  }
+  if(!all(query2ref[[ids[2]]] %in% names(refCDS))){
+    missing = sum(!query2ref[[ids[2]]] %in% names(refCDS))
+    stop(sprintf('%s reference CDSs have missing GRanges object',
+                 missing))
+  }
+  
+  # sanity check if query and ref names are in q2f df
   if(all(!names(query) %in% query2ref[[ids[1]]])){
     unannotatedq = sum((!names(query) %in% query2ref[ids[1]]))
     rlang::warn(sprintf('%s query transcript ids were missing from query2ref df',
-                        unnanotatedq))
+                        unannotatedq))
   }
   if(all(!names(refCDS) %in% query2ref[[ids[2]]])){
     unannotatedr = sum((!names(refCDS) %in% query2ref[ids[2]]))
     rlang::warn(sprintf('%s reference CDS ids were missing from query2ref df',
-                        unnanotatedr))
+                        unannotatedr))
   }
+  
   # extract colnames and prepare outputCDS
   txname = names(query2ref)[ids[1]]
   refname = names(query2ref)[ids[2]]
