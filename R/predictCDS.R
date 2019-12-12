@@ -12,13 +12,11 @@
 #'
 #' @examples 
 #' library(BSgenome.Mmusculus.UCSC.mm10)
-#' predictCDS(querytx, refCDS, Mmusculus, q2r_df)
+#' predictCDS(query, refCDS, Mmusculus, q2r_df)
 #' 
 predictCDS <- function(query, refCDS, fasta,
                        query2ref, ids = c(1,2), 
                        coverage = NULL){
-  
-  #Plans: ensure query2ref ids are in query and refCDS
   
   # catch missing args
   mandargs <- c('query','refCDS','fasta','query2ref')
@@ -87,7 +85,7 @@ predictCDS <- function(query, refCDS, fasta,
   
   # create CDS list for all remaining tx
   out = BiocParallel::bpmapply(function(x,y){
-    CDSreport = getORF(querytx[x], refCDS[y], fasta) %>%
+    CDSreport = getORF(query[x], refCDS[y], fasta) %>%
       as.data.frame()
     return(CDSreport)
   },query2ref[[txname]], query2ref[[refname]],
@@ -97,6 +95,12 @@ predictCDS <- function(query, refCDS, fasta,
     dplyr::mutate(group_name = transcript_id) %>%
     GenomicRanges::makeGRangesListFromDataFrame(split.field = 'group_name',
                                                 keep.extra.columns = T))
+  
+  # warn users if program fails to find CDS for some transcripts
+  if(length(outCDS) < length(query)){
+    missingCDS = length(query) - length(outCDS)
+    rlang::warn(sprintf('Unable to find CDS for %s transcripts',missingCDS))
+  }
   
   return(outCDS)
 }
