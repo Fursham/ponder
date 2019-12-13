@@ -94,6 +94,7 @@ predictNMD <- function(tx, cds, NMDthreshold = 50,
     totest = names(tx)  #prepare vector with names for testing
     if(!is.null(which)){
       totest = totest[totest %in% which] #subset list if which list is given
+      tx = tx[names(tx) %in% which]
     }
     # check for missing cds and return warnings/errors
     totest = totest[totest %in% names(cds)]
