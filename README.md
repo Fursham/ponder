@@ -15,7 +15,7 @@ from high-throughput RNA-seq experiments
 * Predict coding region (CDS) on custom-generated GTF annotation using reference CDS as guide
 * Match chromosome levels and gene_id levels between query and reference GRanges object
 * Resize start and end of GRanges object containing exons of transcripts
-* ~In development~
+* *In development*
   * Analyze alternative segments between query and reference transcripts
   * Analyze uORFs and uATGs on a list of coding mRNAs
 
