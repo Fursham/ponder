@@ -11,7 +11,7 @@ mRNAs from any transcript annotation database or from high-throughput RNA-seq ou
 ## Installation
 ```r
 # install.packages("devtools")
-devtools::install_github("furhsham-h/ponder")
+devtools::install_github("fursham-h/ponder")
 ```
 
 ## Usage
@@ -19,6 +19,7 @@ pondeR is pre-loaded with GenomicRangesList objects containing sample
 exon and cds ranges from 13 transcripts from a gene.
 ```r
 library(pondeR)
+
 names(query_exons)
 #[1] "transcript1"  "transcript10" "transcript11" "transcript12" "transcript13" 
 #[6] "transcript2"  "transcript3" "transcript4"  "transcript5"  "transcript6"  
