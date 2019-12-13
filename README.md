@@ -5,8 +5,21 @@
 Nonsense-Mediated Decay (NMD) is an RNA surveillance mechanism which eliminates 
 abberant messenger RNAs (mRNAs) harbouring a premature stop codon (PTC). pondeR
 predicts the sensitivity of protein-coding mRNAs to NMD by scanning for NMD-inducing
-features. Since pondeR takes GenomicRangesLists objects as input, it can analyze
-mRNAs from any transcript annotation database or from high-throughput RNA-seq outputs.
+features. pondeR can analyze mRNAs from any transcript annotation database or 
+from high-throughput RNA-seq experiments
+
+## Features
+* Scans for NMD-inducing features on coding RNAs from various sources:
+  * Most transcript annotation databases
+  * Custom transcript annotation (GTF) generated from RNA-seq experiemnts
+* Predict coding region (CDS) on custom-generated GTF annotation using reference CDS as guide
+* Match chromosome levels and gene_id levels between query and reference GRanges object
+* Resize start and end of GRanges object containing exons of transcripts
+* ~In development~
+  * Analyze alternative segments between query and reference transcripts
+  * Analyze uORFs and uATGs on a list of coding mRNAs
+
+
 
 ## Installation
 ```r
