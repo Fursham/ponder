@@ -1,7 +1,7 @@
 getCoverages <- function(query, ref, query2ref, 
                          ids = c(1,2), return = c('best','all')){
   
-  #Plans: ensure query2ref ids are in query and refCDS
+  #Plans: set 'over' arg to allow user to choose the denominator
   
   # catch missing args
   mandargs <- c('query','ref','query2ref')
@@ -54,6 +54,7 @@ getCoverages <- function(query, ref, query2ref,
   BPPARAM = BiocParallel::MulticoreParam())
   query2ref$coverage = out
   
+  # return best coverage for each tx by default
   if(return[1] == 'best'){
     query2ref = query2ref %>%
       dplyr::arrange(!!as.symbol(txname), dplyr::desc(coverage)) %>%
