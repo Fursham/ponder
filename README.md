@@ -71,7 +71,7 @@ plotTranscripts(query_exons, query_cds)
 Run predictNMD with exon and cds information as input
 ```r
 predictNMD(query_exons, query_cds)
-## A tibble: 2 x 6
+## A tibble: 1 x 6
 #  tx          is_NMD dist_to_lastEJ num_of_down_EJs dist_to_downEJs threeUTRlength
 #  <chr>       <lgl>           <int>           <dbl> <chr>                    <dbl>
 #1 transcript3 TRUE              361               3 66,283,361                 502
