@@ -66,7 +66,7 @@ transcripts can be visualized using _wiggleplotr_ package
 library(wiggleplotr)
 plotTranscripts(query_exons, query_cds)
 ```
-<img src="wiggleplot_query.png" width="800">
+<img src="wiggleplot_query.png" width="600">
 
 Run predictNMD with exon and cds information as input
 ```r
