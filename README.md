@@ -12,12 +12,12 @@ from high-throughput RNA-seq experiments
 * Scans for NMD-inducing features on coding RNAs from various sources:
   * Most transcript annotation databases
   * Custom transcript annotation (GTF) generated from RNA-seq experiemnts
-* Predict coding region (CDS) on custom-generated GTF annotation using reference CDS as guide
-* Match chromosome levels and gene_id levels between query and reference GRanges object
-* Resize start and end of GRanges object containing exons of transcripts
+* Predicts coding region (CDS) on custom-generated GTF annotation using reference CDS as guide
+* Matches chromosome levels and gene_id levels between query and reference GRanges object
+* Resizes start and end of transcript-organized GRanges object
 * *In development*
-  * Analyze alternative segments between query and reference transcripts
-  * Analyze uORFs and uATGs on a list of coding mRNAs
+  * *Analyze alternative segments between query and reference transcripts*
+  * *Analyze uORFs and uATGs on a list of coding mRNAs*
 
 
 
@@ -29,18 +29,9 @@ devtools::install_github("fursham-h/ponder")
 
 ## Usage
 pondeR is pre-loaded with GenomicRangesList objects containing sample
-exon and cds ranges from 13 transcripts from a gene.
+exon and cds ranges
 ```r
 library(pondeR)
-
-names(query_exons)
-#[1] "transcript1"  "transcript10" "transcript11" "transcript12" "transcript13" 
-#[6] "transcript2"  "transcript3" "transcript4"  "transcript5"  "transcript6"  
-#[11] "transcript7"  "transcript8"  "transcript9" 
-
-names(query_cds)
-#[1] "transcript1"  "transcript11" "transcript12" "transcript13" "transcript2"  
-#[6] "transcript3"  "transcript4" "transcript9" 
 
 query_exons[1]
 # GRangesList object of length 1:
@@ -64,7 +55,7 @@ query_exons[1]
 # seqinfo: 1 sequence from an unspecified genome; no seqlengths
 ```
 
-Transcripts without cds information can be part of a GRangesList but will not
+Transcripts without cds information can be a part of the GRangesList but will not
 be analysed for NMD-inducing features. Transcript architecture of these 
 transcripts can be visualized using _wiggleplotr_ package
 ```r
@@ -84,6 +75,5 @@ predictNMD(query_exons, query_cds)
 #  tx          is_NMD dist_to_lastEJ num_of_down_EJs dist_to_downEJs threeUTRlength
 #  <chr>       <lgl>           <int>           <dbl> <chr>                    <dbl>
 #1 transcript3 TRUE              361               3 66,283,361                 502
-#2 transcript4 TRUE              361               3 66,283,361                 474
 ```
 
