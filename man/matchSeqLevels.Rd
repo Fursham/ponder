@@ -4,12 +4,12 @@
 \alias{matchSeqLevels}
 \title{Match seqnames of input GRanges to reference GRanges}
 \usage{
-matchSeqLevels(inGRanges, refGRanges)
+matchSeqLevels(from, to, ...)
 }
 \arguments{
-\item{inGRanges}{GRanges object with seqnames to change}
+\item{from}{GRanges object with seqnames to change}
 
-\item{refGRanges}{GRanges object from which seqnames is referenced}
+\item{to}{GRanges object from which seqnames is referenced}
 }
 \value{
 Corrected input GRanges

@@ -27,6 +27,6 @@ Title
 }
 \examples{
 library(BSgenome.Mmusculus.UCSC.mm10)
-predictCDS(querytx, refCDS, Mmusculus, q2r_df)
+predictCDS(query, refCDS, Mmusculus, q2r_df)
 
 }

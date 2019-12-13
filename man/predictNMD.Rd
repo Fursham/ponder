@@ -2,25 +2,26 @@
 % Please edit documentation in R/predictNMD.R
 \name{predictNMD}
 \alias{predictNMD}
-\title{Predict NMD nature of mRNA transcripts}
+\title{Predict sensitivity of mRNA transcripts to NMD}
 \usage{
 predictNMD(tx, cds, NMDthreshold = 50, which = NULL, return = c("NMD", "all"))
 }
 \arguments{
 \item{tx}{GRanges object or GRangesList object containing exons
-for each transcript}
+for each transcript. To search for NMD-inducing features, transcripts have
+to be coding and thus contain a cds information of the same transcript name}
 
 \item{cds}{GRanges object or GRangesList object containing coding regions (CDS)
 for each transcript. GRangesList must have names that match names in tx,
-else tx with missing cds will not be analysed}
+else tx will not be analysed}
 
 \item{NMDthreshold}{Minimum distance of STOP codon to last exon junction (EJ) which triggers NMD.
 Default = 50bp}
 
 \item{which}{List containing tx names to filter for analysis}
 
-\item{return}{If tx and cds are GRangesList, returns only NMD-sensitive
-transcripts or all transcripts. Default = 'NMD'}
+\item{return}{If tx and cds are GRangesList, returns only NMD-sensitive (default)
+transcripts or all transcripts.}
 }
 \value{
 List with prediction of NMD sensitivity and statistics:
@@ -39,24 +40,22 @@ upstream position of STOP codon while negative value indicates downstream
 position together with distances of STOP codon to last EJ
 }
 \description{
-Predicts NMD-sensitivity of transcripts
+Predict sensitivity of mRNA transcripts to NMD
 }
 \examples{
 
 ### To visualize transcripts
 library(wiggleplotr)
-plotTranscripts(txl[1:2], cdsl[1:2])
-plotTranscripts(txl[3:4], cdsl[3:4])
+plotTranscripts(query_exons, query_cds)
 
 ### Examples with single GRanges objects
-predictNMD(txl$ENSMUST00000029780,cdsl$ENSMUST00000029780) # NMD-insensitive
-predictNMD(txl$ENSMUST00000197833,cdsl$ENSMUST00000197833) # NMD-sensitive
-###
+predictNMD(query_exons$transcript1, query_cds$transcript1) # NMD-insensitive
+predictNMD(query_exons$transcript3, query_cds$transcript3) # NMD-sensitive
 
 ### Examples with GRangesList object
-predictNMD(txl,cdsl)
-predictNMD(txl,cdsl, return = 'all')
-predictNMD(txl,cdsl,which=c('ENSMUST00000029780', 'ENSMUST00000197833'), return = 'all')
+predictNMD(query_exons, query_cds)
+predictNMD(query_exons, query_cds), return = 'all')
+predictNMD(query_exons, query_cds,which=c('transcript1', 'transcript3'), return = 'all')
 
 
 
