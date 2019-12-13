@@ -1,27 +1,27 @@
 #' Match seqnames of input GRanges to reference GRanges
 #'
-#' @param inGRanges GRanges object with seqnames to change
-#' @param refGRanges GRanges object from which seqnames is referenced
+#' @param from GRanges object with seqnames to change
+#' @param to GRanges object from which seqnames is referenced
 #'
 #' @return Corrected input GRanges
 #' @export
+#' @importFrom GenomeInfoDb seqlevelsStyle
+#' @importFrom GenomeInfoDb mapSeqlevels
 #'
-matchSeqLevels <- function(inGRanges, refGRanges){
+matchSeqLevels <- function(from, to, ...){
   
   suppressWarnings(
-    if (GenomeInfoDb::seqlevelsStyle(inGRanges) != GenomeInfoDb::seqlevelsStyle(refGRanges)) {
-      newStyle <- GenomeInfoDb::mapSeqlevels(GenomeInfoDb::seqlevels(inGRanges), GenomeInfoDb::seqlevelsStyle(refGRanges))
+    if (any(!seqlevelsStyle(from) %in% seqlevelsStyle(to))) {
+      newStyle <- mapSeqlevels(seqlevels(from), (seqlevelsStyle(to)[1]))
       newStyle = newStyle[!is.na(newStyle)]
-      inGRanges <- GenomeInfoDb::renameSeqlevels(inGRanges, newStyle)
+      from <- renameSeqlevels(from, newStyle)
       
-      if (any(!GenomeInfoDb::seqlevels(inGRanges)%in%GenomeInfoDb::seqlevels(refGRanges))) {
-        GenomeInfoDb::seqlevels(inGRanges, pruning.mode = 'tidy') <- as.vector(newStyle)
+      if (any(!seqlevels(from)%in%seqlevels(to))) {
+        seqlevels(from, pruning.mode = 'tidy') <- as.vector(newStyle)
       }
-      
     }
   )
-  
-  return(inGRanges)
+  return(from)
 }
 
 
