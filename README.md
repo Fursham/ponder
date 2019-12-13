@@ -27,6 +27,27 @@ names(query_exons)
 names(query_cds)
 #[1] "transcript1"  "transcript11" "transcript12" "transcript13" "transcript2"  
 #[6] "transcript3"  "transcript4" "transcript9" 
+
+query_exons[1]
+# GRangesList object of length 1:
+# $transcript1 
+# GRanges object with 14 ranges and 0 metadata columns:
+#        seqnames              ranges strand
+#           <Rle>           <IRanges>  <Rle>
+#    [1]     chr3 119783202-119783388      -
+#    [2]     chr3 119781504-119781534      -
+#    [3]     chr3 119761703-119761778      -
+#    [4]     chr3 119752944-119753116      -
+#    [5]     chr3 119751864-119752007      -
+#    ...      ...                 ...    ...
+#   [10]     chr3 119724612-119724645      -
+#   [11]     chr3 119724094-119724186      -
+#   [12]     chr3 119720789-119721005      -
+#   [13]     chr3 119720607-119720684      -
+#   [14]     chr3 119718742-119720460      -
+# 
+# -------
+# seqinfo: 1 sequence from an unspecified genome; no seqlengths
 ```
 
 Transcripts without cds information can be part of a GRangesList but will not
