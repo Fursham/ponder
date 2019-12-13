@@ -1,21 +1,21 @@
-#' Predict NMD nature of mRNA transcripts
+#' Predict sensitivity of mRNA transcripts to NMD
 #'
-#' @description Predicts NMD-sensitivity of transcripts
 #' @param tx 
 #' GRanges object or GRangesList object containing exons
-#' for each transcript
+#' for each transcript. To search for NMD-inducing features, transcripts have
+#' to be coding and thus contain a cds information of the same transcript name
 #' @param cds 
 #' GRanges object or GRangesList object containing coding regions (CDS)
 #' for each transcript. GRangesList must have names that match names in tx,
-#' else tx with missing cds will not be analysed
+#' else tx will not be analysed
 #' @param NMDthreshold 
 #' Minimum distance of STOP codon to last exon junction (EJ) which triggers NMD.
 #' Default = 50bp
 #' @param which 
 #' List containing tx names to filter for analysis
 #' @param return 
-#' If tx and cds are GRangesList, returns only NMD-sensitive
-#' transcripts or all transcripts. Default = 'NMD'
+#' If tx and cds are GRangesList, returns only NMD-sensitive (default)
+#' transcripts or all transcripts.
 #'
 #' @return
 #' List with prediction of NMD sensitivity and statistics:
@@ -39,18 +39,16 @@
 #' 
 #' ### To visualize transcripts
 #' library(wiggleplotr)
-#' plotTranscripts(txl[1:2], cdsl[1:2])
-#' plotTranscripts(txl[3:4], cdsl[3:4])
+#' plotTranscripts(query_exons, query_cds)
 #' 
 #' ### Examples with single GRanges objects
-#' predictNMD(txl$ENSMUST00000029780,cdsl$ENSMUST00000029780) # NMD-insensitive
-#' predictNMD(txl$ENSMUST00000197833,cdsl$ENSMUST00000197833) # NMD-sensitive
-#' ###
+#' predictNMD(query_exons$transcript1, query_cds$transcript1) # NMD-insensitive
+#' predictNMD(query_exons$transcript3, query_cds$transcript3) # NMD-sensitive
 #' 
 #' ### Examples with GRangesList object
-#' predictNMD(txl,cdsl)
-#' predictNMD(txl,cdsl, return = 'all')
-#' predictNMD(txl,cdsl,which=c('ENSMUST00000029780', 'ENSMUST00000197833'), return = 'all')
+#' predictNMD(query_exons, query_cds)
+#' predictNMD(query_exons, query_cds), return = 'all')
+#' predictNMD(query_exons, query_cds,which=c('transcript1', 'transcript3'), return = 'all')
 #' 
 #' 
 #' 
