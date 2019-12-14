@@ -64,24 +64,21 @@ predictNMD <- function(tx, cds, NMDthreshold = 50,
   }
   
   # check if tx and cds are GR or GRlist
-  if(is(tx,'GRanges')){
-    if(is(cds,'GRanges')){
+  if(all(is(tx) %in% is(cds))){
+    if(is(tx,'GRanges')){
       intype = 'gr'
-    } else {
-      txtype = is(tx)[1]
-      cdstype = is(cds)[1]
-      stop(sprintf('cds is type %s but tx is type %s',
-                   cdstype, txtype))
-    }
-  } else if(is(tx,'GRangesList') | is(tx,'list')){
-    if(is(cds,'GRangesList') | is(cds,'list')){
+    } else if(is(tx,'GRangesList')){
       intype = 'grl'
     } else {
-      txtype = is(tx)[1]
-      cdstype = is(cds)[1]
-      stop(sprintf('cds is type %s but tx is type %s',
-                   cdstype, txtype))
+      stop('input object types not compatible')
     }
+  } else {
+    txtype = is(tx)[1]
+    cdstype = is(cds)[1]
+    stop(sprintf('cds is type %s but tx is type %s',
+                 cdstype, txtype))
+  }
+  # catch unmatched seqlevels
   }
   
   #run testNMD_ for single GRanges object and output results
