@@ -6,6 +6,7 @@
 #'
 #' @return Appended GenomicRanges object
 #' @export
+#' @author Fursham Hamid
 #'
 #' @examples
 #' gr1 <- GRanges(seqnames = "chr1", strand = c("+", "+", "+"),
