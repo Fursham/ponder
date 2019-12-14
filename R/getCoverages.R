@@ -1,3 +1,29 @@
+#' Obtain percent coverage between query and reference transcripts
+#'
+#' @param query 
+#' GRangesList object containing exons for each query transcript. Transcripts 
+#' have to be listed in query2ref dataframe, else coverage values will not be
+#' calculated
+#' @param ref 
+#' GRangesList object containing CDS for each reference transcript.
+#' @param query2ref 
+#' Dataframe with at least 2 columns: query transcript_id and its 
+#' reference transcript_id. Query and ref transcript_ids have to match transcript
+#' names in query and refCDS objects. Transcripts with missing corrresponding
+#' GRanges object will return error
+#' @param ids 
+#' Numeric vector stating which columns of query2ref dataframe contain the 
+#' query and reference transcript_ids respectively.
+#' @param return 
+#' If query2ref contain query transcripts with multiple comparisons, function
+#' will return comparisons with 'best' coverage value by default. Alternatively,
+#' a full report can be returned by setting argument to 'all'
+#'
+#' @return
+#' Dataframe from query2ref with coverage values appended as a new column
+#' @export
+#'
+#' @examples
 getCoverages <- function(query, ref, query2ref, ids = c(1,2), 
                          return = c('best','all')){
   
