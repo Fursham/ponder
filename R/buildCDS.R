@@ -1,7 +1,7 @@
 #' Construct query CDS using reference as guide
 #'
 #' @param query 
-#' GRangesList object containing exons for each query transcript
+#' GRangesList object containing exons for each query transcript. 
 #' @param refCDS 
 #' GRangesList object containing CDS for each reference transcript
 #' @param fasta 
@@ -9,8 +9,8 @@
 #' @param query2ref 
 #' Dataframe with at least 2 columns: query transcript_id and its 
 #' reference transcript_id. Query and ref transcript_ids have to match transcript
-#' names in query and refCDS objects. IDs with missing GRanges object will
-#' not be analysed
+#' names in query and refCDS objects. Transcripts with missing corrresponding
+#' GRanges object will return error
 #' @param ids 
 #' Numeric vector stating which columns of query2ref dataframe contain the 
 #' query and reference transcript_ids respectively.
@@ -30,9 +30,8 @@
 #' library(BSgenome.Mmusculus.UCSC.mm10)
 #' predictCDS(query, refCDS, Mmusculus, q2r_df)
 #' 
-buildCDS <- function(query, refCDS, fasta,
-                       query2ref, ids = c(1,2), 
-                       coverage = NULL){
+buildCDS <- function(query, refCDS, fasta, query2ref, 
+                     ids = c(1,2), coverage = NULL){
   
   # catch missing args
   mandargs <- c('query','refCDS','fasta','query2ref')
