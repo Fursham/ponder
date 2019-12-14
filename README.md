@@ -12,7 +12,7 @@ from high-throughput RNA-seq experiments
 * Scans for NMD-inducing features on coding RNAs from various sources:
   * Most transcript annotation databases
   * Custom transcript annotation (GTF) generated from RNA-seq experiemnts
-* Predicts coding region (CDS) on custom-generated GTF annotation using reference CDS as guide
+* Constructs coding region (CDS) on custom-generated GTF annotation using reference CDS as guide
 * Matches chromosome levels and gene_id levels between query and reference GRanges object
 * Resizes start and end of transcript-organized GRanges object
 * *In development*
