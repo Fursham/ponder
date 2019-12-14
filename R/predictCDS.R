@@ -28,9 +28,7 @@ predictCDS <- function(query, refCDS, fasta,
   
   # catch unmatched seqlevels
   if(GenomeInfoDb::seqlevelsStyle(query) != GenomeInfoDb::seqlevelsStyle(refCDS)){
-    querystyle = GenomeInfoDb::seqlevelsStyle(query)
-    refstyle = GenomeInfoDb::seqlevelsStyle(refCDS)
-    stop('query and refCDS has unmatched seqlevel styles. try matching using? function')
+    stop('query and refCDS has unmatched seqlevel styles. try matching using matchSeqLevels function')
   }
   
   # sanity check if all tx in q2r have GRanges object
