@@ -1,5 +1,11 @@
 #' Construct query CDS using reference as guide
 #'
+#' @description buildCDS will attempt to construct query CDS information by
+#' firstly deriving its start codon. This is done searching transcripts for an
+#' annotated start codon, provided by its corresponding reference CDS. 
+#' If this fails, function will find the next common internal ATG codon and sets 
+#' that as the start codon. buildCDS will then search for an in-frame stop codon 
+#' and will return the CDS GRanges if found.
 #' @param query 
 #' GRangesList object containing exons for each query transcript. Transcripts 
 #' have to be listed in query2ref dataframe, else CDS will not be constructed
