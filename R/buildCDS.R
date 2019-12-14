@@ -99,7 +99,7 @@ buildCDS <- function(query, refCDS, fasta, query2ref,
   
   # create CDS list for all remaining tx
   out = BiocParallel::bpmapply(function(x,y){
-    CDSreport = getORF(query[x], refCDS[y], fasta) %>%
+    CDSreport = getCDS_(query[x], refCDS[y], fasta) %>%
       as.data.frame()
     return(CDSreport)
   },query2ref[[txname]], query2ref[[refname]],
@@ -117,4 +117,184 @@ buildCDS <- function(query, refCDS, fasta, query2ref,
   }
   
   return(outCDS)
+}
+
+getCDS_ <- function(query, CDS, fasta) {
+  
+  # prepare output list
+  output = list(ORF_considered = as.character(NA),
+                ORF_start = as.character('Not found'),
+                fiveUTRlength = 0,
+                threeUTRlength = 0,
+                ORF_found = FALSE)
+  
+  queryTx = query[[1]]
+  knownCDS = CDS[[1]]
+  mcols(queryTx)$transcript_id = names(query)
+  # attempt to find an aligned start codon
+  report = getCDSstart_(queryTx, knownCDS, fasta)
+  output = utils::modifyList(output, report) #update output
+  
+  # return if no start codon is found
+  if(output$ORF_start == 'Not found'){
+    return()
+  }
+  
+  # attempt to search for an in-frame stop codon
+  report = getCDSstop_(queryTx,  fasta, output$fiveUTRlength)
+  output = utils::modifyList(output, report) #update output
+  
+  # return if no stop codon is found
+  if(output$ORF_found == FALSE){
+    return()
+  }
+  
+  # build new ORF Granges
+  report = getCDSranges_(queryTx, output$fiveUTRlength, output$threeUTRlength)
+  output = utils::modifyList(output, report) #update output
+  #return(output[c('ORF_considered', 'ORF_start', 'ORF_found')])
+  return(output$ORF_considered)
+}
+
+getCDSstart_ <- function(query, refCDS, fasta){
+  
+  # prepare output list
+  output = list(ORF_start = as.character('Not found'),
+                fiveUTRlength = 0)
+  
+  # get coord of start codon on reference and strand info
+  startcodon = resizeGRangesTranscripts(refCDS, end = sum(BiocGenerics::width(refCDS))-3)
+  strand = as.character(BiocGenerics::strand(query))[1]
+  
+  # if query containg annotated start codon:
+  if(startcodon %within% query & length(startcodon) == 1){
+    
+    # this part of the code will calculate the length of 5'UTR
+    #   disjoin will break query GRanges into sub GRanges, based
+    #   on the position of the start codon.
+    #   we can then find length of the upstream/downstream segments 
+    #   of the break
+    disjoint = BiocGenerics::append(query,startcodon) %>%
+      GenomicRanges::disjoin(with.revmap = T) %>%
+      sort(decreasing = strand == '-') %>%
+      as.data.frame() %>%
+      dplyr::mutate(cumsum = cumsum(width))
+    
+    
+    # retrieve index of segment upstream of start codon and return its cumsumwidth
+    startcodonindex = min(which(lengths(disjoint$revmap) == 2))
+    if(startcodonindex > 1){
+      fiveUTRlength = disjoint[startcodonindex-1,]$cumsum
+    } else{
+      fiveUTRlength = disjoint[1,]$cumsum
+    }
+    
+    # update output list
+    output$ORF_start = 'Annotated'
+    output$fiveUTRlength = fiveUTRlength
+    
+    return(output)
+  } 
+  # if annotated start is not found, attempt to find upstream-most internal ATG
+  else {
+    
+    # get sequence of ref, find all internal inframe-ATG
+    refsequence = unlist(BSgenome::getSeq(fasta, refCDS)) # 
+    startcodons = Biostrings::matchPattern('ATG', refsequence) %>% IRanges::ranges()
+    inframestarts = startcodons[BiocGenerics::end(startcodons) %% 3 == 0 & 
+                                  BiocGenerics::start(startcodons) != 1]
+    
+    # return if no internal ATG is found
+    if(length(inframestarts) == 0){
+      return(output)
+    } else {
+      
+      # This function attempts to map the XStringViews output back to refGRanges
+      inframestartsingranges = do.call('c', base::mapply(function(x,y){
+        start = x - 1
+        end = length(refsequence) - y
+        startcodoninGRanges = resizeGRangesTranscripts(refCDS, start, end)
+        return(startcodoninGRanges)
+      }, BiocGenerics::start(inframestarts), BiocGenerics::end(inframestarts)))
+      
+      # obtain 5'UTR length if query contain any of the inframe ATG
+      if(any(inframestartsingranges %within% query)){
+        
+        firststartgranges = inframestartsingranges[inframestartsingranges %within% query][1]
+        disjoint = BiocGenerics::append(query,firststartgranges) %>%
+          GenomicRanges::disjoin(with.revmap = T) %>%
+          sort(decreasing = strand == '-') %>%
+          as.data.frame() %>%
+          dplyr::mutate(cumsum = cumsum(width))
+        
+        startcodonindex = min(which(lengths(disjoint$revmap) == 2))
+        if(startcodonindex > 1){
+          fiveUTRlength = disjoint[startcodonindex-1,]$cumsum
+        } else{
+          fiveUTRlength = disjoint[1,]$cumsum
+        }
+        
+        output$ORF_start = 'Predicted'
+        output$fiveUTRlength = fiveUTRlength
+        
+        return(output)
+      } else{
+        return(output)
+      }
+    }
+  }
+}
+
+getCDSstop_ <- function(query, fasta, fiveUTRlength){
+  
+  # prepare output list
+  output = list(ORF_found = FALSE,
+                threeUTRlength = 0)
+  
+  # append query GRanges to start from star codon, and retrieve seq
+  queryCDS = resizeGRangesTranscripts(query, start = fiveUTRlength)
+  queryseq = unlist(BSgenome::getSeq(fasta, queryCDS))
+  
+  # prepare a dict of stop codons for pattern matching
+  list_stopcodons = Biostrings::DNAStringSet(c("TAA", "TAG", "TGA"))
+  pdict_stopcodons = Biostrings::PDict(list_stopcodons)
+  
+  # search for in-frame stop codons
+  stopcodons = Biostrings::matchPDict(pdict_stopcodons, queryseq) %>% 
+    unlist() %>% 
+    as.data.frame() %>%
+    dplyr::filter(end %%3 ==0) %>%
+    dplyr::arrange(start)
+  
+  # return if no in-frame stop codons are found
+  if(nrow(stopcodons) == 0){
+    return(output)
+  } else{
+    
+    # retrieve 3UTR length and update output file
+    firststopcodon = stopcodons[1,]
+    threeUTRlength = length(queryseq) - firststopcodon$end
+    output$threeUTRlength = threeUTRlength
+    output$ORF_found = TRUE
+    
+    return(output)
+  }
+}
+
+getCDSranges_ <- function(query, fiveUTRlength, threeUTRlength){
+  
+  # prepare output list
+  output = list('ORF_considered' = NA)
+  
+  # resize query GRanges to ORF and renew metadata info
+  CDSranges = resizeGRangesTranscripts(query, fiveUTRlength, threeUTRlength)
+  CDSranges = CDSranges %>% as.data.frame() %>%
+    dplyr::mutate(type = 'CDS', 
+                  transcript_id = S4Vectors::mcols(query)$transcript_id[1]) %>%
+    dplyr::mutate(phase = cumsum(width%%3)%%3) %>%
+    dplyr::select(seqnames:end, strand, type, phase, transcript_id)
+  CDSranges$phase = c(0, head(CDSranges$phase, - 1))
+  output$ORF_considered  = GenomicRanges::makeGRangesFromDataFrame(CDSranges, keep.extra.columns = TRUE)
+  
+  return(output)
 }
