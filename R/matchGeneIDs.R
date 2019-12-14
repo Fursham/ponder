@@ -1,8 +1,8 @@
-#' Match Gene IDs from query GTF/GFF3 file
+#' Match gene_id from query GTF to a reference
 #' 
 #' @description 
-#' This function will match and correct Gene IDs from a query assembled transcript file, using a 
-#' transcript annotation as reference. 
+#' This function will match and correct Gene IDs from a query GTF to a reference
+#' GTF
 #' 
 #' The default approach to this correction relies on finding overlaps between transcripts in query with
 #' transcripts in reference. Using this method alone could result in false positive matches (19 percent false positives).
@@ -20,22 +20,26 @@
 #' 
 #' 
 #' @param query 
-#' Mandatory. Path to query GTF/GFF3 transcript annotation file
+#' Query GTF imported as GRanges object
 #' @param ref 
-#' Mandatory. Path to reference GTF/GFF3 transcript annotation file. 
+#' Reference GTF as GRanges object
 #' @param primary_gene_id 
-#' Name of the primary gene id in query file. Input to this argument is typically 'gene_id'
+#' Character name of the primary gene id metadata in query GTF. 
+#' Input to this argument is typically 'gene_id'
 #' @param secondary_gene_id 
-#' Name of the secondary gene id in query file. Example of input to this arguement is 'ref_gene_id'
+#' Character name of the secondary gene id in query file. 
+#' Example of input to this arguement is 'ref_gene_id'
 #' 
 #' @return
 #' Gene_id-matched query GRanges
 #' 
 #' @examples
+#' @author Fursham Hamid
 #' 
 #' 
-#' 
-matchGeneIDs <- function(inputGRanges, basicGRanges, primary_gene_id=NULL, secondary_gene_id=NULL) {
+matchGeneIDs <- function(inputGRanges, basicGRanges, 
+                         primary_gene_id=NULL, 
+                         secondary_gene_id=NULL) {
   
   ###################################################################################################################
   # this function will attempt to match gene_ids from input to reference

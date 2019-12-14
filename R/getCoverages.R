@@ -22,6 +22,7 @@
 #' @return
 #' Dataframe from query2ref with coverage values appended as a new column
 #' @export
+#' @author Fursham Hamid
 #'
 #' @examples
 getCoverages <- function(query, ref, query2ref, ids = c(1,2), 

@@ -33,6 +33,7 @@
 #' @return
 #' GRangesList object containing CDS for each query transcript
 #' @export
+#' @author Fursham Hamid
 #'
 #' @examples 
 #' library(BSgenome.Mmusculus.UCSC.mm10)

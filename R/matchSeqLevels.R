@@ -5,6 +5,7 @@
 #'
 #' @return Corrected input GRanges
 #' @export
+#' @author Fursham Hamid
 #' @importFrom GenomeInfoDb seqlevelsStyle
 #' @importFrom GenomeInfoDb mapSeqlevels
 #'
