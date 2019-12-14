@@ -1,20 +1,36 @@
-#' Title
+#' Construct query CDS using reference as guide
 #'
 #' @param query 
+#' GRangesList object containing exons for each query transcript
 #' @param refCDS 
+#' GRangesList object containing CDS for each reference transcript
 #' @param fasta 
+#' BSgenome or Biostrings object containing genomic sequence
 #' @param query2ref 
+#' Dataframe with at least 2 columns: query transcript_id and its 
+#' reference transcript_id. Query and ref transcript_ids have to match transcript
+#' names in query and refCDS objects. IDs with missing GRanges object will
+#' not be analysed
 #' @param ids 
+#' Numeric vector stating which columns of query2ref dataframe contain the 
+#' query and reference transcript_ids respectively.
 #' @param coverage 
+#' Integer stating which column of query2ref dataframe contain percent coverage
+#' between query and reference transcripts. Providing a column with coverage 
+#' values will speed up CDS building process. Query transcripts that share 100%
+#' coverage with reference CDS will be assigned the reference CDS and skip the
+#' CDS searching process. See getCoverages function to calculate coverage values
+#' (default:NULL)
 #'
 #' @return
+#' GRangesList object containing CDS for each query transcript
 #' @export
 #'
 #' @examples 
 #' library(BSgenome.Mmusculus.UCSC.mm10)
 #' predictCDS(query, refCDS, Mmusculus, q2r_df)
 #' 
-predictCDS <- function(query, refCDS, fasta,
+buildCDS <- function(query, refCDS, fasta,
                        query2ref, ids = c(1,2), 
                        coverage = NULL){
   
