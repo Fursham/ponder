@@ -1,5 +1,5 @@
-getCoverages <- function(query, ref, query2ref, 
-                         ids = c(1,2), return = c('best','all')){
+getCoverages <- function(query, ref, query2ref, ids = c(1,2), 
+                         return = c('best','all')){
   
   #Plans: set 'over' arg to allow user to choose the denominator
   
@@ -13,9 +13,7 @@ getCoverages <- function(query, ref, query2ref,
   
   # catch unmatched seqlevels
   if(GenomeInfoDb::seqlevelsStyle(query) != GenomeInfoDb::seqlevelsStyle(ref)){
-    querystyle = GenomeInfoDb::seqlevelsStyle(query)
-    refstyle = GenomeInfoDb::seqlevelsStyle(ref)
-    stop('query and ref has unmatched seqlevel styles. try matching using? function')
+    stop('query and ref has unmatched seqlevel styles. try matching matchSeqLevels function')
   }
   
   # sanity check if all tx in q2r have GRanges object
@@ -48,7 +46,7 @@ getCoverages <- function(query, ref, query2ref,
   
   # get Coverage values for all comparisons
   out = BiocParallel::bpmapply(function(x,y){
-    covrep = getCoverage(query[[x]], ref[[y]])
+    covrep = countCoverage_(query[[x]], ref[[y]])
     return(covrep)
   },query2ref[[txname]], query2ref[[refname]],
   BPPARAM = BiocParallel::MulticoreParam())
@@ -61,4 +59,14 @@ getCoverages <- function(query, ref, query2ref,
       dplyr::distinct(!!as.symbol(txname), .keep_all = T)
   }
   return(query2ref)
+}
+
+countCoverage_ <- function(tx1, tx2){
+  chrom = as.character(S4Vectors::runValue(GenomeInfoDb::seqnames(tx1)))
+  cov = GenomicRanges::coverage(c(tx1,tx2))
+  index = which(names(cov) == chrom)
+  cov = cov[[index]]
+  cov_val = S4Vectors::runValue(cov)
+  cov_len = S4Vectors::runLength(cov)
+  return(sum(cov_len[cov_val==2]) / ((sum(cov_len[cov_val==1]) + (sum(cov_len[cov_val==2])*2))/2))
 }
