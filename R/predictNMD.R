@@ -79,6 +79,8 @@ predictNMD <- function(tx, cds, NMDthreshold = 50,
                  cdstype, txtype))
   }
   # catch unmatched seqlevels
+  if(GenomeInfoDb::seqlevelsStyle(tx) != GenomeInfoDb::seqlevelsStyle(cds)){
+    stop('tx and cds has unmatched seqlevel styles. try matching using matchSeqLevels function')
   }
   
   #run testNMD_ for single GRanges object and output results
