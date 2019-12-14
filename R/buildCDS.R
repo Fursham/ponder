@@ -1,9 +1,11 @@
 #' Construct query CDS using reference as guide
 #'
 #' @param query 
-#' GRangesList object containing exons for each query transcript. 
+#' GRangesList object containing exons for each query transcript. Transcripts 
+#' have to be listed in query2ref dataframe, else CDS will not be constructed
+#' for query missing from query2ref
 #' @param refCDS 
-#' GRangesList object containing CDS for each reference transcript
+#' GRangesList object containing CDS for each reference transcript.
 #' @param fasta 
 #' BSgenome or Biostrings object containing genomic sequence
 #' @param query2ref 
@@ -58,18 +60,17 @@ buildCDS <- function(query, refCDS, fasta, query2ref,
                  missing))
   }
   
-  ### Not sure if the check below is necessary
   # # sanity check if query and ref names are in q2r df
-  # if(all(!names(query) %in% query2ref[[ids[1]]])){
-  #   unannotatedq = sum((!names(query) %in% query2ref[ids[1]]))
-  #   rlang::warn(sprintf('%s query transcript ids were missing from query2ref df',
-  #                       unannotatedq))
-  # }
-  # if(all(!names(refCDS) %in% query2ref[[ids[2]]])){
-  #   unannotatedr = sum((!names(refCDS) %in% query2ref[ids[2]]))
-  #   rlang::warn(sprintf('%s reference CDS ids were missing from query2ref df',
-  #                       unannotatedr))
-  # }
+  if(all(!names(query) %in% query2ref[[ids[1]]])){
+    unannotatedq = sum((!names(query) %in% query2ref[ids[1]]))
+    rlang::warn(sprintf('%s query transcript ids were missing from query2ref df',
+                        unannotatedq))
+  }
+  if(all(!names(refCDS) %in% query2ref[[ids[2]]])){
+    unannotatedr = sum((!names(refCDS) %in% query2ref[ids[2]]))
+    rlang::warn(sprintf('%s reference CDS ids were missing from query2ref df',
+                        unannotatedr))
+  }
   
   # extract colnames and prepare outputCDS
   txname = names(query2ref)[ids[1]]
