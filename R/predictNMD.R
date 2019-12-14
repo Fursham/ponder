@@ -85,7 +85,7 @@ predictNMD <- function(tx, cds, NMDthreshold = 50,
   
   #run testNMD_ for single GRanges object and output results
   if(intype=='gr'){
-    return(testNMD_(tx,cds,distance_stop_EJ=NMDthreshold))
+    return(testNMD(tx,cds,distance_stop_EJ=NMDthreshold))
   }
   
   # for GRangesList, 
@@ -110,7 +110,7 @@ predictNMD <- function(tx, cds, NMDthreshold = 50,
     out = BiocParallel::bplapply(totest,  function(x){
       report = list(tx = x, is_NMD = F, dist_to_lastEJ = 0,
                     num_of_down_EJs = 0,dist_to_downEJs = 0)
-      NMDreport = testNMD_(tx[[x]],cds[[x]],distance_stop_EJ=NMDthreshold)
+      NMDreport = testNMD(tx[[x]],cds[[x]],distance_stop_EJ=NMDthreshold)
       report = utils::modifyList(report, NMDreport)
       return(report)
     }, BPPARAM = BiocParallel::MulticoreParam()) %>%
@@ -118,4 +118,52 @@ predictNMD <- function(tx, cds, NMDthreshold = 50,
       dplyr::filter(if(return[1]=='NMD') is_NMD ==T else T)
     return(out)
   }
+}
+
+testNMD <- function(queryTranscript, queryCDS, distance_stop_EJ = 50){
+  
+  # prepare output list
+  output = list(is_NMD = as.logical(FALSE), 
+                dist_to_lastEJ = as.numeric(0),
+                num_of_down_EJs = as.numeric(0),
+                dist_to_downEJs = as.numeric(0),
+                threeUTRlength = as.numeric(0))
+
+  # sort queryCDS, by exon order (just in case)
+  strand = as.character(BiocGenerics::strand(queryCDS))[1]
+  queryCDS = BiocGenerics::sort(queryCDS, decreasing = strand == '-')
+  queryTranscript = BiocGenerics::sort(queryTranscript, decreasing = strand == '-')
+  
+  # test if query is NMD sensitive
+  #   get distance of last EJC from start of transcript
+  #   disjoin will create a new GRanges that will separate the queryTranscript
+  #   into discernable 5UTR, ORF and 3UTR
+  #   we can then try to use the new GRanges to infer NMD susceptibility
+  lengthtolastEJ = sum(head(BiocGenerics::width(queryTranscript),-1)) 
+  disjoint = BiocGenerics::append(queryCDS,queryTranscript) %>%
+    GenomicRanges::disjoin(with.revmap = T) %>%
+    BiocGenerics::sort(decreasing = strand == '-') %>%
+    as.data.frame() %>%
+    dplyr::mutate(disttolastEJ = lengthtolastEJ - cumsum(width)) %>%
+    dplyr::mutate(threeUTR = dplyr::lead(rev(cumsum(rev(width))),default = 0))
+  
+  # retrieve index of last ORF segment and determine if there are 
+  # more than 1 exons after stop codon
+  stopcodonindex = max(which(lengths(disjoint$revmap) == 2))
+  output$dist_to_lastEJ = disjoint[stopcodonindex,]$disttolastEJ
+  output$threeUTRlength = disjoint[stopcodonindex,]$threeUTR
+  
+  # report number of downstream EJ and its distance to PTC
+  output$num_of_down_EJs = nrow(disjoint) - stopcodonindex -1
+  downEJCdf = disjoint %>% dplyr::filter(dplyr::row_number() >= stopcodonindex+1) %>%
+    dplyr::filter(disttolastEJ >= 0) %>%
+    dplyr::mutate(disttoPTC = cumsum(width))
+  output$dist_to_downEJs = paste(downEJCdf$disttoPTC, collapse = ',')
+  
+  if(output$dist_to_lastEJ > distance_stop_EJ){
+    #annotated transcript as NMD if dist_to_lastEJ is NMD triggering
+    output$is_NMD = TRUE  
+  }
+  # return output
+  return(output)
 }
