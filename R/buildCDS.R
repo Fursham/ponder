@@ -59,17 +59,18 @@ buildCDS <- function(query, refCDS, fasta,
                  missing))
   }
   
-  # sanity check if query and ref names are in q2f df
-  if(all(!names(query) %in% query2ref[[ids[1]]])){
-    unannotatedq = sum((!names(query) %in% query2ref[ids[1]]))
-    rlang::warn(sprintf('%s query transcript ids were missing from query2ref df',
-                        unannotatedq))
-  }
-  if(all(!names(refCDS) %in% query2ref[[ids[2]]])){
-    unannotatedr = sum((!names(refCDS) %in% query2ref[ids[2]]))
-    rlang::warn(sprintf('%s reference CDS ids were missing from query2ref df',
-                        unannotatedr))
-  }
+  ### Not sure if the check below is necessary
+  # # sanity check if query and ref names are in q2r df
+  # if(all(!names(query) %in% query2ref[[ids[1]]])){
+  #   unannotatedq = sum((!names(query) %in% query2ref[ids[1]]))
+  #   rlang::warn(sprintf('%s query transcript ids were missing from query2ref df',
+  #                       unannotatedq))
+  # }
+  # if(all(!names(refCDS) %in% query2ref[[ids[2]]])){
+  #   unannotatedr = sum((!names(refCDS) %in% query2ref[ids[2]]))
+  #   rlang::warn(sprintf('%s reference CDS ids were missing from query2ref df',
+  #                       unannotatedr))
+  # }
   
   # extract colnames and prepare outputCDS
   txname = names(query2ref)[ids[1]]
