@@ -39,7 +39,7 @@
 #'
 #' 
 #' 
-matchGeneIDs <- function(inputGRanges, basicGRanges, 
+matchGeneIDs <- function(query, ref, 
                          primary_gene_id=NULL, 
                          secondary_gene_id=NULL) {
   
@@ -58,22 +58,22 @@ matchGeneIDs <- function(inputGRanges, basicGRanges,
   ###################################################################################################################
   
   # testing and matching gene_ids
-  infoLog('Checking and matching gene_ids...')
+  message('Checking and matching gene_ids...')
   
   # prepare a df with a list of gene_ids found in reference
-  basicGRanges.genelist = basicGRanges %>% as.data.frame() %>%
+  ref.genelist = ref %>% as.data.frame() %>%
     dplyr::select(gene_id) %>%
     dplyr::distinct() %>%
     dplyr::mutate(matched = TRUE)   # this column functions to annotate matched genes later on using join
   
   # convert input GRanges object to dataframe for parsing and adding meta information
-  inputGRanges = inputGRanges %>% as.data.frame() %>%
+  query = query %>% as.data.frame() %>%
     dplyr::mutate(old_gene_id = gene_id, match_level = 0) %>% 
-    dplyr::left_join(basicGRanges.genelist, by = 'gene_id')
+    dplyr::left_join(ref.genelist, by = 'gene_id')
   
   
   # count number of non standard ID before correction
-  nonstand_before = inputGRanges %>% 
+  nonstand_before = query %>% 
     dplyr::distinct(transcript_id, .keep_all = TRUE) %>%
     dplyr::filter(is.na(matched)) %>%
     nrow()
@@ -82,7 +82,7 @@ matchGeneIDs <- function(inputGRanges, basicGRanges,
   if (!is.null(primary_gene_id) & !is.null(secondary_gene_id)) {
     
     # count number of non-standard ids before matching
-    countsbefore = inputGRanges %>% 
+    countsbefore = query %>% 
       dplyr::distinct(transcript_id, .keep_all = TRUE) %>%
       dplyr::filter(is.na(matched)) %>%
       nrow()
@@ -91,10 +91,11 @@ matchGeneIDs <- function(inputGRanges, basicGRanges,
     # proceed with matching only if there are unmatched gene ids
     if (countsbefore > 0){
       
-      infoLog(sprintf('-> Attempting to correct gene ids by replacing %s with %s...', primary_gene_id, secondary_gene_id))
+      message(sprintf('-> Attempting to correct gene ids by replacing %s with %s...', 
+                      primary_gene_id, secondary_gene_id))
       
       # prepare a df with a list of gene_ids found in reference
-      basicGRanges.genelist.1 = basicGRanges %>% as.data.frame() %>%
+      ref.genelist.1 = ref %>% as.data.frame() %>%
         dplyr::select(gene_id) %>%
         dplyr::distinct() %>%
         dplyr::mutate(matched = TRUE)
@@ -102,30 +103,29 @@ matchGeneIDs <- function(inputGRanges, basicGRanges,
       # core of the function. 
       #   this will replace the primary_gene_id with the secondary_gene_id (if present)
       #   and change the match_level of matched transcripts to 1
-      inputGRanges = suppressMessages(inputGRanges %>% 
-                                        dplyr::mutate(!!primary_gene_id := ifelse(is.na(matched) & !is.na(get(secondary_gene_id)), 
-                                                                                  get(secondary_gene_id), 
-                                                                                  get(primary_gene_id))) %>%
-                                        dplyr::mutate(match_level = ifelse(is.na(matched) & !is.na(get(secondary_gene_id)), 
-                                                                           1, 
-                                                                           match_level)) %>%
-                                        dplyr::select(-matched) %>%
-                                        dplyr::left_join(basicGRanges.genelist.1))
+      query = suppressMessages(query %>% 
+                                 dplyr::mutate(!!primary_gene_id := ifelse(is.na(matched) & !is.na(get(secondary_gene_id)), 
+                                                                           get(secondary_gene_id), 
+                                                                           get(primary_gene_id))) %>%
+                                 dplyr::mutate(match_level = ifelse(is.na(matched) & !is.na(get(secondary_gene_id)), 
+                                                                    1, 
+                                                                    match_level)) %>%
+                                 dplyr::select(-matched) %>%
+                                 dplyr::left_join(ref.genelist.1))
+                                        
       
       # count number of non-standard ids after matching
-      countsafter = inputGRanges %>% 
+      countsafter = query %>% 
         dplyr::distinct(transcript_id, .keep_all = TRUE) %>%
         dplyr::filter(is.na(matched)) %>%
         nrow()
       
       # report number of IDs corrected
-      infoLog(sprintf('-> %s transcripts corrected for gene ids', (countsbefore - countsafter)))
+      message(sprintf('-> %s transcripts corrected for gene ids', 
+                      (countsbefore - countsafter)))
       
     }
-    
-    
-    
-    
+
   }
   
   # Matching function 2: replace primary_gene_id with basic gene ID IF:
@@ -133,7 +133,7 @@ matchGeneIDs <- function(inputGRanges, basicGRanges,
   if (!is.null(primary_gene_id)) {
 
     # count number of non-standard ids before matching
-    countsbefore = inputGRanges %>% 
+    countsbefore = query %>% 
       dplyr::distinct(transcript_id, .keep_all = TRUE) %>%
       dplyr::filter(is.na(matched)) %>%
       nrow()
@@ -141,14 +141,15 @@ matchGeneIDs <- function(inputGRanges, basicGRanges,
     # proceed with matching only if there are unmatched gene ids
     if (countsbefore > 0){
       
-      infoLog('--> Attempting to match ensembl gene_ids...')
+      message('--> Attempting to match ensembl gene_ids...')
       # prepare a df with a list of reference gene_ids and append ENSEMBL style ids to remove suffixes
-      basicGRanges.genelist.2 = basicGRanges %>% as.data.frame() %>%
+      ref.genelist.2 = ref %>% as.data.frame() %>%
         dplyr::select(gene_id) %>%
         dplyr::distinct() %>%
         dplyr::rowwise() %>%
         dplyr::mutate(matched = TRUE) %>%
-        dplyr::mutate(appended_ens_id = ifelse(startsWith(gene_id, 'ENS'), strsplit(gene_id, split = '\\.')[[1]][1], NA)) %>%
+        dplyr::mutate(appended_ens_id = ifelse(startsWith(gene_id, 'ENS'), 
+                                               strsplit(gene_id, split = '\\.')[[1]][1], NA)) %>%
         dplyr::filter(!is.na(appended_ens_id)) %>%
         dplyr::select(appended_ens_id, basic_gene_id = gene_id, matched)
       
@@ -156,13 +157,13 @@ matchGeneIDs <- function(inputGRanges, basicGRanges,
       #   this function will append ENSEMBL style primary_gene_ids to remove suffixes
       #   and match those gene_ids to the appended reference gene_ids
       #   and change the match_level of matched transcripts
-      inputGRanges = suppressMessages(inputGRanges %>%
+      query = suppressMessages(query %>%
                                         dplyr::group_by(transcript_id) %>%
                                         dplyr::mutate(appended_ens_id = ifelse(startsWith(get(primary_gene_id), 'ENS') & is.na(matched), 
                                                                                strsplit(get(primary_gene_id), split = '\\.')[[1]][1], 
                                                                                as.character(NA))) %>%
                                         dplyr::select(-matched) %>%
-                                        dplyr::left_join(basicGRanges.genelist.2) %>%
+                                        dplyr::left_join(ref.genelist.2) %>%
                                         dplyr::mutate(!!primary_gene_id := ifelse(!is.na(basic_gene_id),
                                                                                   basic_gene_id, 
                                                                                   get(primary_gene_id))) %>%
@@ -173,7 +174,7 @@ matchGeneIDs <- function(inputGRanges, basicGRanges,
                                         dplyr::ungroup())
       
       # count number of non-standard ids after matching
-      countsafter= inputGRanges %>% 
+      countsafter= query %>% 
         dplyr::distinct(transcript_id, .keep_all = TRUE) %>%
         dplyr::filter(is.na(matched)) %>%
         nrow()
@@ -181,16 +182,16 @@ matchGeneIDs <- function(inputGRanges, basicGRanges,
       # print out statistics of the match
       #   or print out warning if none of the genes were matched
       if (countsbefore > countsafter) {
-        infoLog(sprintf('--> %s transcripts corrected for gene ids', (countsbefore - countsafter)))
+        message(sprintf('--> %s transcripts corrected for gene ids', (countsbefore - countsafter)))
       } else {
-        anyEnsid = inputGRanges %>% 
+        anyEnsid = query %>% 
           dplyr::select(gene_id) %>%
           dplyr::distinct() %>%
           dplyr::filter(startsWith(gene_id, 'ENS')) %>%
           nrow() > 0
         
         if (anyEnsid == TRUE) {
-          infoLog('--> All ensembl gene ids have been matched')
+          message('--> All ensembl gene ids have been matched')
         } else{
           warnLog('--> No ensembl gene ids found in query')
         }
@@ -203,33 +204,33 @@ matchGeneIDs <- function(inputGRanges, basicGRanges,
   
   
   # count number of unmatched ids before matching
-  countsbefore = inputGRanges %>% 
+  countsbefore = query %>% 
     dplyr::distinct(transcript_id, .keep_all = TRUE) %>%
     dplyr::filter(is.na(matched)) %>%
     nrow()
   
   if (countsbefore == 0) {
-    infoLog('--> All gene ids have been matched')
+    message('--> All gene ids have been matched')
   } else {
     
-    infoLog('---> Attempting to match gene_ids by finding overlapping coordinates...')
+    message('---> Attempting to match gene_ids by finding overlapping coordinates...')
     # core of the function. 
     #   this function will gather all unmatched transcripts
     #   and attempt to find its overlap with the reference
     #   and match those gene_ids to the reference gene_ids
     #   and change the match_level of matched transcripts
-    unmatched_df = inputGRanges %>%
+    unmatched_df = query %>%
       dplyr::filter(is.na(matched), type == 'exon') %>%
       dplyr::distinct(transcript_id,.keep_all = T) %>% 
       dplyr::select(seqnames, start, end, strand, transcript_id)
     unmatched_granges = GenomicRanges::makeGRangesFromDataFrame(unmatched_df, keep.extra.columns = TRUE)
     
-    matched_df = IRanges::mergeByOverlaps(unmatched_granges, basicGRanges) %>% 
+    matched_df = IRanges::mergeByOverlaps(unmatched_granges, ref) %>% 
       as.data.frame() %>%
       dplyr::select(transcript_id, basic_gene_id = gene_id) %>%
       dplyr::distinct(transcript_id, .keep_all = TRUE)
     
-    inputGRanges = suppressMessages(inputGRanges %>%
+    query = suppressMessages(query %>%
                                       dplyr::select(-matched) %>%
                                       dplyr::left_join(matched_df) %>%
                                       dplyr::mutate(gene_id = ifelse(!is.na(basic_gene_id),
@@ -239,17 +240,17 @@ matchGeneIDs <- function(inputGRanges, basicGRanges,
                                                                          4, 
                                                                          match_level)) %>%
                                       dplyr::select(-basic_gene_id) %>%
-                                      dplyr::left_join(basicGRanges.genelist))
+                                      dplyr::left_join(ref.genelist))
     
     # count number of unmatched ids after matching
-    countsafter = inputGRanges %>% 
+    countsafter = query %>% 
       dplyr::distinct(transcript_id, .keep_all = TRUE) %>%
       dplyr::filter(is.na(matched)) %>%
       nrow()
     
     
     # report statistics of the match
-    infoLog(sprintf('---> %s transcripts corrected for gene ids', (countsbefore - countsafter)))
+    message(sprintf('---> %s transcripts corrected for gene ids', (countsbefore - countsafter)))
     
     
   }
@@ -259,42 +260,42 @@ matchGeneIDs <- function(inputGRanges, basicGRanges,
   # annotate the match_level on unmatched gene_ids
   # and cleanup the dataframe
   
-  inputGRanges = inputGRanges %>%
+  query = query %>%
     dplyr::mutate(match_level = ifelse(is.na(matched),
                                        5,match_level)) %>%
     dplyr::select(-matched)
     
-  if('gene_name' %in% names(inputGRanges) & 'gene_name' %in% names(S4Vectors::mcols(basicGRanges))){
-    basicGRanges.genelist.1 = basicGRanges %>% as.data.frame() %>%
+  if('gene_name' %in% names(query) & 'gene_name' %in% names(S4Vectors::mcols(ref))){
+    ref.genelist.1 = ref %>% as.data.frame() %>%
       dplyr::select(gene_id, ref_gene_name = gene_name) %>%
       dplyr::distinct() 
     
-    inputGRanges = inputGRanges %>%
-      dplyr::left_join(basicGRanges.genelist.1, by = 'gene_id') %>%
+    query = query %>%
+      dplyr::left_join(ref.genelist.1, by = 'gene_id') %>%
       dplyr::mutate(gene_name = ifelse(match_level != 5 & is.na(gene_name),
                                          ref_gene_name,gene_name)) %>%
       dplyr::select(-ref_gene_name)
   } else {
-    inputGRanges = inputGRanges %>%
+    query = query %>%
       dplyr::mutate(gene_name = NA)
   } 
   
-  # report pre-testing analysis and return inputGRanges
-  nonstand_after = inputGRanges %>% 
+  # report pre-testing analysis and return query
+  nonstand_after = query %>% 
     dplyr::distinct(transcript_id, .keep_all = TRUE) %>%
     dplyr::filter(match_level == 5) %>%
     nrow()
   corrected_ids = nonstand_before - nonstand_after
   
-  infoLog(sprintf('Total gene_ids corrected: %s', corrected_ids))
-  infoLog(sprintf('Remaining number of non-standard gene_ids: %s', nonstand_after))
+  message(sprintf('Total gene_ids corrected: %s', corrected_ids))
+  message(sprintf('Remaining number of non-standard gene_ids: %s', nonstand_after))
   if (nonstand_after > 0) {
     warnLog('Transcripts with non-standard gene_ids will be skipped from analysis')
     
   } 
   
-  inputGRanges = GenomicRanges::makeGRangesFromDataFrame(inputGRanges, keep.extra.columns = TRUE)
-  return(inputGRanges)
+  query = GenomicRanges::makeGRangesFromDataFrame(query, keep.extra.columns = TRUE)
+  return(query)
 }
 
 
