@@ -29,3 +29,6 @@ resizeGRangesTranscripts(gr1, 110,150)
 
 
 }
+\author{
+Fursham Hamid
+}

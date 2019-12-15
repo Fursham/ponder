@@ -17,3 +17,6 @@ Corrected input GRanges
 \description{
 Match seqnames of input GRanges to reference GRanges
 }
+\author{
+Fursham Hamid
+}

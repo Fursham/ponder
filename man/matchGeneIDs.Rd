@@ -2,7 +2,7 @@
 % Please edit documentation in R/matchGeneIDs.R
 \name{matchGeneIDs}
 \alias{matchGeneIDs}
-\title{Match Gene IDs from query GTF/GFF3 file}
+\title{Match gene_id from query GTF to a reference}
 \usage{
 matchGeneIDs(
   inputGRanges,
@@ -12,20 +12,22 @@ matchGeneIDs(
 )
 }
 \arguments{
-\item{primary_gene_id}{Name of the primary gene id in query file. Input to this argument is typically 'gene_id'}
+\item{primary_gene_id}{Character name of the primary gene id metadata in query GTF. 
+Input to this argument is typically 'gene_id'}
 
-\item{secondary_gene_id}{Name of the secondary gene id in query file. Example of input to this arguement is 'ref_gene_id'}
+\item{secondary_gene_id}{Character name of the secondary gene id in query file. 
+Example of input to this arguement is 'ref_gene_id'}
 
-\item{query}{Mandatory. Path to query GTF/GFF3 transcript annotation file}
+\item{query}{Query GTF imported as GRanges object}
 
-\item{ref}{Mandatory. Path to reference GTF/GFF3 transcript annotation file.}
+\item{ref}{Reference GTF as GRanges object}
 }
 \value{
 Gene_id-matched query GRanges
 }
 \description{
-This function will match and correct Gene IDs from a query assembled transcript file, using a 
-transcript annotation as reference. 
+This function will match and correct Gene IDs from a query GTF to a reference
+GTF
 
 The default approach to this correction relies on finding overlaps between transcripts in query with
 transcripts in reference. Using this method alone could result in false positive matches (19 percent false positives).
@@ -41,8 +43,6 @@ provide 'primary_gene_id' and 'secondary_gene_id' arguments. To determine if you
 possible secondary Gene IDs, try importing query GTF file using rtracklayer package and check its metadata 
 columns
 }
-\examples{
-
-
-
+\author{
+Fursham Hamid
 }
