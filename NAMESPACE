@@ -3,7 +3,7 @@
 export(buildCDS)
 export(classifyAS)
 export(getCoverages)
-export(gff3togtfconvert)
+export(makeGTF)
 export(matchSeqLevels)
 export(predictNMD)
 export(resizeGRangesTranscripts)

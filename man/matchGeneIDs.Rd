@@ -4,23 +4,18 @@
 \alias{matchGeneIDs}
 \title{Match gene_id from query GTF to a reference}
 \usage{
-matchGeneIDs(
-  inputGRanges,
-  basicGRanges,
-  primary_gene_id = NULL,
-  secondary_gene_id = NULL
-)
+matchGeneIDs(query, ref, primary_gene_id = NULL, secondary_gene_id = NULL)
 }
 \arguments{
+\item{query}{Query GTF imported as GRanges object}
+
+\item{ref}{Reference GTF as GRanges object}
+
 \item{primary_gene_id}{Character name of the primary gene id metadata in query GTF. 
 Input to this argument is typically 'gene_id'}
 
 \item{secondary_gene_id}{Character name of the secondary gene id in query file. 
 Example of input to this arguement is 'ref_gene_id'}
-
-\item{query}{Query GTF imported as GRanges object}
-
-\item{ref}{Reference GTF as GRanges object}
 }
 \value{
 Gene_id-matched query GRanges
