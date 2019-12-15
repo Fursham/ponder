@@ -1,26 +1,46 @@
-makeGTF <- function(inputGRanges, report_df, makeGTF){
-  infoLog('Creating GTF file')
-  if (makeGTF == TRUE){
-    out.dir = getwd()
-  } else{
-    out.dir = makeGTF
+makeGTF <- function(exons, cds, con){
+  
+  # catch missing args
+  mandargs <- c('exons','cds','con')
+  passed <- names(as.list(match.call())[-1])
+  if (any(!mandargs %in% passed)) {
+    stop(paste("missing values for", 
+               paste(setdiff(mandargs, passed), collapse=", ")))
   }
   
-  # collect CDS information from reported dataframe
-  report_CDS = report_df %>% 
-    dplyr::select(dplyr::starts_with('ORF_considered')) %>%
-    dplyr::filter(!is.na(ORF_considered.type)) %>%
-    dplyr::rename_all(function(x){return(substr(x, start = 16, stop = nchar(x)))}) %>%
-    dplyr::mutate(source = 'NMDer') 
+  #check seqlevels
+  if(GenomeInfoDb::seqlevelsStyle(exons) != GenomeInfoDb::seqlevelsStyle(cds)){
+    stop('exons and cds has unmatched seqlevel styles. try matching using matchSeqLevels function')
+  }
   
-  # collect transcript information from input GRanges
-  input_transcripts = report_df %>% 
-    dplyr::select(NMDer_ID, Transcript_ID) %>%
-    dplyr::left_join(as.data.frame(inputGRanges), by = c('Transcript_ID' = 'transcript_id')) %>%
-    dplyr::mutate(source = 'NMDer', transcript_id = NMDer_ID) %>%
-    dplyr::select(seqnames:type,phase:gene_id,transcript_id)
+  # unlist GRangesList and fill important attribute columns
+  exons <- unlist(exons)
+  cds <- unlist(cds)
+  if(any(!c('type','transcript_id') %in% names(mcols(exons)))){
+    metadata <- c('type','transcript_id')
+    missing <- metadata[!metadata %in% names(mcols(exons))]
+    if('type' %in% missing){
+      mcols(exons)$type <- 'exon'
+    }
+    if('transcript_id' %in% missing){
+      mcols(exons)$transcript_id <- names(exons)
+    }
+  }
+  if(any(!c('type','transcript_id','phase') %in% names(mcols(cds)))){
+    metadata <- c('type','transcript_id')
+    missing <- metadata[!metadata %in% names(mcols(cds))]
+    if('type' %in% missing){
+      mcols(cds)$type <- 'CDS'
+    }
+    if('transcript_id' %in% missing){
+      mcols(cds)$transcript_id <- names(cds)
+    }
+    if('phase' %in% missing){
+      mcols(cds)$phase <- data.table::shift(cumsum(width(exons)%%3)%%3, fill = 0)
+    }
+  }
+  names(exons) <- NULL
+  names(cds) <- NULL
   
-  # combine transcript annotation and CDS information
-  output_gtf = suppressWarnings(dplyr::bind_rows(input_transcripts, report_CDS))
-  rtracklayer::export(output_gtf, paste0(out.dir, '/NMDer.gtf'), format = 'gtf')
+  rtracklayer::export(c(exons,cds), con, 'gtf')
 }
