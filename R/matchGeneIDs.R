@@ -33,8 +33,10 @@
 #' @return
 #' Gene_id-matched query GRanges
 #' 
+#'@author Fursham Hamid
 #' @examples
-#' @author Fursham Hamid
+#' matchGeneIDs(query_gtf, ref_gtf)
+#'
 #' 
 #' 
 matchGeneIDs <- function(inputGRanges, basicGRanges, 

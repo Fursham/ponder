@@ -31,6 +31,9 @@ Dataframe from query2ref with coverage values appended as a new column
 \description{
 Obtain percent coverage between query and reference transcripts
 }
+\examples{
+getCoverages(query_gtf, ref_gtf, q2r)
+}
 \author{
 Fursham Hamid
 }

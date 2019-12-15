@@ -25,6 +25,7 @@
 #' @author Fursham Hamid
 #'
 #' @examples
+#' getCoverages(query_gtf, ref_gtf, q2r)
 getCoverages <- function(query, ref, query2ref, ids = c(1,2), 
                          return = c('best','all')){
   
