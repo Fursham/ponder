@@ -9,7 +9,7 @@ checkInputs <- function(input, ref, fasta){
   names <- c('input', 'ref', 'fasta')
   
   if(length(unique(levels)) == 1){
-    print('\tSeqlevels on all objects are identical')
+    message('\tSeqlevels on all objects are identical')
   } else {
     lapply(unique(levels), function(x){
       objs = paste(names[which(levels == x)], collapse = ', ')
