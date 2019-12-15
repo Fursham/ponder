@@ -111,7 +111,7 @@ buildCDS <- function(query, refCDS, fasta, query2ref,
       as.data.frame()
     return(CDSreport)
   },query2ref[[txname]], query2ref[[refname]],
-  BPPARAM = BiocParallel::MulticoreParam()) %>%
+  BPPARAM = BiocParallel::MulticoreParam(), SIMPLIFY = F) %>%
     dplyr::bind_rows()
   outCDS = suppressWarnings(dplyr::bind_rows(outCDS, out) %>%
     dplyr::mutate(group_name = transcript_id) %>%
@@ -302,7 +302,7 @@ getCDSranges_ <- function(query, fiveUTRlength, threeUTRlength){
     dplyr::mutate(phase = cumsum(width%%3)%%3) %>%
     dplyr::select(seqnames:end, strand, type, phase, transcript_id)
   CDSranges$phase = c(0, head(CDSranges$phase, - 1))
-  output$ORF_considered  = GenomicRanges::makeGRangesFromDataFrame(CDSranges, keep.extra.columns = TRUE)
-  
+  #output$ORF_considered  = GenomicRanges::makeGRangesFromDataFrame(CDSranges, keep.extra.columns = TRUE)
+  output$ORF_considered  = CDSranges
   return(output)
 }
