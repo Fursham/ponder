@@ -32,6 +32,9 @@ q2rcovs <- getCoverages(query_exons, ref_exons, q2r)
 query_cds <- buildCDS(query_exons, ref_cds, 
                         Mmusculus, q2rcovs, coverage = 3)
 
+#export exons and cds to gtf
+makeGTF(query_exons, query_cds, '.')
+
 #refine uORF and uATG
 
 #testNMD
