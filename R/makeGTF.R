@@ -1,3 +1,12 @@
+#' Combine and export exons and cds Granges to GTF
+#'
+#' @param exons GRangesList object containing exons for each query transcript.
+#' @param cds GRangesList object containing cds for each query transcript.
+#' @param con See ?rtracklayer::export for a description of this argument
+#'
+#' @return See ?rtracklayer::export for a description of this argument
+#' @export
+#'
 makeGTF <- function(exons, cds, con){
   
   # catch missing args
