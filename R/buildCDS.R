@@ -50,6 +50,19 @@ buildCDS <- function(query, refCDS, fasta, query2ref,
                paste(setdiff(mandargs, passed), collapse=", ")))
   }
   
+  # check if query and cds are GRlist
+  if(!is(query,'GRangesList') | !is(refCDS,'GRangesList')){
+    txtype = is(query)[1]
+    cdstype = is(refCDS)[1]
+    
+    error = c(!is(query,'GRangesList') , !is(refCDS,'GRangesList'))
+    obj = paste(c('query','refCDS')[error], collapse = ',')
+    types = paste(c(is(query)[1], is(refCDS)[1])[error], collapse = ',')
+    
+    stop(sprintf('Incompatile input object. %s is type %s respectively',
+                 obj, types))
+  }
+  
   # catch unmatched seqlevels
   if(GenomeInfoDb::seqlevelsStyle(query) != GenomeInfoDb::seqlevelsStyle(refCDS)){
     stop('query and refCDS has unmatched seqlevel styles. try matching using matchSeqLevels function')

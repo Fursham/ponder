@@ -1,15 +1,70 @@
-uORFuATG_ <- function(txlist, cdslist, fasta){
+searchuORFs <- function(exons, cds, fasta,
+                           ORFlength = 21, which = NULL){
   
-  output = list(is_NMD = as.logical(FALSE), 
-                dist_to_lastEJ = as.numeric(0),
-                num_of_down_EJs = as.numeric(0),
-                dist_to_downEJs = as.numeric(0))
-  if (other_features == TRUE) {
-    output = modifyList(output, list(threeUTRlength = as.numeric(NA),
-                                     uORF = as.character(NA), 
-                                     uATG = as.character(NA), 
-                                     uATG_frame = as.character(NA)))
+  # catch missing args
+  mandargs <- c('exons', 'cds','fasta')
+  passed <- names(as.list(match.call())[-1])
+  if (any(!mandargs %in% passed)) {
+    stop(paste("missing values for", 
+               paste(setdiff(mandargs, passed), collapse=", ")))
   }
+  
+  # check if exons and cds are GRlist
+  if(!is(exons,'GRangesList') | !is(cds,'GRangesList')){
+    txtype = is(exons)[1]
+    cdstype = is(cds)[1]
+    
+    error = c(!is(exons,'GRangesList') , !is(cds,'GRangesList'))
+    obj = paste(c('exons','cds')[error], collapse = ',')
+    types = paste(c(is(exons)[1], is(cds)[1])[error], collapse = ',')
+
+    stop(sprintf('Incompatile input object. %s is type %s respectively',
+                 obj, types))
+  }
+  
+  # catch unmatched seqlevels
+  if(GenomeInfoDb::seqlevelsStyle(exons) != GenomeInfoDb::seqlevelsStyle(cds)){
+    stop('exons and cds has unmatched seqlevel styles. try matching using matchSeqLevels function')
+  }
+  
+  # test for uORF and uATG
+  totest = names(exons)
+  # check for missing cds and return warnings/errors
+  totest = totest[totest %in% names(cds)]
+  if(length(totest)==0){
+    stop('all tx have missing cds info. please ensure tx and cds names match')
+  } 
+  if(length(totest) < length(exons)){
+    skiptest = length(exons) - length(totest)
+    rlang::warn(sprintf('%s tx(s) have missing cds info and have been skipped',
+                        skiptest))
+  }
+  out = BiocParallel::bplapply(totest,  function(x){
+    report = getuORFuATG_(exons[x], cds[x], fasta, ORFlength)
+    return(report %>% as.data.frame())
+  }, BPPARAM = BiocParallel::MulticoreParam()) %>%
+    dplyr::bind_rows()
+  
+  newtx <- out %>% dplyr::select(dplyr::starts_with('tx')) %>%
+    dplyr::distinct() %>%
+    dplyr::rename_all(function(x){return(substr(x, start = 4, stop = nchar(x)))}) %>%
+    dplyr::select(-group) %>%
+    GenomicRanges::makeGRangesListFromDataFrame(split.field = 'group_name', 
+                                                keep.extra.columns = T)
+  
+  newcds <- out %>% dplyr::select(dplyr::starts_with('cds')) %>%
+    dplyr::distinct() %>%
+    dplyr::rename_all(function(x){return(substr(x, start = 5, stop = nchar(x)))}) %>%
+    dplyr::select(-group) %>%
+    GenomicRanges::makeGRangesListFromDataFrame(split.field = 'group_name', 
+                                                keep.extra.columns = T)
+  
+  return(list('exons' = newtx, 'cds' = newcds))
+}
+
+
+
+getuORFuATG_ <- function(txlist, cdslist, fasta, size){
   
   #extract GR from GRL
   tx = txlist[[1]]
@@ -40,7 +95,7 @@ uORFuATG_ <- function(txlist, cdslist, fasta){
   if(startcodonindex >1){
     fiveUTRindex = startcodonindex -1
   } else{
-    fiveUTRindex = 1
+    return() #return if start tx and cds starts with start codon
   }
   fiveUTRlength = disjoint[fiveUTRindex,]$tmp.fwdcumsum
 
@@ -59,7 +114,7 @@ uORFuATG_ <- function(txlist, cdslist, fasta){
   
   # return if 5UTR contain no start/stop codons
   if(nrow(allmatches) == 0){
-    return(output)
+    return()
   }
   
   # this code will generate a dataframe of start/stop coordinates of
@@ -80,14 +135,15 @@ uORFuATG_ <- function(txlist, cdslist, fasta){
                   width = end - start + 1) %>% 
     dplyr::ungroup() %>%
     dplyr::arrange(start) %>%
+    dplyr::filter(width >= size) %>%
     dplyr::mutate(group_name = ifelse(group_name == 'uORF',
-                                      paste0(dplyr::row_number(),group_name),
+                                      paste0(group_name, '_',dplyr::row_number()),
                                       group_name)) %>% 
     dplyr::select(-shiftype)
   
   # return if no uORFs or uATGs are found
   if(nrow(uORFuATG) == 0){
-    return(output)
+    return()
   }
   
   # this code will return non-overlapping uORFs and stops at the first uATG
@@ -100,8 +156,9 @@ uORFuATG_ <- function(txlist, cdslist, fasta){
     start = x - 1
     end = length(fiveUTRseq) - y
     thisGR = resizeGRangesTranscripts(fiveUTRGRanges, start, end) 
-    S4Vectors::mcols(thisGR)$group_name = z
+    S4Vectors::mcols(thisGR)$type = 'CDS'
     S4Vectors::mcols(thisGR)$frame = a
+    S4Vectors::mcols(thisGR)$phase <- data.table::shift(cumsum(width(thisGR)%%3)%%3, fill = 0)
     S4Vectors::mcols(thisGR)$newname= paste0(z, '_', names(txlist))
     return(thisGR)
   }, nonOverlapsuORFuATG$start, nonOverlapsuORFuATG$end, 
@@ -111,30 +168,23 @@ uORFuATG_ <- function(txlist, cdslist, fasta){
     makeGRangesListFromDataFrame(split.field = 'newname', 
                                  keep.extra.columns = T)
   
+  # made new tx GRangesList
+  txlistnew = rep(txlist,length(uORFgr))
+  names(txlistnew) = names(uORFgr)
   
-  if('uATG'%in%uORFs$group_name){
-    uATGgr = uORFgr[[which('uATG' == uORFs$group_name)]]
-    disjoint = BiocGenerics::append(uATGgr,tx) %>%
-      GenomicRanges::disjoin(with.revmap = T) %>%
-      BiocGenerics::sort(decreasing = strand == '-')
+  # get CDS with newly found uATG
+  if(any(startsWith(names(uORFgr), 'uATG'))){
+    uATGindex = which(startsWith(names(uORFgr),'uATG'))
+    uATGgr = uORFgr[uATGindex]
+    uATGtx = txlistnew[names(uATGgr)]
+    uATGCDS = getCDS_(uATGtx, uATGgr, fasta)
+    if(!is.null(uATGCDS)){
+      uATGCDS = uATGCDS %>%
+        dplyr::select(-transcript_id) %>%
+        makeGRangesFromDataFrame(keep.extra.columns = T)
+      S4Vectors::mcols(uATGCDS)$frame= mcols(uATGgr[[1]])$frame
+      uORFgr[[uATGindex]] = uATGCDS
+    }
   }
-  
-  
-  ############
-  if('uORF'%in%uORFGranges$group_name){
-    uORF = uORFGranges %>% 
-      dplyr::filter(group_name == 'uORF') %>%
-      dplyr::mutate(coord = paste0(start, '-', end)) %>%
-      dplyr::select(coord)
-    output$uORF = paste(uORF$coord, collapse = '|')
-  }
-  
-  if('uATG'%in%uORFGranges$group_name){
-    uATG = uORFGranges %>% 
-      dplyr::filter(group_name == 'uATG') %>%
-      dplyr::mutate(coord = paste0(start, '-', end)) %>%
-      dplyr::select(coord, frame)
-    output$uATG = paste(uATG$coord, collapse = '|')
-    output$uATG_frame = paste(uATG$frame, collapse = '|')
-  }
+  return(list('tx' = txlistnew, 'cds' = uORFgr))
 }
