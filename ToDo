@@ -1,1 +1,6 @@
 ####### ToDos ####### 
+
+- CORRECT searchuORFs error where df of cds is more than 1 row
+- Package function to identify alternative segments
+- Simplify variable names
+- Run Checks
