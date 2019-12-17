@@ -186,5 +186,8 @@ getuORFuATG_ <- function(txlist, cdslist, fasta, size){
       uORFgr[[uATGindex]] = uATGCDS
     }
   }
+# to solve bind_rows error
+# convert tx and uORFgr to data frame, annotate as tx or cds and merge, remove group
+# will separate df after bplapply based on tx/cds and rebuild gr
   return(list('tx' = txlistnew, 'cds' = uORFgr))
 }
