@@ -1,6 +1,11 @@
 ####### ToDos ####### 
 
 - CORRECT searchuORFs error where df of cds is more than 1 row
-- Package function to identify alternative segments
+- include workflow to predict protein domains. Check out hmmer from Bio3d
+- see if differences in domains can be easily compared 
+
+- test different input types. AnnHub gtfs, Ensembl gtfs, custom fasta
+
+- Package function to identify alternative segments. See hmmer for ideas on output 
 - Simplify variable names
 - Run Checks
