@@ -14,10 +14,11 @@ from high-throughput RNA-seq experiments
   * Custom transcript annotation (GTF) generated from RNA-seq experiemnts
 * Constructs coding region (CDS) on custom-generated GTF annotation using reference CDS as guide
 * Matches chromosome levels and gene_id levels between query and reference GRanges object
+* Search coding mRNAs for uORFs and overlapping ORFs
 * Resizes start and end of transcript-organized GRanges object
 * *In development*
   * *Analyze alternative segments between query and reference transcripts*
-  * *Analyze uORFs and uATGs on a list of coding mRNAs*
+  * *Compare functional significance between mRNA isoforms*
 
 
 
