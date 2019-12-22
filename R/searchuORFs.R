@@ -1,5 +1,5 @@
-searchuORFs <- function(exons, cds, fasta,
-                           ORFlength = 21, which = NULL){
+searchuORFs <- function(exons, cds, fasta, ORFlength = 21, 
+                        which = NULL, append = TRUE){
   
   # catch missing args
   mandargs <- c('exons', 'cds','fasta')
@@ -41,21 +41,17 @@ searchuORFs <- function(exons, cds, fasta,
   }
   out = BiocParallel::bplapply(totest,  function(x){
     report = getuORFuATG_(exons[x], cds[x], fasta, ORFlength)
-    return(report %>% as.data.frame())
+    return(report)
   }, BPPARAM = BiocParallel::MulticoreParam()) %>%
     dplyr::bind_rows()
   
-  newtx <- out %>% dplyr::select(dplyr::starts_with('tx')) %>%
+  newtx <- out %>% dplyr::filter(type == 'exon') %>%
     dplyr::distinct() %>%
-    dplyr::rename_all(function(x){return(substr(x, start = 4, stop = nchar(x)))}) %>%
-    dplyr::select(-group) %>%
     GenomicRanges::makeGRangesListFromDataFrame(split.field = 'group_name', 
                                                 keep.extra.columns = T)
   
-  newcds <- out %>% dplyr::select(dplyr::starts_with('cds')) %>%
+  newcds <- out %>% dplyr::filter(type == 'CDS') %>%
     dplyr::distinct() %>%
-    dplyr::rename_all(function(x){return(substr(x, start = 5, stop = nchar(x)))}) %>%
-    dplyr::select(-group) %>%
     GenomicRanges::makeGRangesListFromDataFrame(split.field = 'group_name', 
                                                 keep.extra.columns = T)
   
@@ -171,7 +167,9 @@ getuORFuATG_ <- function(txlist, cdslist, fasta, size){
   # made new tx GRangesList
   txlistnew = rep(txlist,length(uORFgr))
   names(txlistnew) = names(uORFgr)
-  
+  txlistnew = txlistnew %>% as.data.frame() %>%
+    dplyr::mutate(type = 'exon')
+    
   # get CDS with newly found uATG
   if(any(startsWith(names(uORFgr), 'uATG'))){
     uATGindex = which(startsWith(names(uORFgr),'uATG'))
@@ -186,8 +184,9 @@ getuORFuATG_ <- function(txlist, cdslist, fasta, size){
       uORFgr[[uATGindex]] = uATGCDS
     }
   }
-# to solve bind_rows error
-# convert tx and uORFgr to data frame, annotate as tx or cds and merge, remove group
-# will separate df after bplapply based on tx/cds and rebuild gr
-  return(list('tx' = txlistnew, 'cds' = uORFgr))
+  combinedDF = uORFgr %>% as.data.frame() %>%
+    dplyr::bind_rows(txlistnew) %>%
+    dplyr::select(-group)
+
+  return(combinedDF)
 }
