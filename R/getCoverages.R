@@ -54,8 +54,8 @@ getCoverages <- function(query, ref, query2ref, ids = c(1, 2),
       missing
     ))
   }
-  if (!all(query2ref[[ids[2]]] %in% names(refCDS))) {
-    missing <- sum(!query2ref[[ids[2]]] %in% names(refCDS))
+  if (!all(query2ref[[ids[2]]] %in% names(ref))) {
+    missing <- sum(!query2ref[[ids[2]]] %in% names(ref))
     stop(sprintf(
       "%s reference CDSs have missing GRanges object",
       missing

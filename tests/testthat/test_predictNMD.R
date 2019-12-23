@@ -8,7 +8,7 @@ test_that("Test the structure of outputs", {
   expect_equal(names(out1), c('is_NMD', 'dist_to_lastEJ',
                               'num_of_down_EJs', 'dist_to_downEJs',
                               'threeUTRlength')) 
-  expect_equal(names(out2), c('tx', 'is_NMD', 'dist_to_lastEJ',
+  expect_equal(names(out2), c('exons', 'is_NMD', 'dist_to_lastEJ',
                               'num_of_down_EJs', 'dist_to_downEJs',
                               'threeUTRlength')) 
   expect_equal(nrow(out2), 4) 
