@@ -19,9 +19,20 @@
 #' exons and cds. Default: FALSE
 #'
 #' @return
+#' List containing exon and cds GRangesList of upstream and overlapping ORFs.
+#' If append is TRUE, function will append newly-found ORFs to input
+#' exons and cds provided
 #' @export
 #'
 #' @examples
+#' 
+#' library(BSgenome.Mmusculus.UCSC.mm10)
+#' searchuORFs(query_exons, query_cds, Mmusculus)
+#' searchuORFs(query_exons, query_cds, Mmusculus, append = T)
+#' 
+#' # To separate exons and cds GRangesList into differebt objects
+#' unpack[query_exons_uORF, query_cds_uORF] = searchuORFs(query_exons, query_cds, Mmusculus)
+#' 
 searchuORFs <- function(exons, cds, fasta, ORFlength = 21,
                         which = NULL, append = FALSE) {
 
