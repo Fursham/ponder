@@ -7,49 +7,51 @@
 #' @return See ?rtracklayer::export for a description of this argument
 #' @export
 #'
-makeGTF <- function(exons, cds, con){
-  
+makeGTF <- function(exons, cds, con) {
+
   # catch missing args
-  mandargs <- c('exons','cds','con')
+  mandargs <- c("exons", "cds", "con")
   passed <- names(as.list(match.call())[-1])
   if (any(!mandargs %in% passed)) {
-    stop(paste("missing values for", 
-               paste(setdiff(mandargs, passed), collapse=", ")))
+    stop(paste(
+      "missing values for",
+      paste(setdiff(mandargs, passed), collapse = ", ")
+    ))
   }
-  
-  #check seqlevels
-  if(GenomeInfoDb::seqlevelsStyle(exons) != GenomeInfoDb::seqlevelsStyle(cds)){
-    stop('exons and cds has unmatched seqlevel styles. try matching using matchSeqLevels function')
+
+  # check seqlevels
+  if (GenomeInfoDb::seqlevelsStyle(exons) != GenomeInfoDb::seqlevelsStyle(cds)) {
+    stop("exons and cds has unmatched seqlevel styles. try matching using matchSeqLevels function")
   }
-  
+
   # unlist GRangesList and fill important attribute columns
   exons <- unlist(exons)
   cds <- unlist(cds)
-  if(any(!c('type','transcript_id') %in% names(mcols(exons)))){
-    metadata <- c('type','transcript_id')
+  if (any(!c("type", "transcript_id") %in% names(mcols(exons)))) {
+    metadata <- c("type", "transcript_id")
     missing <- metadata[!metadata %in% names(mcols(exons))]
-    if('type' %in% missing){
-      mcols(exons)$type <- 'exon'
+    if ("type" %in% missing) {
+      mcols(exons)$type <- "exon"
     }
-    if('transcript_id' %in% missing){
+    if ("transcript_id" %in% missing) {
       mcols(exons)$transcript_id <- names(exons)
     }
   }
-  if(any(!c('type','transcript_id','phase') %in% names(mcols(cds)))){
-    metadata <- c('type','transcript_id')
+  if (any(!c("type", "transcript_id", "phase") %in% names(mcols(cds)))) {
+    metadata <- c("type", "transcript_id")
     missing <- metadata[!metadata %in% names(mcols(cds))]
-    if('type' %in% missing){
-      mcols(cds)$type <- 'CDS'
+    if ("type" %in% missing) {
+      mcols(cds)$type <- "CDS"
     }
-    if('transcript_id' %in% missing){
+    if ("transcript_id" %in% missing) {
       mcols(cds)$transcript_id <- names(cds)
     }
-    if('phase' %in% missing){
-      mcols(cds)$phase <- data.table::shift(cumsum(width(exons)%%3)%%3, fill = 0)
+    if ("phase" %in% missing) {
+      mcols(cds)$phase <- data.table::shift(cumsum(width(exons) %% 3) %% 3, fill = 0)
     }
   }
   names(exons) <- NULL
   names(cds) <- NULL
-  
-  rtracklayer::export(c(exons,cds), con, 'gtf')
+
+  rtracklayer::export(c(exons, cds), con, "gtf")
 }

@@ -9,20 +9,17 @@
 #' @importFrom GenomeInfoDb seqlevelsStyle
 #' @importFrom GenomeInfoDb mapSeqlevels
 #'
-matchSeqLevels <- function(from, to, ...){
-  
+matchSeqLevels <- function(from, to, ...) {
   suppressWarnings(
     if (any(!seqlevelsStyle(from) %in% seqlevelsStyle(to))) {
       newStyle <- mapSeqlevels(seqlevels(from), (seqlevelsStyle(to)[1]))
-      newStyle = newStyle[!is.na(newStyle)]
+      newStyle <- newStyle[!is.na(newStyle)]
       from <- renameSeqlevels(from, newStyle)
-      
-      if (any(!seqlevels(from)%in%seqlevels(to))) {
-        seqlevels(from, pruning.mode = 'tidy') <- as.vector(newStyle)
+
+      if (any(!seqlevels(from) %in% seqlevels(to))) {
+        seqlevels(from, pruning.mode = "tidy") <- as.vector(newStyle)
       }
     }
   )
   return(from)
 }
-
-
