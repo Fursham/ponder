@@ -1,5 +1,29 @@
+#' Search coding mRNAs for upstream and overlapping ORFs
+#'
+#' @param exons 
+#' GRanges object or GRangesList object containing exons
+#' for each transcript. To search for uORFs, transcripts have
+#' to be coding and thus contain a cds information of the same transcript name
+#' @param cds 
+#' GRanges object or GRangesList object containing coding regions (CDS)
+#' for each transcript. GRangesList must have names that match names in exons,
+#' else exons will not be analysed
+#' @param fasta 
+#' BSgenome or Biostrings object containing genomic sequence
+#' @param ORFlength 
+#' Minumum length of ORF. Default: 21
+#' @param which 
+#' List containing transcript names to filter for analysis
+#' @param append 
+#' Logical value to append GRangesList containing uORF ranges to input
+#' exons and cds. Default: FALSE
+#'
+#' @return
+#' @export
+#'
+#' @examples
 searchuORFs <- function(exons, cds, fasta, ORFlength = 21,
-                        which = NULL, append = TRUE) {
+                        which = NULL, append = FALSE) {
 
   # catch missing args
   mandargs <- c("exons", "cds", "fasta")
