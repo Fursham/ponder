@@ -1,20 +1,20 @@
 #' Predict sensitivity of mRNA transcripts to NMD
 #'
-#' @param tx
+#' @param exons
 #' GRanges object or GRangesList object containing exons
 #' for each transcript. To search for NMD-inducing features, transcripts have
 #' to be coding and thus contain a cds information of the same transcript name
 #' @param cds
 #' GRanges object or GRangesList object containing coding regions (CDS)
-#' for each transcript. GRangesList must have names that match names in tx,
-#' else tx will not be analysed
+#' for each transcript. GRangesList must have names that match names in exons,
+#' else exons will not be analysed
 #' @param NMDthreshold
 #' Minimum distance of STOP codon to last exon junction (EJ) which triggers NMD.
 #' Default = 50bp
 #' @param which
-#' List containing tx names to filter for analysis
+#' List containing names of transcripts from exons to filter for analysis
 #' @param return
-#' If tx and cds are GRangesList, returns only NMD-sensitive (default)
+#' If exons and cds are GRangesList, returns only NMD-sensitive (default)
 #' transcripts or all transcripts.
 #'
 #' @return
@@ -49,11 +49,11 @@
 #' predictNMD(query_exons, query_cds)
 #' predictNMD(query_exons, query_cds, return = "all")
 #' predictNMD(query_exons, query_cds, which = c("transcript1", "transcript3"), return = "all")
-predictNMD <- function(tx, cds, NMDthreshold = 50,
+predictNMD <- function(exons, cds, NMDthreshold = 50,
                        which = NULL, return = c("NMD", "all")) {
 
   # catch missing args
-  mandargs <- c("tx", "cds")
+  mandargs <- c("exons", "cds")
   passed <- names(as.list(match.call())[-1])
   if (any(!mandargs %in% passed)) {
     stop(paste(
@@ -62,49 +62,49 @@ predictNMD <- function(tx, cds, NMDthreshold = 50,
     ))
   }
 
-  # check if tx and cds are GR or GRlist
-  if (all(is(tx) %in% is(cds))) {
-    if (is(tx, "GRanges")) {
+  # check if exons and cds are GR or GRlist
+  if (all(is(exons) %in% is(cds))) {
+    if (is(exons, "GRanges")) {
       intype <- "gr"
-    } else if (is(tx, "GRangesList")) {
+    } else if (is(exons, "GRangesList")) {
       intype <- "grl"
     } else {
       stop("input object types not compatible")
     }
   } else {
-    txtype <- is(tx)[1]
+    txtype <- is(exons)[1]
     cdstype <- is(cds)[1]
     stop(sprintf(
-      "cds is type %s but tx is type %s",
+      "cds is type %s but exons is type %s",
       cdstype, txtype
     ))
   }
   # catch unmatched seqlevels
-  if (GenomeInfoDb::seqlevelsStyle(tx) != GenomeInfoDb::seqlevelsStyle(cds)) {
-    stop("tx and cds has unmatched seqlevel styles. try matching using matchSeqLevels function")
+  if (GenomeInfoDb::seqlevelsStyle(exons) != GenomeInfoDb::seqlevelsStyle(cds)) {
+    stop("exons and cds has unmatched seqlevel styles. try matching using matchSeqLevels function")
   }
 
   # run testNMD_ for single GRanges object and output results
   if (intype == "gr") {
-    return(testNMD(tx, cds, distance_stop_EJ = NMDthreshold))
+    return(testNMD(exons, cds, distance_stop_EJ = NMDthreshold))
   }
 
   # for GRangesList,
   if (intype == "grl") {
-    totest <- names(tx) # prepare vector with names for testing
+    totest <- names(exons) # prepare vector with names for testing
     if (!is.null(which)) {
       totest <- totest[totest %in% which] # subset list if which list is given
-      tx <- tx[names(tx) %in% which]
+      exons <- exons[names(exons) %in% which]
     }
     # check for missing cds and return warnings/errors
     totest <- totest[totest %in% names(cds)]
     if (length(totest) == 0) {
-      stop("all tx have missing cds info. please ensure tx and cds names match")
+      stop("all exons have missing cds info. please ensure exons and cds names match")
     }
-    if (length(totest) < length(tx)) {
-      skiptest <- length(tx) - length(totest)
+    if (length(totest) < length(exons)) {
+      skiptest <- length(exons) - length(totest)
       rlang::warn(sprintf(
-        "%s tx(s) have missing cds info and have been skipped",
+        "%s exons(s) have missing cds info and have been skipped",
         skiptest
       ))
     }
@@ -112,10 +112,10 @@ predictNMD <- function(tx, cds, NMDthreshold = 50,
     # running brlapply and testNMD
     out <- BiocParallel::bplapply(totest, function(x) {
       report <- list(
-        tx = x, is_NMD = F, dist_to_lastEJ = 0,
+        exons = x, is_NMD = F, dist_to_lastEJ = 0,
         num_of_down_EJs = 0, dist_to_downEJs = 0
       )
-      NMDreport <- testNMD(tx[[x]], cds[[x]], distance_stop_EJ = NMDthreshold)
+      NMDreport <- testNMD(exons[[x]], cds[[x]], distance_stop_EJ = NMDthreshold)
       report <- utils::modifyList(report, NMDreport)
       return(report)
     }, BPPARAM = BiocParallel::MulticoreParam()) %>%
