@@ -90,6 +90,11 @@ searchuORFs <- function(exons, cds, fasta, ORFlength = 21,
       split.field = "group_name",
       keep.extra.columns = T
     )
+  
+  if (append == T) {
+    newtx <- c(exons, newtx)
+    newcds <- c(cds, newcds)
+  }
 
   return(list("exons" = newtx, "cds" = newcds))
 }
