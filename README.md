@@ -78,3 +78,5 @@ predictNMD(query_exons, query_cds)
 #1 transcript3 TRUE              361               3 66,283,361                 502
 ```
 
+## Acknowledgements
+* [Kaur Alasoo](https://github.com/kauralasoo)
