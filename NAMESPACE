@@ -2,6 +2,7 @@
 
 export(buildCDS)
 export(classifyAS)
+export(extractCDSfeature)
 export(getCoverages)
 export(makeGTF)
 export(matchSeqLevels)
