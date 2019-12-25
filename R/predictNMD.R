@@ -93,6 +93,15 @@ predictNMD <- function(exons, cds, NMDthreshold = 50,
   if (intype == "grl") {
     totest <- names(exons) # prepare vector with names for testing
     if (!is.null(which)) {
+      which_matched <- which[which %in% names(cds)]
+      if (length(which_matched) == 0){
+        stop('transcript names in `which` is not found in cds')
+      } else if (length(which_matched) != length(which)){
+        num_unmatched <- length(which) - length(which_matched)
+        warning(sprintf('%s transcript names in `which` is missing from cds names',
+                        num_unmatched))
+      }
+      
       totest <- totest[totest %in% which] # subset list if which list is given
       exons <- exons[names(exons) %in% which]
     }
