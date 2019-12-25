@@ -1,3 +1,23 @@
+#' Extract protein features from coding mRNAs
+#'
+#' @param cds 
+#' GRanges object or GRangesList object containing coding regions (CDS)
+#' for each transcript. 
+#' @param fasta 
+#' BSgenome or Biostrings object containing genomic sequence
+#' @param which 
+#' List containing names of transcripts from cds to filter for analysis
+#'
+#' @return
+#' Dataframe containing protein features for each cds entry
+#' Current features tested:
+#' (1) Presence and type of protein domains
+#' (2) Probability of signal peptide sequence
+#' @export
+#'
+#' @examples
+#' library(BSgenome.Mmusculus.UCSC.mm10)
+#' extractCDSfeature(query_cds, Mmusculus)
 extractCDSfeature <- function(cds, fasta, which = NULL) {
   
   # catch missing args
