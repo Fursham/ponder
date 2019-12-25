@@ -3,10 +3,14 @@
 - DONE:CORRECT searchuORFs error where df of cds is more than 1 row
 - DONE:checkout styler to auto stylize scripts 
 
-- include workflow to predict protein domains. Check out hmmer from Bio3d
-- see if differences in domains can be easily compared 
+- Biological significance of isoforms
+  - DONE:checkout signalHsmm
+  - DONE:complete out hmmer function
+- Differential AS and domain comparison
 
-- test different input types. AnnHub gtfs, Ensembl gtfs, custom fasta
+- test different input types. 
+  - GTFs from Cufflinks, Stringtie, denovo assemblers(Trinity etc)
+  -AnnHub gtfs, Ensembl gtfs, custom fasta
 
 - Package function to identify alternative segments. See hmmer for ideas on output 
 - Simplify variable names
