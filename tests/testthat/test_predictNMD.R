@@ -17,9 +17,9 @@ test_that("Test the structure of outputs", {
 
 test_that("Test the value of outputs", {
   
-  expect_equal(out2$dist_to_lastEJ, c(-133,-130,361,-129)) 
+  expect_equal(out2$dist_to_lastEJ, c(-133,-133,361,-133)) 
   expect_equal(out2$num_of_down_EJs, c(0,0,3,0)) 
   expect_equal(out2$dist_to_downEJs, c("","","66,283,361","")) 
-  expect_equal(out2$threeUTRlength, c(1586,1586,502,939)) 
+  expect_equal(out2$threeUTRlength, c(1155,1494,641,1082)) 
 
 })

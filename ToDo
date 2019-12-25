@@ -1,5 +1,7 @@
 ####### ToDos ####### 
 
+- Remake test files. Change to Ptbp1
+
 - DONE:CORRECT searchuORFs error where df of cds is more than 1 row
 - DONE:checkout styler to auto stylize scripts 
 

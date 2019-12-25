@@ -15,6 +15,6 @@ test_that("Test the structure of outputs", {
 test_that("Test the value of outputs", {
   
   expect_equal(out1, q2rcovs)
-  expect_equal(round(out2$coverage[1:4], 3), c(1, 0.941,0.941,1))
+  expect_equal(round(out2$coverage[1:4], 3), c(1, 0.901,0.901,1))
   
 })
