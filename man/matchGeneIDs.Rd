@@ -11,10 +11,10 @@ matchGeneIDs(query, ref, primary_gene_id = NULL, secondary_gene_id = NULL)
 
 \item{ref}{Reference GTF as GRanges object}
 
-\item{primary_gene_id}{Character name of the primary gene id metadata in query GTF. 
+\item{primary_gene_id}{Character name of the primary gene id metadata in query GTF.
 Input to this argument is typically 'gene_id'}
 
-\item{secondary_gene_id}{Character name of the secondary gene id in query file. 
+\item{secondary_gene_id}{Character name of the secondary gene id in query file.
 Example of input to this arguement is 'ref_gene_id'}
 }
 \value{
@@ -31,18 +31,15 @@ To improve this, users have an option to activate two additional layers of match
 Gene IDs, this program will try to match both IDs in a less stringent manner. This correction can be invoked
 by providing the 'primary_gene_id' argument
 
-(2) Matching by secondary Gene_IDs. Depending on the transcript assembly program, GTF/GFF3 annotations 
-may contain additional comments on the transcript information. This may include a distinct 
+(2) Matching by secondary Gene_IDs. Depending on the transcript assembly program, GTF/GFF3 annotations
+may contain additional comments on the transcript information. This may include a distinct
 secondary Gene ID annotation that potentially matches with the reference. To invoke this correction,
-provide 'primary_gene_id' and 'secondary_gene_id' arguments. To determine if your transcript assembly contain 
-possible secondary Gene IDs, try importing query GTF file using rtracklayer package and check its metadata 
+provide 'primary_gene_id' and 'secondary_gene_id' arguments. To determine if your transcript assembly contain
+possible secondary Gene IDs, try importing query GTF file using rtracklayer package and check its metadata
 columns
 }
 \examples{
 matchGeneIDs(query_gtf, ref_gtf)
-
-
-
 }
 \author{
 Fursham Hamid

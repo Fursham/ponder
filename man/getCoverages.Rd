@@ -7,18 +7,18 @@
 getCoverages(query, ref, query2ref, ids = c(1, 2), return = c("best", "all"))
 }
 \arguments{
-\item{query}{GRangesList object containing exons for each query transcript. Transcripts 
+\item{query}{GRangesList object containing exons for each query transcript. Transcripts
 have to be listed in query2ref dataframe, else coverage values will not be
 calculated}
 
 \item{ref}{GRangesList object containing CDS for each reference transcript.}
 
-\item{query2ref}{Dataframe with at least 2 columns: query transcript_id and its 
+\item{query2ref}{Dataframe with at least 2 columns: query transcript_id and its
 reference transcript_id. Query and ref transcript_ids have to match transcript
 names in query and refCDS objects. Transcripts with missing corrresponding
 GRanges object will return error}
 
-\item{ids}{Numeric vector stating which columns of query2ref dataframe contain the 
+\item{ids}{Numeric vector stating which columns of query2ref dataframe contain the
 query and reference transcript_ids respectively.}
 
 \item{return}{If query2ref contain query transcripts with multiple comparisons, function

@@ -20,14 +20,16 @@ Appended GenomicRanges object
 Resize 5' and 3' ends of a transcript GenomicRanges
 }
 \examples{
-gr1 <- GRanges(seqnames = "chr1", strand = c("+", "+", "+"),
-ranges = IRanges(start = c(1,500,1000), 
-end = c(100,600,1100)))
+gr1 <- GRanges(
+  seqnames = "chr1", strand = c("+", "+", "+"),
+  ranges = IRanges(
+    start = c(1, 500, 1000),
+    end = c(100, 600, 1100)
+  )
+)
 
-resizeGRangesTranscripts(gr1, 20,80)
-resizeGRangesTranscripts(gr1, 110,150)
-
-
+resizeGRangesTranscripts(gr1, 20, 80)
+resizeGRangesTranscripts(gr1, 110, 150)
 }
 \author{
 Fursham Hamid

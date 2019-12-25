@@ -4,23 +4,29 @@
 \alias{predictNMD}
 \title{Predict sensitivity of mRNA transcripts to NMD}
 \usage{
-predictNMD(tx, cds, NMDthreshold = 50, which = NULL, return = c("NMD", "all"))
+predictNMD(
+  exons,
+  cds,
+  NMDthreshold = 50,
+  which = NULL,
+  return = c("NMD", "all")
+)
 }
 \arguments{
-\item{tx}{GRanges object or GRangesList object containing exons
+\item{exons}{GRanges object or GRangesList object containing exons
 for each transcript. To search for NMD-inducing features, transcripts have
 to be coding and thus contain a cds information of the same transcript name}
 
 \item{cds}{GRanges object or GRangesList object containing coding regions (CDS)
-for each transcript. GRangesList must have names that match names in tx,
-else tx will not be analysed}
+for each transcript. GRangesList must have names that match names in exons,
+else exons will not be analysed}
 
 \item{NMDthreshold}{Minimum distance of STOP codon to last exon junction (EJ) which triggers NMD.
 Default = 50bp}
 
-\item{which}{List containing tx names to filter for analysis}
+\item{which}{List containing names of transcripts from exons to filter for analysis}
 
-\item{return}{If tx and cds are GRangesList, returns only NMD-sensitive (default)
+\item{return}{If exons and cds are GRangesList, returns only NMD-sensitive (default)
 transcripts or all transcripts.}
 }
 \value{
@@ -34,9 +40,9 @@ position of STOP codon while negative value indicates downstream position
 
 num_of_down_EJs: Number of downstream EJs
 
-dist_to_downEJs: Integer value indicating distance of STOP codon to each down 
-EJs Values are referenced from last EJ, thus a positive value indicates 
-upstream position of STOP codon while negative value indicates downstream 
+dist_to_downEJs: Integer value indicating distance of STOP codon to each down
+EJs Values are referenced from last EJ, thus a positive value indicates
+upstream position of STOP codon while negative value indicates downstream
 position together with distances of STOP codon to last EJ
 }
 \description{
@@ -54,11 +60,8 @@ predictNMD(query_exons$transcript3, query_cds$transcript3) # NMD-sensitive
 
 ### Examples with GRangesList object
 predictNMD(query_exons, query_cds)
-predictNMD(query_exons, query_cds), return = 'all')
-predictNMD(query_exons, query_cds,which=c('transcript1', 'transcript3'), return = 'all')
-
-
-
+predictNMD(query_exons, query_cds, return = "all")
+predictNMD(query_exons, query_cds, which = c("transcript1", "transcript3"), return = "all")
 }
 \author{
 Fursham Hamid
