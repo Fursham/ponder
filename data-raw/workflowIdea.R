@@ -39,3 +39,12 @@ makeGTF(query_exons, query_cds, '.')
 
 #testNMD
 predictNMD(query_exons, query_cds)
+
+# get ensembl annotation
+AnnHub <- AnnotationHub()
+Mmus <- AnnHub[['AH60127']]
+
+
+# Features of translated proteins from CDS list
+extractCDSfeature(query_cds, Mmusculus)
+
