@@ -26,8 +26,7 @@ from high-throughput RNA-seq experiments
   * *Compare alternative spliced segments between isoforms*
   * *Compare biological significance between mRNA isoforms*
   
-
-
+See vignette for full instructions on how to get started
 
 ## Installation
 ```r
@@ -35,37 +34,21 @@ from high-throughput RNA-seq experiments
 devtools::install_github("fursham-h/ponder")
 ```
 
-## Usage
-pondeR is pre-loaded with GenomicRangesList objects containing sample
-exon and cds ranges
+## Example
+pondeR is packaged with sample GenomicRangesList objects containing 
+exon and cds ranges of 4 transcripts from the same gene
 ```r
 library(pondeR)
 
-query_exons[1]
-# GRangesList object of length 1:
-# $transcript1 
-# GRanges object with 14 ranges and 0 metadata columns:
-#        seqnames              ranges strand
-#           <Rle>           <IRanges>  <Rle>
-#    [1]     chr3 119783202-119783388      -
-#    [2]     chr3 119781504-119781534      -
-#    [3]     chr3 119761703-119761778      -
-#    [4]     chr3 119752944-119753116      -
-#    [5]     chr3 119751864-119752007      -
-#    ...      ...                 ...    ...
-#   [10]     chr3 119724612-119724645      -
-#   [11]     chr3 119724094-119724186      -
-#   [12]     chr3 119720789-119721005      -
-#   [13]     chr3 119720607-119720684      -
-#   [14]     chr3 119718742-119720460      -
-# 
-# -------
-# seqinfo: 1 sequence from an unspecified genome; no seqlengths
+names(query_exons[1])
+# [1] "transcript1" "transcript2" "transcript3" "transcript4"
+names(query_cds[1])
+# [1] "transcript1" "transcript2" "transcript3" "transcript4"
+
 ```
 
-Transcripts without cds information can be a part of the GRangesList but will not
-be analysed for NMD-inducing features. Transcript architecture of these 
-transcripts can be visualized using _wiggleplotr_ package
+Transcript architecture of these transcripts can be visualized 
+using _wiggleplotr_ package
 ```r
 #if (!requireNamespace("BiocManager", quietly=TRUE))
 #    install.packages("BiocManager")
@@ -82,7 +65,7 @@ predictNMD(query_exons, query_cds)
 ## A tibble: 1 x 6
 #  tx          is_NMD dist_to_lastEJ num_of_down_EJs dist_to_downEJs threeUTRlength
 #  <chr>       <lgl>           <int>           <dbl> <chr>                    <dbl>
-#1 transcript3 TRUE              361               3 66,283,361                 502
+#1 transcript3 TRUE              361               3 66,283,361                 641
 ```
 
 ## Acknowledgements
